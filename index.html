@@ -320,6 +320,14 @@ const OVR = {
   150: { forms: 6, final: true, revive: true, theme: ['redonly', 'cross', 'wall', 'thunder'], note: 'すべての鬼の頂。' },
 };
 
+// temperaments: how an enemy paces itself (multipliers on the original game's 普通)
+const TEMPER = [
+  { name: '速射', spd: [1.15, 1.35], gap: [1.1, 1.4], den: [.8, 1.0], warn: [.9, 1.05] },  // fast shots, long pauses
+  { name: '連撃', spd: [.75, .9], gap: [.55, .75], den: [.85, 1.05], warn: [.95, 1.1] },  // slow shots, one after another
+  { name: '重厚', spd: [.75, .9], gap: [1.1, 1.4], den: [1.3, 1.6], warn: [1.0, 1.15] },  // slow, thick volleys
+  { name: '均衡', spd: [.95, 1.1], gap: [.8, 1.0], den: [1.0, 1.2], warn: [.9, 1.05] },
+  { name: '気まぐれ', spd: [.85, 1.25], gap: [.6, 1.3], den: [.9, 1.3], warn: [.85, 1.1], jit: true },  // uneven rhythm
+];
 function buildStage(n) {
   const rng = mulberry32(n * 7919 + 13), t = (n - 1) / 149, o = OVR[n] || {};
   const pick = arr => arr[Math.floor(rng() * arr.length)];
@@ -344,15 +352,20 @@ function buildStage(n) {
   // the enemy's own way of laying out its shots
   const shapes = rollShapes(mulberry32(n * 104729 + 3), n);
 
-  let k = o.forms || (n <= 4 ? 1 : n <= 12 ? 1 + (n >= 8) : Math.min(6, 2 + Math.floor((n - 13) / 30) + (rng() < .4 ? 1 : 0)));
+  // The stage number does not make shots faster, volleys closer, forms more numerous or life longer.
+  // Those come from the enemy's temperament; only the opening stages are held gentle.
+  const R = (a, b) => a + rng() * (b - a);
+  const arch = pick(TEMPER);
+  const ease = Math.min(1, (n - 1) / 19);            // 0 at stage 1, 1 from stage 20
+  const blend = (calm, v) => calm + (v - calm) * ease;
+  const base = { spd: R(...arch.spd), gap: R(...arch.gap), den: R(...arch.den), warn: R(...arch.warn) };
+  let k = o.forms || (n <= 5 ? 1 : n <= 15 ? 1 + (rng() < .5 ? 1 : 0) : pick([1, 2, 2, 3, 3, 3, 4, 4, 5, 6]));
   const survive = o.rules && o.rules.survive;
-  const totalHp = Math.round(22 + 33 * Math.min(1, (n - 1) / 8) + 230 * t);
   const forms = [];
-  // difficulty climbs quickly to stage 40 (= the original game's 普通), then slowly to stage 150
-  const e0 = n <= 40 ? .5 * (n - 1) / 39 : .5 + .5 * (n - 40) / 110;
-  const curve = (a, mid, b, e) => e <= .5 ? a + (mid - a) * e * 2 : mid + (b - mid) * (e - .5) * 2;
   for (let i = 0; i < k; i++) {
-    const ft = Math.min(1, e0 + i * .035);
+    // each form's life is its own, not a share of a total
+    const hp = n === 1 ? 22 : n <= 10 ? Math.round(R(24, 34) + n * 2) : Math.round(R(30, 75));
+    const step = i * .04 * ease;                      // later forms of one enemy press a little harder
     let pool;
     if (n <= 5) pool = ['plain', ...avail];
     else if (o.old) pool = OLD.slice();
@@ -366,12 +379,11 @@ function buildStage(n) {
     forms.push({
       name: ['一ノ型', '二ノ型', '三ノ型', '四ノ型', '五ノ型', '六ノ型'][i],
       pool, theme, shapes,
-      spd: (o.old ? .1 : 0) + curve(.62, 1.0, 1.4, ft), gap: curve(1.8, 1.0, .55, ft), warn: curve(1.35, 1.0, .62, ft),
-      den: (o.old ? .5 : 0) + curve(.5, 1.0, 1.8, ft),
-      red: o.white ? 0 : n < 6 ? 0 : n === 6 ? .35 : curve(.15, .4, .75, ft),
-      white: !!o.white, tier: 0,
-      hp: Math.max(15, Math.round(totalHp / k)),
-      special: [],
+      spd: blend(.62, base.spd) * (1 + step), gap: blend(1.8, base.gap), warn: blend(1.35, base.warn),
+      den: blend(.5, (o.old ? .5 : 0) + base.den) + step * 2,
+      red: o.white ? 0 : n < 6 ? 0 : n === 6 ? .35 : Math.min(.8, .15 + .55 * t + step),
+      white: !!o.white, tier: 0, jit: !!arch.jit,
+      hp, special: [],
     });
   }
   // specials
@@ -390,10 +402,11 @@ function buildStage(n) {
   const final = !survive && (o.final || n % 10 === 0 || (n > 60 && rng() < .3));
   const revive = !survive && (o.revive || n === 80 || (n > 80 && rng() < .12));
   const rules = Object.assign({}, o.rules || {});
+  const totalHp = forms.reduce((a, f) => a + f.hp, 0);
   if (rules.limit) rules.limit = Math.round(totalHp * .55 + 45 + (final ? 40 : 0));
   return {
     n, name: NAMES[n - 1] || ('鬼' + n), glyph: (NAMES[n - 1] || '鬼')[0], forms, final, revive, rules, theme, note: o.note || '',
-    specials: [...sp], finalSeed: n * 31 + 7, t, shapes,
+    specials: [...sp], finalSeed: n * 31 + 7, t, shapes, temper: arch.name,
   };
 }
 const STAGES = []; for (let n = 1; n <= 150; n++) STAGES.push(buildStage(n));
@@ -880,7 +893,7 @@ function startAttack() {
   // only the hardest free-play tier ever layers two volleys, and only two plain shot layouts
   if (F.tier === 2 && k === 'plain' && Math.random() < .2) dur = Math.max(dur, fireShape('plain', { any: true }));
   B.busy = dur;
-  B.nextAtk = F.gap;
+  B.nextAtk = F.gap * (F.jit ? .55 + Math.random() * .9 : 1);
 }
 
 // =====================================================================
