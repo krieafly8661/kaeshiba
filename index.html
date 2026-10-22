@@ -171,36 +171,39 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 // ---- the player never changes: same moves, same timings, every stage and every difficulty ----
 const SPEED = 235, DASH_T = .17, DASH_V = 720, DASH_CD = .55;
 const PARRY_WIN = .14, PARRY_CD = .5, WHIFF = .25, PARRY_R = 26, PERFECT_PAD = 12;
-const SLASH_REACH = 50, SLASH_CD = .2, STAGGER = 1.8, FINAL_STAGGER = 4.5;
+const SLASH_REACH = 50, SLASH_CD = .2, STAGGER = 1.8, FINAL_STAGGER = 4.5, BREAK_DMG = 7;
 
 // =====================================================================
 // gimmicks: every attack and special the enemies can use
 // =====================================================================
+// Three kinds of thing an enemy knows:
+//  p: 1  — a property of shots (how a shot behaves). The enemy fires it in its own shapes.
+//  (none) — a technique that is its own move (beams, charges, seals, field effects...).
+//  sp: 1 — a special that changes a whole form.
 const GIM = {
-  aim: { n: '狙い撃ち', s: 'こちらを狙う白弾' },
-  ring: { n: '輪弾', s: '全方位に広がる輪' },
-  fan: { n: '扇撃ち', s: '扇状の連射' },
-  spiral: { n: '渦', s: '渦を巻く弾幕' },
+  red: { n: '朱弾', s: '弾けない朱い弾', p: 1 },
+  homing: { n: '追い弾', s: '曲がって追ってくる弾', p: 1 },
+  stopgo: { n: '止め弾', s: '止まって向き直る弾', p: 1 },
+  bounce: { n: '跳ね弾', s: '壁で跳ねる朱弾', p: 1 },
+  bigorb: { n: '大玉', s: '放っておくと弾ける大玉', p: 1 },
+  accel: { n: '加速弾', s: '後から速くなる弾', p: 1 },
+  wave: { n: '波弾', s: 'うねりながら迫る弾', p: 1 },
+  split: { n: '分裂弾', s: '三つに割れる弾', p: 1 },
+  mines: { n: '置き弾', s: '近づくと弾ける置き弾', p: 1 },
+  orbit: { n: '衛星弾', s: '身にまとってから放つ弾', p: 1 },
+  redonly: { n: '朱一色', s: 'すべてが朱い弾', p: 1 },
+  ghost: { n: '幽弾', s: '途中で見えなくなる弾', p: 1 },
+  fake: { n: '偽白', s: '弾くと爆ぜる偽の白弾', p: 1 },
+  needle: { n: '千本', s: '速く細い針', p: 1 },
+  redbig: { n: '朱大玉', s: '弾けるまで弾けない大玉', p: 1 },
+  redsplit: { n: '朱分裂弾', s: '割れるまで弾けない分裂弾', p: 1 },
   charge: { n: '突進', s: '鋭い突進' },
-  red: { n: '朱弾', s: '弾けない朱い弾' },
-  homing: { n: '追い弾', s: '曲がって追ってくる弾' },
   laser: { n: '光線', s: '狙い澄ました光線' },
-  stopgo: { n: '止め弾', s: '止まって向き直る弾' },
-  bounce: { n: '跳ね弾', s: '壁で跳ねる朱弾' },
-  bigorb: { n: '大玉', s: '放っておくと弾ける大玉' },
   thunder: { n: '落雷', s: '足元を狙う落雷' },
-  accel: { n: '加速弾', s: '後から速くなる弾' },
-  wave: { n: '波弾', s: 'うねりながら迫る弾' },
-  rain: { n: '弾の雨', s: '天から降る弾' },
   wind: { n: '風', s: '体を押し流す風' },
   cross: { n: '光輪', s: '回る光線' },
-  split: { n: '分裂弾', s: '三つに割れる弾' },
-  mines: { n: '置き弾', s: '近づくと弾ける置き弾' },
-  orbit: { n: '衛星弾', s: '身にまとってから放つ弾' },
   snipe: { n: '狙撃', s: '一瞬で届く狙撃' },
   teleport: { n: '瞬身', s: '消えては別の場所に現れる' },
-  redstorm: { n: '赤嵐', s: '朱一色の渦' },
-  redring: { n: '赤輪', s: '朱一色の輪' },
   wall: { n: '弾壁', s: '隙間のない弾の壁' },
   encircle: { n: '包囲', s: '閉じてくる弾の輪' },
   sealDash: { n: '封踏', s: '踏み込みを封じる' },
@@ -208,10 +211,8 @@ const GIM = {
   slow: { n: '泥沼', s: '足を取る泥' },
   dark: { n: '闇', s: '視界を奪う闇' },
   well: { n: '渦穴', s: '引き寄せる渦穴' },
-  ghost: { n: '幽弾', s: '途中で見えなくなる弾' },
   turret: { n: '砲台', s: '据え置きの砲台' },
   reverse: { n: '逆さ', s: '操作を逆さにする' },
-  fake: { n: '偽白', s: '弾くと爆ぜる偽の白弾' },
   swap: { n: '反転', s: '白と朱の理を入れ替える' },
   freeze: { n: '刻止め', s: '弾の時を止める' },
   shrink: { n: '狭め', s: '戦う場を狭める' },
@@ -219,10 +220,8 @@ const GIM = {
   lattice: { n: '格子', s: '格子状の光線' },
   curse: { n: '呪印', s: '後から爆ぜる呪い' },
   echo: { n: '谺', s: '同じ技を繰り返す' },
-  needle: { n: '千本', s: '速く細い針' },
   tether: { n: '鎖', s: '動ける範囲を縛る鎖' },
   chainzone: { n: '連雷', s: '連なって迫る落雷' },
-  // specials: properties of a whole form rather than single attacks
   stones: { n: '封印石', s: '石を正しい順に踏むまで傷つかない', sp: 1 },
   shield: { n: '盾', s: '片側を盾で守る', sp: 1 },
   counter: { n: '返し構え', s: '構えの間は弾き返しを打ち返す', sp: 1 },
@@ -233,19 +232,49 @@ const GIM = {
   revive: { n: '再起', s: '一度だけ立ち上がる', sp: 1 },
   final: { n: '奥義', s: 'とどめの瞬間に奥義を放つ', sp: 1 },
 };
-// the stage where each gimmick first appears
+// the stage where each gimmick first appears (stages 1-4 teach the plain white shot in new shapes)
 const INTRO = {
-  1: 'aim', 2: 'ring', 3: 'fan', 4: 'spiral', 5: 'charge', 6: 'red', 7: 'homing', 8: 'laser', 9: 'stopgo', 10: 'final',
-  11: 'bounce', 12: 'bigorb', 13: 'thunder', 14: 'accel', 15: 'wave', 16: 'rain', 17: 'wind', 18: 'cross', 19: 'split', 20: 'mines',
-  22: 'orbit', 24: 'snipe', 26: 'teleport', 28: 'redstorm', 29: 'redring', 30: 'wall', 32: 'encircle', 34: 'sealDash', 36: 'sealParry', 38: 'slow',
+  5: 'charge', 6: 'red', 7: 'homing', 8: 'laser', 9: 'stopgo', 10: 'final',
+  11: 'bounce', 12: 'bigorb', 13: 'thunder', 14: 'accel', 15: 'wave', 17: 'wind', 18: 'cross', 19: 'split', 20: 'mines',
+  22: 'orbit', 24: 'snipe', 26: 'teleport', 28: 'redonly', 30: 'wall', 32: 'encircle', 33: 'redsplit', 34: 'sealDash', 36: 'sealParry', 37: 'redbig', 38: 'slow',
   40: 'stones', 42: 'dark', 44: 'well', 46: 'shield', 48: 'ghost', 50: 'swap', 52: 'turret', 54: 'reverse', 56: 'fake', 58: 'counter',
   60: 'clones', 62: 'freeze', 64: 'shrink', 66: 'chase', 68: 'lattice', 70: 'regen', 72: 'curse', 74: 'invisible', 76: 'echo', 80: 'revive',
   90: 'needle', 100: 'mirror', 110: 'tether', 120: 'chainzone',
 };
 const ATK_IDS = Object.keys(GIM).filter(k => !GIM[k].sp && k !== 'red');
+const isProp = id => id === 'plain' || (GIM[id] && GIM[id].p);
 const introAt = {}; for (const s in INTRO) introAt[INTRO[s]] = +s;
-const OLD = ['aim', 'ring', 'fan', 'spiral', 'charge', 'homing', 'stopgo', 'laser'];
-const DASH_NEEDED = new Set(['wall', 'encircle']);
+const OLD = ['plain', 'plain', 'charge', 'homing', 'stopgo', 'laser'];
+// how often a technique is picked relative to the others
+const WEIGHT = { wind: .3, plain: 1.3 };
+
+// ---- shapes: every enemy has its own handful, with its own counts, spreads and speeds ----
+const SHAPE_TYPES = ['aimed', 'ring', 'spiral', 'flower', 'stream', 'spray', 'cross', 'rain', 'rows', 'helix', 'star', 'arc'];
+function rollShape(type, r) {
+  const R = (a, b) => a + r() * (b - a), I = (a, b) => Math.floor(R(a, b + 1));
+  switch (type) {
+    case 'aimed': return { type, n: [1, 3, 5][I(0, 2)], spread: R(.1, .24), vol: I(2, 4), gap: R(.3, .5), spd: R(180, 240) };
+    case 'ring': return { type, n: I(10, 20), waves: I(1, 3), gap: R(.35, .6), rot: R(0, 1), spd: R(140, 180) };
+    case 'spiral': return { type, arms: I(2, 4), dur: R(1.8, 2.6), step: R(.06, .09), turn: R(.15, .3), dir: r() < .5 ? 1 : -1, spd: R(130, 160) };
+    case 'flower': return { type, n: I(12, 20), waves: I(3, 5), gap: R(.3, .42), petals: I(3, 6), spd: R(130, 160) };
+    case 'stream': return { type, dur: R(1.2, 1.8), rate: R(.05, .08), wob: R(0, .25), lines: I(1, 3), sep: R(.25, .4), spd: R(220, 280) };
+    case 'spray': return { type, n: I(18, 30), dur: R(1, 1.5), cone: R(.5, 1.0), spd: R(170, 240) };
+    case 'cross': return { type, dirs: [4, 6, 8][I(0, 2)], bursts: I(2, 4), len: I(3, 5), gap: R(.4, .55), spd: R(130, 160), rot: R(.2, .6) };
+    case 'rain': return { type, n: I(20, 30), dur: R(1.6, 2.4), side: ['top', 'top', 'left', 'right'][I(0, 3)], spd: R(170, 210) };
+    case 'rows': return { type, vol: I(3, 5), n: I(5, 9), width: R(160, 260), gap: R(.4, .55), spd: R(150, 190) };
+    case 'helix': return { type, dur: R(1.8, 2.4), step: R(.06, .08), turn: R(.17, .25), spd: R(140, 160) };
+    case 'star': return { type, pts: I(4, 7), n: I(28, 40), waves: I(1, 2), gap: R(.5, .7), spd: R(140, 165) };
+    case 'arc': return { type, n: I(14, 22), span: R(4.2, 5.2), vol: I(2, 3), gap: R(.55, .75), spd: R(160, 190) };
+  }
+}
+function rollShapes(r, n) {
+  const pool = n <= 4 ? ['aimed', 'ring', 'spiral', 'aimed'] : n <= 15 ? SHAPE_TYPES.slice(0, 7) : SHAPE_TYPES;
+  const k = n <= 2 ? 1 : Math.min(4, 2 + Math.floor((n - 1) / 50) + (r() < .4 ? 1 : 0));
+  const out = [];
+  if (n === 1) return [{ type: 'aimed', n: 1, spread: .15, vol: 3, gap: .5, spd: 200 }];
+  while (out.length < k) { const t = pool[Math.floor(r() * pool.length)]; if (!out.some(s => s.type === t) || out.length >= pool.length) out.push(rollShape(t, r)); }
+  return out;
+}
 
 const NAMES = `小鬼 豆狸 鬼火 狐火 一ツ目 赤舌 河童 唐傘 提灯火 天邪鬼
 鎌鼬 大首 雷獣 野槌 磯女 雨女 一反木綿 輪入道 毛羽毛現 山姥
@@ -276,7 +305,7 @@ const OVR = {
   85: { rules: { survive: 45, noParry: true }, note: '弾けない。45秒、かわし切れ。' },
   88: { special: ['stones'], mem: true, note: '石の順番は最初の一瞬しか見えない。' },
   95: { rules: { noDash: true, dark: true }, note: '闇の中、踏み込みなしで。' },
-  99: { theme: ['fake', 'aim', 'fan'], note: '白に見える弾が、白とは限らない。' },
+  99: { theme: ['fake'], note: '白に見える弾が、白とは限らない。' },
   105: { rules: { limit: true }, note: '時間内に討て。' },
   111: { white: true, old: true, note: '白弾だけ。ただし桁違いに濃い。' },
   115: { rules: { perfectOnly: true }, special: ['counter'], note: '極でしか通らず、構えの間は打ち返してくる。' },
@@ -288,7 +317,7 @@ const OVR = {
   140: { special: ['clones', 'invisible'], note: '姿の見えない本物を、分身の中から探せ。' },
   145: { rules: { limit: true }, special: ['regen'], note: '時間内に、癒える前に。' },
   149: { rules: { perfectOnly: true }, note: '「極」で返した弾しか通らない。' },
-  150: { forms: 6, final: true, revive: true, theme: ['redstorm', 'cross', 'wall', 'thunder'], note: 'すべての鬼の頂。' },
+  150: { forms: 6, final: true, revive: true, theme: ['redonly', 'cross', 'wall', 'thunder'], note: 'すべての鬼の頂。' },
 };
 
 function buildStage(n) {
@@ -299,7 +328,8 @@ function buildStage(n) {
   // theme: the gimmicks this enemy is strong at
   let theme;
   if (o.theme) theme = o.theme.slice();
-  else if (o.old) theme = OLD.slice(0, 5);
+  else if (o.old) theme = ['plain', 'charge', 'homing', 'stopgo'];
+  else if (n <= 4) theme = ['plain'];
   else if (INTRO[n] && !GIM[INTRO[n]].sp && INTRO[n] !== 'red') theme = [INTRO[n]];
   else if (n > 60 && n % 7 === 0) theme = [pick(OLD), pick(OLD)];
   else {
@@ -307,11 +337,12 @@ function buildStage(n) {
     theme = [rng() < .7 ? pick(recent) : pick(avail)];
     if (n > 25 && rng() < .6) theme.push(pick(avail));
   }
-  if (n === 6) theme = ['ring', 'fan'];
-  if (n === 10) theme = ['spiral', 'charge'];
-  if (INTRO[n] === 'stones' || INTRO[n] === 'shield' || INTRO[n] === 'counter' || INTRO[n] === 'clones' || INTRO[n] === 'regen' || INTRO[n] === 'invisible' || INTRO[n] === 'revive' || INTRO[n] === 'mirror')
-    theme = [pick(avail.slice(-6))];
+  if (n === 6) theme = ['plain'];
+  if (n === 10) theme = ['charge', 'homing'];
+  if (['stones', 'shield', 'counter', 'clones', 'regen', 'invisible', 'revive', 'mirror'].includes(INTRO[n])) theme = [pick(avail.slice(-6))];
   theme = [...new Set(theme)];
+  // the enemy's own way of laying out its shots
+  const shapes = rollShapes(mulberry32(n * 104729 + 3), n);
 
   let k = o.forms || (n <= 4 ? 1 : n <= 12 ? 1 + (n >= 8) : Math.min(6, 2 + Math.floor((n - 13) / 30) + (rng() < .4 ? 1 : 0)));
   const survive = o.rules && o.rules.survive;
@@ -320,10 +351,10 @@ function buildStage(n) {
   for (let i = 0; i < k; i++) {
     const ft = Math.min(1, t + i * .035);
     let pool;
-    if (n <= 5) pool = avail.slice();
+    if (n <= 5) pool = ['plain', ...avail];
     else if (o.old) pool = OLD.slice();
     else {
-      pool = theme.slice();
+      pool = ['plain', ...theme];
       const extra = 1 + Math.floor(t * 3) + Math.min(i, 2);
       for (let j = 0; j < extra; j++) pool.push(rng() < .55 ? pick(avail.slice(-10)) : pick(avail));
       if (introAt.charge <= n && rng() < .5) pool.push('charge');
@@ -331,7 +362,7 @@ function buildStage(n) {
     pool = [...new Set(pool)];
     forms.push({
       name: ['一ノ型', '二ノ型', '三ノ型', '四ノ型', '五ノ型', '六ノ型'][i],
-      pool, theme,
+      pool, theme, shapes,
       spd: (o.old ? .1 : 0) + .62 + .78 * ft, gap: Math.max(.42, 1.8 - 1.25 * ft), warn: Math.max(.62, 1.35 - .62 * ft),
       den: (o.old ? .5 : 0) + .5 + 1.3 * ft,
       red: o.white ? 0 : n < 6 ? 0 : n === 6 ? .35 : Math.min(.75, .15 + .5 * ft),
@@ -352,14 +383,14 @@ function buildStage(n) {
     if (s === 'mirror') f.pool = f.pool.filter(p => p !== 'charge' && p !== 'teleport');
     if (s === 'stones' && o.mem) f.mem = true;
   }
-  for (const f of forms) if (!f.pool.length) f.pool = ['aim', 'ring'];
+  for (const f of forms) if (!f.pool.length) f.pool = ['plain'];
   const final = !survive && (o.final || n % 10 === 0 || (n > 60 && rng() < .3));
   const revive = !survive && (o.revive || n === 80 || (n > 80 && rng() < .12));
   const rules = Object.assign({}, o.rules || {});
   if (rules.limit) rules.limit = Math.round(totalHp * .55 + 45 + (final ? 40 : 0));
   return {
     n, name: NAMES[n - 1] || ('鬼' + n), glyph: (NAMES[n - 1] || '鬼')[0], forms, final, revive, rules, theme, note: o.note || '',
-    specials: [...sp], finalSeed: n * 31 + 7, t,
+    specials: [...sp], finalSeed: n * 31 + 7, t, shapes,
   };
 }
 const STAGES = []; for (let n = 1; n <= 150; n++) STAGES.push(buildStage(n));
@@ -454,7 +485,7 @@ function sfx(n) {
 let state = 'title';
 let RUN = null;        // { mode: 'stage'|'free', st, kesshi, diff }
 let forms, fi, F, RL;  // form list, current form index, current form, stage rules
-let P, B, EM, bullets, lasers, zones, parts, texts, after, slashes, streaks, wind, sched, gt, stats, shake, hitstop, flash, banner, ending, lastAtk, lastReal;
+let P, B, EM, bullets, lasers, zones, parts, texts, after, slashes, streaks, wind, sched, gt, stats, shake, hitstop, flash, banner, ending, lastAtk;
 let fx, turrets, decoys, wells, slows, stones, tether, seenNow, kc;
 const input = { parry: false, dash: false };
 
@@ -464,11 +495,12 @@ function newGame(run) {
     forms = run.st.forms; RL = run.st.rules;
   } else {
     const d = FREE[run.diff];
-    const pool = ATK_IDS.filter(id => BASE20.has(id) || save.seen.includes(id));
+    const pool = ['plain', ...ATK_IDS.filter(id => BASE20.has(id) || save.seen.includes(id))];
     const special = ['shield', 'counter', 'regen'].filter(id => save.seen.includes(id));
+    const fr = mulberry32(4242), shapes = ['aimed', 'ring', 'spiral', 'flower', 'stream', 'arc'].map(t => rollShape(t, fr));
     // three forms, each a step harder; the last carries the difficulty's full weight
     forms = [0, 1, 2].map(i => ({
-      name: ['一ノ型', '二ノ型', '三ノ型'][i], pool, theme: [],
+      name: ['一ノ型', '二ノ型', '三ノ型'][i], pool, theme: [], shapes,
       spd: d.spd * (.88 + i * .06), gap: d.gap * (1.15 - i * .075), warn: d.warn, den: d.den * (.82 + i * .09),
       red: Math.min(.8, d.red * (.75 + i * .125)), white: false, tier: i === 2 ? d.tier : Math.max(0, d.tier - 1),
       hp: Math.round(d.bhp * .55), special: i === 2 ? special : [],
@@ -487,7 +519,7 @@ function newGame(run) {
   bullets = []; lasers = []; zones = []; parts = []; texts = []; after = []; slashes = []; streaks = []; sched = [];
   turrets = []; decoys = []; wells = []; slows = []; stones = null; tether = null; wind = null;
   fx = { sealP: 0, sealD: 0, rev: 0, dark: 0, swap: 0, freeze: 0, shrink: 0, shrinkK: 0 };
-  gt = 0; shake = 0; hitstop = 0; flash = 0; banner = null; ending = 0; lastAtk = ''; lastReal = 'ring'; lastShot = -1; kc = 0;
+  gt = 0; shake = 0; hitstop = 0; flash = 0; banner = null; ending = 0; lastAtk = ''; lastRun = null; lastShape = null; lastShot = -1; kc = 0;
   stats = { time: 0, parries: 0, perfects: 0, slashes: 0, hits: 0, maxCombo: 0, won: false, why: '' };
   seenNow = new Set();
   input.parry = input.dash = false;
@@ -568,111 +600,147 @@ function blink() {
 }
 
 // =====================================================================
-// attacks: each schedules its shots and returns how long the enemy stays committed
+// shots: a shape (the enemy's own layout) fired with a property (how each shot behaves)
+// =====================================================================
+let bigCount = 0;
+// returns a spawner that gives every shot of one volley the same property
+function spawner(prop, kindFn) {
+  return (x, y, a, s) => {
+    let kind = kindFn ? kindFn() : K();
+    if (prop === 'redonly' || prop === 'bounce' || prop === 'mines') kind = 'r';
+    if (prop === 'fake' || prop === 'homing') kind = F.white || Math.random() > F.red * .5 ? 'w' : kind;
+    if (prop === 'mines' && (bigCount++ % 2)) return null;
+    if ((prop === 'bigorb' || prop === 'redbig') && (bigCount++ % 4)) return shootFrom(x, y, a, s, kind);
+    const b = shootFrom(x, y, a, s, kind);
+    switch (prop) {
+      case 'homing': b.home = 1.7; b.turn = 2.3; break;
+      case 'stopgo': b.stop = { t: .45, wait: .4 + Math.random() * .35, spd: s * 1.05, phase: 0 }; break;
+      case 'bounce': b.bounce = F.den > 1.3 ? 2 : 1; break;
+      case 'bigorb': b.kind = 'w'; b.r = 18; b.big = true; b.split = 2.4; b.vx *= .6; b.vy *= .6; break;
+      case 'accel': b.vx *= .2; b.vy *= .2; b.acc = { a: s * 1.6, max: s * 1.45 }; break;
+      case 'wave': b.wv = { a, s, amp: 40, fr: 5, t: 0, ph: Math.random() * 6 }; break;
+      case 'split': b.sp3 = .75 + Math.random() * .25; break;
+      // red variants: shielded from parries until they break open; the pieces are ordinary shots
+      case 'redbig': b.kind = 'r'; b.r = 18; b.big = true; b.split = 2.4; b.vx *= .6; b.vy *= .6; break;
+      case 'redsplit': b.kind = 'r'; b.sp3 = .75 + Math.random() * .25; b.child = 'w'; break;
+      case 'mines': b.brake = true; b.mine = 2.3 + Math.random() * 1.2; b.life = 8; b.vx *= .5 + Math.random(); b.vy *= .5 + Math.random(); break;
+      case 'orbit': b.orb = { c: ORG(), r: 10, ang: a, w: 3 * (Math.random() < .5 ? 1 : -1), t: 1.0, out: s }; break;
+      case 'ghost': b.ghost = true; break;
+      case 'fake': if (Math.random() < .45) b.fake = true; break;
+      case 'needle': b.needle = true; b.r = 4; b.vx *= 2.1; b.vy *= 2.1; break;
+    }
+    return b;
+  };
+}
+// each layout schedules its volleys and returns how long the enemy stays committed
+const SHAPES = {
+  aimed(p, sp) {
+    for (let v = 0; v < p.vol; v++) at(v * p.gap, () => { const o = ORG(), a0 = aimAng(), m = NN(p.n) | 1; for (let i = 0; i < m; i++) sp(o.x, o.y, a0 + (i - (m - 1) / 2) * p.spread, p.spd * SPD()); sfx('shot'); });
+    return p.vol * p.gap + .5;
+  },
+  ring(p, sp) {
+    for (let w = 0; w < p.waves; w++) at(w * p.gap, () => { const o = ORG(), m = NN(p.n), off = w * p.rot + Math.random() * .2; for (let i = 0; i < m; i++) sp(o.x, o.y, off + i / m * TAU, p.spd * SPD()); sfx('shot'); });
+    return p.waves * p.gap + .4;
+  },
+  spiral(p, sp) {
+    let k = 0; const arms = Math.max(1, Math.round(p.arms * Math.min(1.4, F.den)));
+    for (let s = 0; s < p.dur; s += p.step) { const kk = k++; at(s, () => { const o = ORG(); for (let a = 0; a < arms; a++) sp(o.x, o.y, p.dir * kk * p.turn + a * TAU / arms, p.spd * SPD()); sfx('shot'); }); }
+    return p.dur + .3;
+  },
+  flower(p, sp) {
+    for (let w = 0; w < p.waves; w++) at(w * p.gap, () => { const o = ORG(), m = NN(p.n), off = w * Math.PI / m; for (let i = 0; i < m; i++) { const a = off + i / m * TAU; sp(o.x, o.y, a, p.spd * SPD() * (1 + .35 * Math.cos(p.petals * a))); } sfx('shot'); });
+    return p.waves * p.gap + .4;
+  },
+  stream(p, sp) {
+    const lines = Math.max(1, Math.round(p.lines * Math.min(1.3, F.den)));
+    for (let s = 0, k = 0; s < p.dur; s += p.rate, k++) { const kk = k; at(s, () => { const o = ORG(), a0 = aimAng() + Math.sin(kk * .5) * p.wob; for (let l = 0; l < lines; l++) sp(o.x, o.y, a0 + (l - (lines - 1) / 2) * p.sep, p.spd * SPD()); }); }
+    at(0, () => sfx('shot'));
+    return p.dur + .4;
+  },
+  spray(p, sp) {
+    const m = NN(p.n);
+    for (let i = 0; i < m; i++) at(i / m * p.dur, () => { const o = ORG(); sp(o.x, o.y, aimAng() + (Math.random() - .5) * 2 * p.cone, p.spd * SPD() * (.8 + Math.random() * .4)); if (i % 4 === 0) sfx('shot'); });
+    return p.dur + .4;
+  },
+  cross(p, sp) {
+    for (let b = 0; b < p.bursts; b++) at(b * p.gap, () => { const o = ORG(), off = b * p.rot; for (let d = 0; d < p.dirs; d++) for (let j = 0; j < p.len; j++) sp(o.x, o.y, off + d / p.dirs * TAU, p.spd * SPD() * (1 + j * .18)); sfx('shot'); });
+    return p.bursts * p.gap + .4;
+  },
+  rain(p, sp) {
+    const m = NN(p.n), bd = bounds();
+    for (let i = 0; i < m; i++) at(i / m * p.dur, () => {
+      if (p.side === 'top') sp(bd.x0 + Math.random() * (bd.x1 - bd.x0), 36, Math.PI / 2 + (Math.random() - .5) * .3, p.spd * SPD());
+      else { const left = p.side === 'left'; sp(left ? 0 : W, bd.y0 + Math.random() * (bd.y1 - bd.y0), (left ? 0 : Math.PI) + (Math.random() - .5) * .3, p.spd * SPD()); }
+    });
+    at(0, () => sfx('shot'));
+    return p.dur + .5;
+  },
+  rows(p, sp) {
+    for (let v = 0; v < p.vol; v++) at(v * p.gap, () => { const o = ORG(), a = aimAng(), m = NN(p.n), px = -Math.sin(a), py = Math.cos(a); for (let i = 0; i < m; i++) { const off = (i / Math.max(1, m - 1) - .5) * p.width; sp(o.x + px * off, o.y + py * off, a, p.spd * SPD()); } sfx('shot'); });
+    return p.vol * p.gap + .5;
+  },
+  helix(p, sp) {
+    let k = 0;
+    for (let s = 0; s < p.dur; s += p.step) { const kk = k++; at(s, () => { const o = ORG(); sp(o.x, o.y, kk * p.turn, p.spd * SPD()); sp(o.x, o.y, -kk * p.turn + Math.PI, p.spd * SPD()); }); }
+    at(0, () => sfx('shot'));
+    return p.dur + .3;
+  },
+  star(p, sp) {
+    for (let w = 0; w < p.waves; w++) at(w * p.gap, () => { const o = ORG(), m = NN(p.n), off = Math.random() * TAU; for (let i = 0; i < m; i++) { const a = off + i / m * TAU, tri = Math.abs(((i / m * p.pts) % 1) - .5) * 2; sp(o.x, o.y, a, p.spd * SPD() * (.7 + .6 * tri)); } sfx('shot'); });
+    return p.waves * p.gap + .4;
+  },
+  arc(p, sp) {
+    for (let v = 0; v < p.vol; v++) at(v * p.gap, () => { const o = ORG(), m = NN(p.n), a0 = aimAng() + Math.PI - p.span / 2 + (Math.random() - .5) * .8; for (let i = 0; i < m; i++) sp(o.x, o.y, a0 + i / (m - 1) * p.span, p.spd * SPD()); sfx('shot'); });
+    return p.vol * p.gap + .4;
+  },
+};
+let lastShape = null;
+function fireShape(prop, opts = {}) {
+  const list = F.shapes;
+  let s = list[Math.floor(Math.random() * list.length)];
+  if (list.length > 1 && s === lastShape && !opts.any) s = list[(list.indexOf(s) + 1) % list.length];
+  lastShape = s;
+  if (prop !== 'plain') seenNow.add(prop);
+  bigCount = 0;
+  return SHAPES[s.type](s, spawner(prop, opts.kind));
+}
+// the light covering fire that goes with a technique: one of the enemy's shapes, plain shots
+const cover = (kind) => fireShape('plain', { kind });
+const whiteOnly = () => 'w';
+
+// =====================================================================
+// techniques: moves in their own right
 // =====================================================================
 const ATK = {
-  aim() {
-    const m = Math.max(1, Math.round(F.den * 2 - .3));
-    for (let w = 0; w < 3; w++) at(w * .5 / Math.max(.8, F.spd), () => fan(m, .14, 200 * SPD()));
-    return 1.6;
-  },
-  ring() {
-    const waves = F.den > 1.1 ? 2 : 1, n = NN(14);
-    for (let w = 0; w < waves; w++) at(w * .5, () => ring(n, 160 * SPD()));
-    return .4 + waves * .5;
-  },
-  fan() {
-    const m = NN(5);
-    for (let w = 0; w < 3; w++) at(w * .4, () => fan(m, .17, 230 * SPD()));
-    return 1.5;
-  },
-  spiral() {
-    const dur = 2.2, step = .075, arms = F.den > 1.2 ? 3 : 2, dir = Math.random() < .5 ? 1 : -1;
-    let k = 0;
-    for (let s = 0; s < dur; s += step) { const kk = k++; at(s, () => { for (let a = 0; a < arms; a++) shoot(dir * kk * .23 + a * TAU / arms, 145 * SPD(), K()); sfx('shot'); }); }
-    return dur + .3;
-  },
   charge() {
     const n = clamp(Math.floor(F.den), 1, 3);
     for (let i = 0; i < n; i++) at(i * 1.6, () => startCharge());
     return (n - 1) * 1.6 + 1.5;
   },
-  homing() {
-    const n = NN(5);
-    for (let w = 0; w < 2; w++) at(w * .7, () => { const a0 = aimAng() + Math.PI; for (let i = 0; i < n; i++) { const b = shoot(a0 + (i - (n - 1) / 2) * .35, 150 * SPD(), 'w'); b.home = 1.9; b.turn = 2.3; } sfx('shot'); });
-    return 2.0;
-  },
   laser() {
     const n = clamp(Math.round(F.den * 1.6), 1, 4);
     for (let i = 0; i < n; i++) at(i * .45, () => { laser(aimAng()); sfx('warn'); });
-    at(.6, () => ring(NN(10), 150 * SPD()));
+    at(.6, () => cover());
     return n * .45 + 1.1;
-  },
-  stopgo() {
-    const n = NN(13);
-    at(0, () => { const off = Math.random() * TAU; for (let i = 0; i < n; i++) { const b = shoot(off + i / n * TAU, 260 * SPD(), K()); b.stop = { t: .45, wait: .45 + (i % 3) * .14, spd: 235 * SPD(), phase: 0 }; } sfx('shot'); });
-    return 1.9;
-  },
-  bounce() {
-    for (let w = 0; w < 3; w++) at(w * .5, () => { const a0 = aimAng(); for (let i = 0; i < 5; i++) shoot(a0 + (i - 2) * .38, 230 * SPD(), 'r').bounce = 1 + (F.den > 1.3 ? 1 : 0); sfx('shot'); });
-    at(.25, () => fan(3, .15, 220 * SPD(), 'w'));
-    return 2.0;
-  },
-  bigorb() {
-    const n = F.den > 1.2 ? 2 : 1;
-    for (let i = 0; i < n; i++) at(i * .9, () => { const b = shoot(aimAng(), 120 * SPD(), 'w'); b.r = 18; b.big = true; b.split = 2.4; sfx('warn'); });
-    at(.4, () => fan(4, .2, 200 * SPD()));
-    return 1.6 + n * .9;
   },
   thunder() {
     const n = NN(4);
     for (let i = 0; i < n; i++) at(i * .28, () => { const j = i === 0 ? 0 : 70; zone(P.x + (Math.random() - .5) * j, P.y + (Math.random() - .5) * j); sfx('warn'); });
-    at(.6, () => ring(NN(12), 150 * SPD()));
+    at(.6, () => cover());
     return n * .28 + 1.2;
-  },
-  accel() {
-    for (let w = 0; w < 3; w++) at(w * .6, () => { const n = NN(11), off = Math.random() * TAU; for (let i = 0; i < n; i++) { const b = shoot(off + i / n * TAU, 40, K()); b.acc = { a: 260 * SPD(), max: 320 * SPD() }; } sfx('shot'); });
-    return 2.0;
-  },
-  wave() {
-    for (let w = 0; w < 4; w++) at(w * .4, () => { const a0 = aimAng(), m = NN(3); for (let i = 0; i < m; i++) { const a = a0 + (i - (m - 1) / 2) * .28, b = shoot(a, 0, K()); b.wv = { a, s: 170 * SPD(), amp: 46, fr: 5, t: 0, ph: i * 1.3 }; } sfx('shot'); });
-    return 2.0;
-  },
-  rain() {
-    const n = NN(26);
-    for (let k = 0; k < n; k++) at(k * .08, () => { const b = bounds(); shootFrom(b.x0 + Math.random() * (b.x1 - b.x0), 36, Math.PI / 2 + (Math.random() - .5) * .3, 200 * SPD(), K()); });
-    at(0, () => sfx('shot'));
-    return n * .08 + .6;
   },
   wind() {
     const a = Math.random() * TAU;
     wind = { ax: Math.cos(a), ay: Math.sin(a), warn: .7, t: 3.2, str: 100 + F.den * 40 };
-    at(.9, () => fan(5, .18, 220 * SPD()));
-    at(1.7, () => ring(NN(14), 160 * SPD()));
-    at(2.5, () => fan(5, .18, 220 * SPD()));
+    at(.9, () => cover());
     return 3.8;
   },
   cross() {
     const base = Math.random() * TAU, rot = (Math.random() < .5 ? -1 : 1) * (.5 + F.den * .15), arms = F.den > 1.3 ? 6 : 4;
     for (let i = 0; i < arms; i++) laser(base + i * TAU / arms, { warn: 1.0 * F.warn, act: 1.7, w: 20, rot, follow: true });
     sfx('warn');
-    at(1.2, () => fan(5, .2, 220 * SPD(), 'w'));
-    at(2.0, () => fan(5, .2, 220 * SPD(), 'w'));
+    at(1.2, () => cover(whiteOnly));
     return 3.0;
-  },
-  split() {
-    for (let w = 0; w < 2; w++) at(w * .8, () => { const a0 = aimAng(), m = NN(4); for (let i = 0; i < m; i++) { const b = shoot(a0 + (i - (m - 1) / 2) * .4, 150 * SPD(), K()); b.sp3 = .9; } sfx('shot'); });
-    return 2.2;
-  },
-  mines() {
-    const n = NN(6);
-    at(0, () => { for (let i = 0; i < n; i++) { const b = shoot(Math.random() * TAU, 160 + Math.random() * 180, 'r'); b.brake = true; b.mine = 2.6 + Math.random() * 1.2; b.life = 8; } sfx('shot'); });
-    at(.8, () => fan(3, .2, 210 * SPD(), 'w'));
-    return 2.2;
-  },
-  orbit() {
-    for (let w = 0; w < 2; w++) at(w * 1.1, () => { const n = NN(10), off = Math.random() * TAU, dir = w % 2 ? -1 : 1; for (let i = 0; i < n; i++) { const b = shoot(0, 0, K()); b.orb = { r: 10, ang: off + i / n * TAU, w: 3 * dir, t: 1.1, out: 190 * SPD() }; } sfx('shot'); });
-    return 2.8;
   },
   snipe() {
     const n = clamp(Math.round(F.den * 1.8), 1, 4);
@@ -681,65 +749,45 @@ const ATK = {
   },
   teleport() {
     const n = F.den > 1.3 ? 3 : 2;
-    for (let i = 0; i < n; i++) { at(i * .9, blink); at(i * .9 + .35, () => ring(NN(12), 170 * SPD())); }
-    return n * .9 + .5;
-  },
-  redstorm() {
-    const dur = 2.6, step = .07, arms = F.den > 1.3 ? 4 : 3, dir = Math.random() < .5 ? 1 : -1;
-    let k = 0;
-    for (let s = 0; s < dur; s += step) { const kk = k++; at(s, () => { for (let a = 0; a < arms; a++) shoot(dir * kk * .19 + a * TAU / arms, 150 * SPD(), 'r'); sfx('shot'); }); }
-    for (let s = .3; s < dur; s += .6) at(s, () => shoot(aimAng(), 230 * SPD(), 'w'));
-    return dur + .3;
-  },
-  redring() {
-    const n = NN(22);
-    for (let w = 0; w < 3; w++) at(w * .55, () => ring(n, 150 * SPD(), 'r', w * Math.PI / n));
-    at(.3, () => fan(3, .12, 240 * SPD(), 'w'));
-    return 2.0;
+    for (let i = 0; i < n; i++) { at(i * 1.1, blink); at(i * 1.1 + .35, () => cover()); }
+    return n * 1.1 + .6;
   },
   wall() {
     const sides = ['top', 'bottom', 'left', 'right'], s1 = sides[Math.random() * 4 | 0];
     const s2 = { top: 'left', bottom: 'right', left: 'bottom', right: 'top' }[s1];
     at(0, () => makeWall(s1));
     if (F.den > 1.1) at(1.6, () => makeWall(s2));
-    at(.8, () => fan(5, .15, 230 * SPD(), 'w'));
     return 3.2;
   },
   encircle() {
     at(0, () => encircle());
-    at(.5, () => fan(3, .2, 200 * SPD(), 'w'));
     return 2.0;
   },
   sealDash() {
     fx.sealD = 4.5; sfx('seal'); pop(P.x, P.y - 26, '封 踏', C.shu, 20);
-    for (let w = 0; w < 3; w++) at(.6 + w * 1.1, () => ring(NN(16), 150 * SPD(), 'w'));
+    at(.6, () => cover(whiteOnly)); at(2.4, () => cover(whiteOnly));
     return 4.2;
   },
   sealParry() {
     fx.sealP = 4.5; sfx('seal'); pop(P.x, P.y - 26, '封 弾', C.shu, 20);
-    for (let w = 0; w < 4; w++) at(.5 + w * .9, () => fan(NN(5), .2, 210 * SPD()));
+    at(.6, () => cover()); at(2.4, () => cover());
     return 4.2;
   },
   slow() {
     for (let i = 0; i < 3; i++) slows.push({ x: clamp(P.x + (i - 1) * 110, 60, W - 60), y: clamp(P.y + (Math.random() - .5) * 80, 80, H - 60), r: 70, life: 6.5, t: 0 });
-    at(.6, () => ATK.spiral());
+    at(.6, () => cover());
     return 3.0;
   },
   dark() {
     fx.dark = 5.5; sfx('seal');
-    for (let w = 0; w < 4; w++) at(.6 + w * 1.0, () => fan(NN(4), .2, 200 * SPD()));
+    at(.6, () => cover()); at(2.6, () => cover());
     return 4.6;
   },
   well() {
     const b = bounds();
     wells.push({ x: b.x0 + 100 + Math.random() * (b.x1 - b.x0 - 200), y: b.y0 + 80 + Math.random() * (b.y1 - b.y0 - 160), life: 4.8, t: 0, str: 120 + F.den * 40 });
-    at(.6, () => ring(NN(14), 150 * SPD()));
-    at(1.8, () => ring(NN(14), 150 * SPD()));
+    at(.6, () => cover());
     return 3.4;
-  },
-  ghost() {
-    for (let w = 0; w < 3; w++) at(w * .55, () => { const n = NN(12), off = Math.random() * TAU; for (let i = 0; i < n; i++) shoot(off + i / n * TAU, 160 * SPD(), K()).ghost = true; sfx('shot'); });
-    return 2.0;
   },
   turret() {
     const b = bounds(), n = F.den > 1.2 ? 3 : 2;
@@ -749,34 +797,28 @@ const ATK = {
   },
   reverse() {
     fx.rev = 3.8; sfx('seal'); pop(P.x, P.y - 26, '逆', C.shu, 22);
-    for (let w = 0; w < 3; w++) at(.5 + w * 1.0, () => fan(NN(5), .2, 200 * SPD()));
+    at(.6, () => cover());
     return 3.8;
-  },
-  fake() {
-    for (let w = 0; w < 3; w++) at(w * .55, () => { const a0 = aimAng(), m = NN(5); for (let i = 0; i < m; i++) { const b = shoot(a0 + (i - (m - 1) / 2) * .2, 210 * SPD(), 'w'); if ((i + w) % 2 === 0) b.fake = true; } sfx('shot'); });
-    return 2.0;
   },
   swap() {
     fx.swap = 6; sfx('seal'); banner = { txt: '反転', t: 1.3 };
-    for (let w = 0; w < 4; w++) at(.8 + w * 1.1, () => ring(NN(14), 150 * SPD(), () => (kc++ % 2 ? 'r' : 'w')));
+    at(.8, () => cover(() => (kc++ % 2 ? 'r' : 'w'))); at(3.0, () => cover(() => (kc++ % 2 ? 'r' : 'w')));
     return 5.6;
   },
   freeze() {
-    at(0, () => ring(NN(16), 170 * SPD()));
-    at(.3, () => { fx.freeze = 1.6; sfx('seal'); });
-    at(.6, () => ring(NN(16), 170 * SPD()));
-    at(1.1, () => fan(NN(5), .2, 220 * SPD()));
+    at(0, () => cover());
+    at(.5, () => { fx.freeze = 1.6; sfx('seal'); });
+    at(.8, () => cover());
     return 2.8;
   },
   shrink() {
     fx.shrink = 6.5; sfx('seal');
-    for (let w = 0; w < 4; w++) at(1.0 + w * 1.1, () => fan(NN(4), .22, 200 * SPD()));
+    at(1.0, () => cover()); at(3.2, () => cover());
     return 5.0;
   },
   chase() {
     const n = clamp(Math.round(F.den * 2), 1, 4);
     for (let i = 0; i < n; i++) at(i * .7, () => { zone(P.x, P.y, { follow: 1.1, warn: 1.5 * F.warn, r: 44 }); sfx('warn'); });
-    at(.4, () => ring(NN(10), 150 * SPD()));
     return n * .7 + 1.4;
   },
   lattice() {
@@ -788,52 +830,52 @@ const ATK = {
   },
   curse() {
     at(0, () => { zone(P.x, P.y, { follow: 2.2, warn: 2.8, r: 82 }); sfx('seal'); pop(P.x, P.y - 26, '呪', C.shu, 22); });
-    at(.6, () => ring(NN(12), 150 * SPD()));
-    at(1.6, () => fan(NN(4), .2, 210 * SPD()));
+    at(.6, () => cover());
     return 3.2;
   },
   echo() {
-    const k = lastReal && ATK[lastReal] && lastReal !== 'echo' ? lastReal : 'ring';
-    const d = ATK[k]();
-    at(d * .55, () => ATK[k]());
+    const last = lastRun || { id: 'plain' };
+    const d = runAttack(last.id, true);
+    at(d * .55, () => runAttack(last.id, true));
     return d * 1.6;
-  },
-  needle() {
-    for (let w = 0; w < 3; w++) at(w * .5, () => { const a0 = aimAng(), m = NN(7); for (let i = 0; i < m; i++) { const b = shoot(a0 + (i - (m - 1) / 2) * .07, 430 * SPD(), 'w'); b.needle = true; b.r = 4; } sfx('shot'); });
-    return 1.9;
   },
   tether() {
     tether = { ax: P.x, ay: P.y, vx: (Math.random() - .5) * 80, vy: (Math.random() - .5) * 60, r: 140, life: 6 };
     sfx('seal'); pop(P.x, P.y - 26, '鎖', C.shu, 22);
-    for (let w = 0; w < 4; w++) at(.6 + w * 1.1, () => ring(NN(14), 150 * SPD()));
+    at(.6, () => cover()); at(2.8, () => cover());
     return 5.0;
   },
   chainzone() {
     const o = ORG(), tx = P.x, ty = P.y, n = 7;
     for (let i = 1; i <= n; i++) at(i * .14, () => { const k = i / n * 1.25; zone(o.x + (tx - o.x) * k, o.y + (ty - o.y) * k, { r: 40, warn: .7 * F.warn }); });
     at(0, () => sfx('warn'));
-    at(.9, () => ring(NN(12), 160 * SPD()));
-    return 2.2;
+    return 2.0;
   },
 };
-
+let lastRun = null;
+function runAttack(id, fromEcho) {
+  if (!fromEcho && id !== 'echo') lastRun = { id };
+  if (isProp(id)) return fireShape(id);
+  seenNow.add(id);
+  return ATK[id]();
+}
+function pickAttack(pl, avoid) {
+  let total = 0;
+  for (const id of pl) if (id !== avoid || pl.length === 1) total += WEIGHT[id] || 1;
+  let r = Math.random() * total;
+  for (const id of pl) { if (id === avoid && pl.length > 1) continue; r -= WEIGHT[id] || 1; if (r <= 0) return id; }
+  return pl[0];
+}
 function startAttack() {
   const pl = F.pool;
-  let k, tries = 0;
-  do { k = pl[Math.random() * pl.length | 0]; tries++; } while (k === lastAtk && pl.length > 1 && tries < 10);
+  const k = pickAttack(pl, lastAtk);
   lastAtk = k;
   if (decoys.length) { const all = [B, ...decoys]; EM = all[Math.random() * all.length | 0]; } else EM = null;
   if (k === 'charge') EM = null;
   B.vis = 1;
-  seenNow.add(k);
-  let dur = ATK[k]();
-  if (k !== 'echo') lastReal = k;
-  // harder free-play tiers layer a second technique on top
-  const pairP = F.tier === 1 ? .35 : F.tier === 2 ? .8 : 0;
-  if (pairP && Math.random() < pairP && k !== 'charge') {
-    const others = pl.filter(x => x !== k && x !== 'charge' && x !== 'echo');
-    if (others.length) { const k2 = others[Math.random() * others.length | 0]; seenNow.add(k2); dur = Math.max(dur, ATK[k2]()); }
-  }
+  let dur = runAttack(k);
+  // only the hardest free-play tier ever layers two volleys, and only two plain shot layouts
+  if (F.tier === 2 && k === 'plain' && Math.random() < .2) dur = Math.max(dur, fireShape('plain', { any: true }));
   B.busy = dur;
   B.nextAtk = F.gap;
 }
@@ -940,9 +982,9 @@ function reflect(b, d) {
   else { hitstop = Math.max(hitstop, .025); sfx('parry'); }
 }
 const invulnerable = () => ending || B.barrier || B.seal || RL.survive;
-function damageBoss(d) {
+function damageBoss(d, raw) {
   if (invulnerable()) return;
-  if (B.stagger > 0) d *= 1.6;
+  if (B.stagger > 0 && !raw) d *= 1.6;
   B.hp -= d; B.hurtF = .07; B.lastHit = gt; B.vis = 1; sfx('hit');
   if (B.hp <= 0) formDown();
 }
@@ -985,20 +1027,21 @@ function chargeParried() {
   }
   sched = []; B.busy = 0; stats.perfects++;
   const f0 = fi;
-  damageBoss(7 * mult());
+  damageBoss(BREAK_DMG * mult());
   if (!ending && fi === f0 && !invulnerable() && B.hp > 0) { B.stagger = B.staggerMax = STAGGER; B.nextAtk = .4; }
   pop(mx, my - 20, '崩し', C.kin, 30);
   burst(mx, my, C.kin, 30, 380, .6, 3);
   hitstop = .15; flash = reduced ? 0 : .5; addShake(10); sfx('big');
 }
-function slash(base, label) {
+// a cut on a broken enemy is worth about 0.4 of the blow that broke it
+function slash(label) {
   P.combo++; stats.slashes++; stats.maxCombo = Math.max(stats.maxCombo, P.combo);
   const a = Math.atan2(B.y - P.y, B.x - P.x);
   slashes.push({ x: B.x, y: B.y, a: a + (Math.random() - .5) * 1.2, life: .22 });
   burst(B.x - Math.cos(a) * B.r * .6, B.y - Math.sin(a) * B.r * .6, C.kin, 14, 300, .35);
   pop(B.x, B.y - B.r - 14, label, C.kin, 24);
   hitstop = Math.max(hitstop, .05); addShake(4); sfx('slash');
-  damageBoss(base * mult());
+  damageBoss(BREAK_DMG * .4 * mult(), true);
 }
 
 // ---- 封印石: step on three stones in order to drop the seal ----
@@ -1058,7 +1101,7 @@ function tryParry() {
   if (P.dead || ending) return;
   if (parrySealed()) { pop(P.x, P.y - 22, '封', C.shu, 16); return; }
   if (B.stagger > 0 && !invulnerable() && Math.hypot(B.x - P.x, B.y - P.y) < B.r + P.r + SLASH_REACH) {
-    if (P.slashCD <= 0) { P.slashCD = SLASH_CD; slash(2, '斬'); }
+    if (P.slashCD <= 0) { P.slashCD = SLASH_CD; slash('斬'); }
     return;
   }
   if (P.parryCD > 0 || P.parryT > 0 || P.dashT > 0) return;
@@ -1109,7 +1152,7 @@ function update(dt) {
   if (P.dashT > 0) {
     P.dashT -= dt; P.x += P.dvx * dt; P.y += P.dvy * dt;
     after.push({ x: P.x, y: P.y, a: .45 });
-    if (!P.dashHit && B.stagger > 0 && !invulnerable() && Math.hypot(B.x - P.x, B.y - P.y) < B.r + P.r + 8) { P.dashHit = true; slash(3, '踏斬'); }
+    if (!P.dashHit && B.stagger > 0 && !invulnerable() && Math.hypot(B.x - P.x, B.y - P.y) < B.r + P.r + 8) { P.dashHit = true; slash('踏斬'); }
   } else if (!P.dead) {
     P.x += mv.x * SPEED * slowK * dt; P.y += mv.y * SPEED * slowK * dt;
   }
@@ -1256,8 +1299,8 @@ function update(dt) {
     if (b.own === 'b') {
       if (frozen) { checkHitPlayer(b, i); continue; }
       if (b.orb) {
-        const o = b.orb; o.t -= dt; o.ang += o.w * dt; o.r = Math.min(70, o.r + 120 * dt);
-        b.x = B.x + Math.cos(o.ang) * o.r; b.y = B.y + Math.sin(o.ang) * o.r;
+        const o = b.orb, c = o.c || B; o.t -= dt; o.ang += o.w * dt; o.r = Math.min(70, o.r + 120 * dt);
+        b.x = c.x + Math.cos(o.ang) * o.r; b.y = c.y + Math.sin(o.ang) * o.r;
         if (o.t <= 0) { b.vx = Math.cos(o.ang) * o.out; b.vy = Math.sin(o.ang) * o.out; b.orb = null; }
         else { checkHitPlayer(b, i); continue; }
       }
@@ -1280,7 +1323,7 @@ function update(dt) {
         b.mine -= dt;
         if (b.mine <= 0 || (b.age > .8 && Math.hypot(P.x - b.x, P.y - b.y) < 60)) { burstRing(b.x, b.y, 8, 170 * SPD()); sfx('zap'); bullets.splice(i, 1); continue; }
       }
-      if (b.sp3) { b.sp3 -= dt; if (b.sp3 <= 0) { const a = Math.atan2(b.vy, b.vx), s = Math.hypot(b.vx, b.vy) * 1.25; for (const da of [-.38, 0, .38]) shootFrom(b.x, b.y, a + da, s, b.kind); bullets.splice(i, 1); continue; } }
+      if (b.sp3) { b.sp3 -= dt; if (b.sp3 <= 0) { const a = Math.atan2(b.vy, b.vx), s = Math.hypot(b.vx, b.vy) * 1.25; for (const da of [-.38, 0, .38]) shootFrom(b.x, b.y, a + da, s, b.child || b.kind); bullets.splice(i, 1); continue; } }
       if (b.big) { b.split -= dt; if (b.split <= 0 || b.x < 20 || b.x > W - 20 || b.y < 40 || b.y > H - 20) { burstRing(b.x, b.y, NN(14), 170 * SPD(), () => (kc++ % 2 ? 'r' : 'w')); burst(b.x, b.y, C.washi, 12, 200, .4); sfx('zap'); bullets.splice(i, 1); continue; } }
     }
     b.x += b.vx * dt; b.y += b.vy * dt; b.life -= dt;
@@ -1533,8 +1576,14 @@ function render() {
       else if (b.fake) { ctx.fillStyle = C.shu; ctx.beginPath(); ctx.arc(b.x, b.y, 1.8, 0, TAU); ctx.fill(); }
       else if (b.home > 0 || b.stop || b.sp3) { ctx.fillStyle = C.ai; ctx.beginPath(); ctx.arc(b.x, b.y, 2.5, 0, TAU); ctx.fill(); }
     } else {
-      ctx.fillStyle = C.shu; diamond(b.x, b.y, b.r + 2); ctx.fill();
-      ctx.fillStyle = C.ai; diamond(b.x, b.y, b.r - 3.5); ctx.fill();
+      if (b.big) {
+        ctx.fillStyle = C.shu; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, TAU); ctx.fill();
+        ctx.strokeStyle = C.ai; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(b.x, b.y, b.r * .55 + Math.sin(gt * 12) * 2, 0, TAU); ctx.stroke();
+      } else {
+        ctx.fillStyle = C.shu; diamond(b.x, b.y, b.r + 2); ctx.fill();
+        ctx.fillStyle = C.ai; diamond(b.x, b.y, b.r - 3.5); ctx.fill();
+        if (b.sp3) { ctx.fillStyle = C.washi; ctx.beginPath(); ctx.arc(b.x, b.y, 2, 0, TAU); ctx.fill(); }
+      }
     }
     ctx.globalAlpha = 1;
   }
