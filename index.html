@@ -222,6 +222,10 @@ const GIM = {
   echo: { n: '谺', s: '同じ技を繰り返す' },
   tether: { n: '鎖', s: '動ける範囲を縛る鎖' },
   chainzone: { n: '連雷', s: '連なって迫る落雷' },
+  sealAll: { n: '封身', s: '弾きも踏み込みも封じる' },
+  sealPform: { n: '封弾の型', s: 'この型の間は弾けない。耐え抜けば次の型へ', sp: 1 },
+  sealDform: { n: '封踏の型', s: 'この型の間は踏み込めない', sp: 1 },
+  sealSform: { n: '封斬の型', s: 'この型の間は崩しても斬れない', sp: 1 },
   stones: { n: '封印石', s: '石を正しい順に踏むまで傷つかない', sp: 1 },
   shield: { n: '盾', s: '片側を盾で守る', sp: 1 },
   counter: { n: '返し構え', s: '構えの間は弾き返しを打ち返す', sp: 1 },
@@ -237,7 +241,7 @@ const INTRO = {
   5: 'charge', 6: 'red', 7: 'homing', 8: 'laser', 9: 'stopgo', 10: 'final',
   11: 'bounce', 12: 'bigorb', 13: 'thunder', 14: 'accel', 15: 'wave', 17: 'wind', 18: 'cross', 19: 'split', 20: 'mines',
   22: 'orbit', 24: 'snipe', 26: 'teleport', 28: 'redonly', 30: 'wall', 32: 'encircle', 33: 'redsplit', 34: 'sealDash', 36: 'sealParry', 37: 'redbig', 38: 'slow',
-  40: 'stones', 42: 'dark', 44: 'well', 46: 'shield', 48: 'ghost', 50: 'swap', 52: 'turret', 54: 'reverse', 56: 'fake', 58: 'counter',
+  40: 'stones', 42: 'dark', 43: 'sealDform', 44: 'well', 46: 'shield', 47: 'sealPform', 48: 'ghost', 53: 'sealSform', 84: 'sealAll', 50: 'swap', 52: 'turret', 54: 'reverse', 56: 'fake', 58: 'counter',
   60: 'clones', 62: 'freeze', 64: 'shrink', 66: 'chase', 68: 'lattice', 70: 'regen', 72: 'curse', 74: 'invisible', 76: 'echo', 80: 'revive',
   90: 'needle', 100: 'mirror', 110: 'tether', 120: 'chainzone',
 };
@@ -314,12 +318,19 @@ const OVR = {
   130: { rules: { dark: true }, note: 'ずっと闇の中。' },
   133: { white: true, old: true, note: '白弾だけ。最も濃い白。' },
   135: { rules: { noDash: true }, note: 'この番では踏み込めない。' },
+  67: { rules: { noSlash: true }, note: '崩しても斬れない。' },
+  83: { rules: { noDash: true } },
+  97: { rules: { survive: 50, noParry: true } },
+  113: { rules: { noSlash: true, noDash: true } },
+  128: { rules: { noDash: true } },
+  143: { rules: { survive: 55, noParry: true } },
   140: { special: ['clones', 'invisible'], note: '姿の見えない本物を、分身の中から探せ。' },
   145: { rules: { limit: true }, special: ['regen'], note: '時間内に、癒える前に。' },
   149: { rules: { perfectOnly: true }, note: '「極」で返した弾しか通らない。' },
   150: { forms: 6, final: true, revive: true, theme: ['redonly', 'cross', 'wall', 'thunder'], note: 'すべての鬼の頂。' },
 };
 
+const FORM_SP = ['shield', 'counter', 'clones', 'regen', 'invisible', 'mirror', 'sealPform', 'sealDform', 'sealSform'];
 // temperaments: how an enemy paces itself (multipliers on the original game's 普通)
 const TEMPER = [
   { name: '速射', spd: [1.15, 1.35], gap: [1.1, 1.4], den: [.8, 1.0], warn: [.9, 1.05] },  // fast shots, long pauses
@@ -332,7 +343,7 @@ function buildStage(n) {
   const rng = mulberry32(n * 7919 + 13), t = (n - 1) / 149, o = OVR[n] || {};
   const pick = arr => arr[Math.floor(rng() * arr.length)];
   const avail = ATK_IDS.filter(id => introAt[id] <= n);
-  const specAvail = ['shield', 'counter', 'clones', 'regen', 'invisible', 'mirror'].filter(id => introAt[id] <= n);
+  const specAvail = FORM_SP.filter(id => introAt[id] <= n);
   // theme: the gimmicks this enemy is strong at
   let theme;
   if (o.theme) theme = o.theme.slice();
@@ -347,7 +358,7 @@ function buildStage(n) {
   }
   if (n === 6) theme = ['plain'];
   if (n === 10) theme = ['charge', 'homing'];
-  if (['stones', 'shield', 'counter', 'clones', 'regen', 'invisible', 'revive', 'mirror'].includes(INTRO[n])) theme = [pick(avail.slice(-6))];
+  if (INTRO[n] === 'stones' || INTRO[n] === 'revive' || FORM_SP.includes(INTRO[n])) theme = [pick(avail.slice(-6))];
   theme = [...new Set(theme)];
   // the enemy's own way of laying out its shots
   const shapes = rollShapes(mulberry32(n * 104729 + 3), n);
@@ -388,7 +399,7 @@ function buildStage(n) {
   }
   // specials
   const sp = new Set(o.special || []);
-  if (['stones', 'shield', 'counter', 'clones', 'regen', 'invisible', 'mirror'].includes(INTRO[n])) sp.add(INTRO[n]);
+  if (INTRO[n] === 'stones' || FORM_SP.includes(INTRO[n])) sp.add(INTRO[n]);
   if (!o.special && !INTRO[n] && n > 41 && specAvail.length && rng() < .28) sp.add(pick(specAvail));
   if (!o.special && n > 90 && specAvail.length && rng() < .15) sp.add(pick(specAvail));
   for (const s of sp) {
@@ -397,6 +408,8 @@ function buildStage(n) {
     f.special.push(s);
     if (s === 'mirror') f.pool = f.pool.filter(p => p !== 'charge' && p !== 'teleport');
     if (s === 'stones' && o.mem) f.mem = true;
+    // a form you cannot parry cannot be hurt either: it is endured for a set time instead
+    if (s === 'sealPform') f.surviveT = Math.round(R(22, 32));
   }
   for (const f of forms) if (!f.pool.length) f.pool = ['plain'];
   const final = !survive && (o.final || n % 10 === 0 || (n > 60 && rng() < .3));
@@ -542,6 +555,7 @@ function newGame(run) {
   setupForm();
 }
 function setupForm() {
+  B.formT = 0; B.sealDone = false;
   decoys = []; stones = null; B.seal = false; B.vis = 1;
   const sp = F.special;
   for (const s of sp) seenNow.add(s);
@@ -849,6 +863,11 @@ const ATK = {
     at(.6, () => cover());
     return 3.2;
   },
+  sealAll() {
+    fx.sealP = Math.max(fx.sealP, 3); fx.sealD = Math.max(fx.sealD, 3); sfx('seal'); pop(P.x, P.y - 26, '封 身', C.shu, 20);
+    at(.5, () => cover());
+    return 3.4;
+  },
   echo() {
     const last = lastRun || { id: 'plain' };
     const d = runAttack(last.id, true);
@@ -997,7 +1016,8 @@ function reflect(b, d) {
   if (perfect) { stats.perfects++; pop(b.x, b.y - 14, '極', C.kin, 26); hitstop = Math.max(hitstop, .06); sfx('perfect'); }
   else { hitstop = Math.max(hitstop, .025); sfx('parry'); }
 }
-const invulnerable = () => ending || B.barrier || B.seal || RL.survive;
+const sealForm = () => F.special.includes('sealPform') && !B.sealDone;
+const invulnerable = () => ending || B.barrier || B.seal || RL.survive || sealForm();
 function damageBoss(d, raw) {
   if (invulnerable()) return;
   if (B.stagger > 0 && !raw) d *= 1.6;
@@ -1111,12 +1131,13 @@ function readMove() {
   if (fx.rev > 0) { m.x = -m.x; m.y = -m.y; }
   return m;
 }
-const parrySealed = () => RL.noParry || fx.sealP > 0;
-const dashSealed = () => RL.noDash || fx.sealD > 0;
+const parrySealed = () => RL.noParry || fx.sealP > 0 || sealForm();
+const dashSealed = () => RL.noDash || fx.sealD > 0 || F.special.includes('sealDform');
+const slashSealed = () => RL.noSlash || F.special.includes('sealSform');
 function tryParry() {
   if (P.dead || ending) return;
   if (parrySealed()) { pop(P.x, P.y - 22, '封', C.shu, 16); return; }
-  if (B.stagger > 0 && !invulnerable() && Math.hypot(B.x - P.x, B.y - P.y) < B.r + P.r + SLASH_REACH) {
+  if (B.stagger > 0 && !invulnerable() && !slashSealed() && Math.hypot(B.x - P.x, B.y - P.y) < B.r + P.r + SLASH_REACH) {
     if (P.slashCD <= 0) { P.slashCD = SLASH_CD; slash('斬'); }
     return;
   }
@@ -1150,6 +1171,11 @@ function update(dt) {
     if (stats.time >= RL.survive) win();
   }
   if (!ending && RL.limit && stats.time >= RL.limit) lose('時間切れ');
+  // 封弾の型: endured for its set time, then the seal lifts and the form falls
+  if (!ending && !RL.survive && sealForm() && B.final !== 'on') {
+    B.formT += dt;
+    if (B.formT >= F.surviveT) { B.sealDone = true; B.hp = 0; formDown(); }
+  }
 
   const due = sched.filter(s => s.t <= gt);
   if (due.length) { sched = sched.filter(s => s.t > gt); due.forEach(s => s.fn()); }
@@ -1168,7 +1194,7 @@ function update(dt) {
   if (P.dashT > 0) {
     P.dashT -= dt; P.x += P.dvx * dt; P.y += P.dvy * dt;
     after.push({ x: P.x, y: P.y, a: .45 });
-    if (!P.dashHit && B.stagger > 0 && !invulnerable() && Math.hypot(B.x - P.x, B.y - P.y) < B.r + P.r + 8) { P.dashHit = true; slash('踏斬'); }
+    if (!P.dashHit && B.stagger > 0 && !invulnerable() && !slashSealed() && Math.hypot(B.x - P.x, B.y - P.y) < B.r + P.r + 8) { P.dashHit = true; slash('踏斬'); }
   } else if (!P.dead) {
     P.x += mv.x * SPEED * slowK * dt; P.y += mv.y * SPEED * slowK * dt;
   }
@@ -1626,8 +1652,9 @@ function render() {
   // HUD: enemy life
   const x0 = 200, bw = W - 400, y0 = 22;
   ctx.fillStyle = C.line; ctx.fillRect(x0, y0, bw, 8);
-  if (RL.survive) {
-    ctx.fillStyle = C.kin; ctx.fillRect(x0, y0, bw * Math.min(1, stats.time / RL.survive), 8);
+  if (RL.survive || sealForm()) {
+    const k = RL.survive ? stats.time / RL.survive : B.formT / F.surviveT;
+    ctx.fillStyle = C.kin; ctx.fillRect(x0, y0, bw * Math.min(1, k), 8);
   } else {
     ctx.fillStyle = B.stagger > 0 ? C.kin : B.seal ? C.mute : C.washi; ctx.fillRect(x0, y0, bw * clamp(B.hp / F.hp, 0, 1), 8);
   }
@@ -1651,8 +1678,9 @@ function render() {
     if (i < P.hp) { ctx.fillStyle = C.shu; ctx.fill(); } else { ctx.strokeStyle = C.line; ctx.lineWidth = 1.5; ctx.stroke(); }
   }
   const chips = [];
-  if (RL.noParry) chips.push(['弾き禁止', 0]); else if (fx.sealP > 0) chips.push(['封 弾', fx.sealP]);
-  if (RL.noDash) chips.push(['踏込禁止', 0]); else if (fx.sealD > 0) chips.push(['封 踏', fx.sealD]);
+  if (RL.noParry) chips.push(['弾き禁止', 0]); else if (sealForm()) chips.push(['封 弾', F.surviveT - B.formT]); else if (fx.sealP > 0) chips.push(['封 弾', fx.sealP]);
+  if (slashSealed()) chips.push(['封 斬', 0]);
+  if (RL.noDash) chips.push(['踏込禁止', 0]); else if (F.special.includes('sealDform')) chips.push(['封 踏', 0]); else if (fx.sealD > 0) chips.push(['封 踏', fx.sealD]);
   if (fx.rev > 0) chips.push(['逆さ', fx.rev]);
   if (fx.swap > 0) chips.push(['反転', fx.swap]);
   if (RL.perfectOnly) chips.push(['極のみ', 0]);
