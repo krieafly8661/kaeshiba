@@ -2007,7 +2007,7 @@ function render() {
 // =====================================================================
 // screens
 // =====================================================================
-const VERSION = '2.0.5';
+const VERSION = '2.0.6';
 let selN = 1, life = 0, freeDiff = 1, tempUnlock = false;
 const keysBar = $('.keys');
 function show(html) { ov.innerHTML = html; ov.hidden = false; ov.scrollTop = 0; keysBar.hidden = state !== 'title'; }
@@ -2290,7 +2290,13 @@ function frame(now) {
 // an idle enemy turns behind the menus
 newGame({ mode: 'stage', st: STAGES[0], life: 0 }); RUN = null;
 fit();
-titleScreen();
+// A reload in the middle of a run (a republished version, or the browser dropping a background tab)
+// goes straight back to that run, paused, instead of the title screen.
+{
+  const rd = loadResume();
+  if (rd && Date.now() - rd.at < 30 * 60e3) { try { continueRun(rd); pause(); } catch (e) { clearResume(); titleScreen(); } }
+  else titleScreen();
+}
 requestAnimationFrame(frame);
 })();
 </script>
