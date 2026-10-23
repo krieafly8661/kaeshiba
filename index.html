@@ -549,6 +549,44 @@ const SAVE_KEY = 'kaeshiba150.v1';
 let save = { clr: {}, tried: {}, seen: [], free: {} };
 try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (s) save = Object.assign(save, s); } catch (e) {}
 function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} }
+// ask the browser not to clear this site's storage on its own
+try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
+// On claude.ai the clear record (with best times and scores) is also kept in the viewer's own private
+// store, so it survives the browser forgetting its local copy. Elsewhere this simply never connects.
+let cloudRef = null;
+const minPos = (a, b) => a > 0 && b > 0 ? Math.min(a, b) : (a > 0 ? a : b > 0 ? b : 0);
+function mergeRecords(r) {
+  for (const n in r.clr || {}) {
+    const a = save.clr[n] || {}, b = r.clr[n] || {};
+    const hs = [0, 1, 2].map(i => Math.max((a.hs || [])[i] || 0, (b.hs || [])[i] || 0));
+    save.clr[n] = { t: minPos(a.t, b.t), kt: minPos(a.kt, b.kt), ut: minPos(a.ut, b.ut), k: a.k || b.k ? 1 : 0, u: a.u || b.u ? 1 : 0, hs };
+  }
+  for (const d in r.free || {}) save.free[d] = minPos(save.free[d], r.free[d]);
+  save.freeHS = save.freeHS || {};
+  for (const d in r.freeHS || {}) save.freeHS[d] = Math.max(save.freeHS[d] || 0, r.freeHS[d]);
+}
+function pushCloud() {
+  if (!cloudRef) return;
+  cloudRef.set({ clr: save.clr, free: save.free, freeHS: save.freeHS || {}, at: Date.now() }).catch(() => {});
+}
+(async () => {
+  try {
+    if (!window.claude || !window.claude.use) return;
+    const [db, user] = await Promise.all([window.claude.use('db'), window.claude.use('user')]);
+    if (!db || !user) return;
+    const id = await user.id();
+    if (!id) return;
+    const ref = db.doc('data/users/' + id + '/progress');
+    const snap = await ref.get();
+    cloudRef = ref;
+    const before = JSON.stringify(save.clr);
+    if (snap.exists) mergeRecords(snap.data());
+    persist();
+    // anything only this browser knew goes up once
+    if (!snap.exists || JSON.stringify(save.clr) !== JSON.stringify((snap.data() || {}).clr || {})) pushCloud();
+    if (JSON.stringify(save.clr) !== before) { if (state === 'title') titleScreen(); else if (state === 'select') selectScreen(true); }
+  } catch (e) { cloudRef = null; }
+})();
 const unlocked = n => n === 1 || tempUnlock || !!save.clr[n - 1];
 
 // ---- canvas sizing ----
@@ -1969,7 +2007,7 @@ function render() {
 // =====================================================================
 // screens
 // =====================================================================
-const VERSION = '2.0.4';
+const VERSION = '2.0.5';
 let selN = 1, life = 0, freeDiff = 1, tempUnlock = false;
 const keysBar = $('.keys');
 function show(html) { ov.innerHTML = html; ov.hidden = false; ov.scrollTop = 0; keysBar.hidden = state !== 'title'; }
@@ -2051,7 +2089,9 @@ function detailScreen(n) {
     <div class="seg" role="group" aria-label="命">
       ${LIFE.map((l, i) => `<button type="button" data-act="life" data-v="${i}" aria-pressed="${i === life}">${l.name}</button>`).join('')}
     </div>
-    <p class="best">通常 <b>${c && c.t ? fmt(c.t) : '―'}</b> ・ 決死 <b>${c && c.kt ? fmt(c.kt) : '―'}</b> ・ 泡沫 <b>${c && c.ut ? fmt(c.ut) : '―'}</b></p>
+    <dl class="stats">
+      ${LIFE.map((l, i) => `<dt>${l.name}</dt><dd>${c && c[['t', 'kt', 'ut'][i]] ? fmt(c[['t', 'kt', 'ut'][i]]) : '―'} ・ ${c && c.hs && c.hs[i] ? c.hs[i] : '―'}</dd>`).join('')}
+    </dl>
     <div class="row"><button type="button" class="primary" data-act="go">挑む</button>
       ${n > 1 && unlocked(n - 1) ? `<button type="button" class="ghost" data-act="pick" data-v="${n - 1}">前の番</button>` : ''}
       ${n < 150 && unlocked(n + 1) ? `<button type="button" class="ghost" data-act="pick" data-v="${n + 1}">次の番</button>` : ''}
@@ -2066,7 +2106,9 @@ function freeScreen() {
       ${FREE.map((d, i) => `<button type="button" data-act="fdiff" data-v="${i}" aria-pressed="${i === freeDiff}">${d.name}</button>`).join('')}
     </div>
     <div class="row"><button type="button" class="primary" data-act="gofree">始める</button><button type="button" class="ghost" data-act="title">戻る</button></div>
-    <p class="best">${FREE.map((d, i) => `${d.name} <b>${save.free[i] ? fmt(save.free[i]) : '―'}</b>`).join(' ・ ')}</p>
+    <dl class="stats">
+      ${FREE.map((d, i) => `<dt>${d.name}</dt><dd>${save.free[i] ? fmt(save.free[i]) : '―'} ・ ${(save.freeHS || {})[i] || '―'}</dd>`).join('')}
+    </dl>
   </div>`);
 }
 function startRun(run) {
@@ -2103,19 +2145,30 @@ function showResult() {
   clearResume();
   for (const id of seenNow) if (!save.seen.includes(id)) save.seen.push(id);
   const s = stats, won = s.won;
-  let rec = false;
-  if (RUN.mode === 'stage' && won) {
-    const n = RUN.st.n, c = save.clr[n] || {};
-    const lf = RUN.life || 0;
-    if (lf === 2) { c.u = 1; if (!c.ut || s.time < c.ut) { c.ut = s.time; rec = true; } }
-    if (lf >= 1) { c.k = 1; if (lf === 1 && (!c.kt || s.time < c.kt)) { c.kt = s.time; rec = true; } }
-    if (lf === 0 && (!c.t || s.time < c.t)) { c.t = s.time; rec = true; }
-    if (!c.t && lf > 0) c.t = 0;
-    save.clr[n] = c;
-  }
-  if (RUN.mode === 'free' && won && (!save.free[RUN.diff] || s.time < save.free[RUN.diff])) { save.free[RUN.diff] = s.time; rec = true; }
-  persist();
   const sc = scoreOf(s);
+  let newTime = false, newScore = false, bestT = 0, bestS = 0;
+  const lf = RUN.life || 0, TK = ['t', 'kt', 'ut'];
+  if (RUN.mode === 'stage') {
+    const n = RUN.st.n, c = save.clr[n] || {};
+    if (won) {
+      if (lf === 2) c.u = 1;
+      if (lf >= 1) c.k = 1;
+      if (!c[TK[lf]] || s.time < c[TK[lf]]) { c[TK[lf]] = s.time; newTime = true; }
+      c.hs = c.hs || [0, 0, 0];
+      if (sc > c.hs[lf]) { c.hs[lf] = sc; newScore = true; }
+      save.clr[n] = c;
+    }
+    const cc = save.clr[n] || {};
+    bestT = cc[TK[lf]] || 0; bestS = (cc.hs || [])[lf] || 0;
+  } else {
+    save.freeHS = save.freeHS || {};
+    if (won) {
+      if (!save.free[RUN.diff] || s.time < save.free[RUN.diff]) { save.free[RUN.diff] = s.time; newTime = true; }
+      if (sc > (save.freeHS[RUN.diff] || 0)) { save.freeHS[RUN.diff] = sc; newScore = true; }
+    }
+    bestT = save.free[RUN.diff] || 0; bestS = save.freeHS[RUN.diff] || 0;
+  }
+  persist(); if (won) pushCloud();
   const rank = !won ? '' : sc >= 8500 ? 'S' : sc >= 7000 ? 'A' : sc >= 5500 ? 'B' : sc >= 4000 ? 'C' : 'D';
   const label = RUN.mode === 'stage' ? `第${RUN.st.n}番 ${RUN.st.name}${RUN.life ? ' ・' + LIFE[RUN.life].name : ''}` : `自由稽古 ${FREE[RUN.diff].name}`;
   const nextBtn = RUN.mode === 'stage' && won && RUN.st.n < 150 ? `<button type="button" class="primary" data-act="next">次の番へ</button>` : '';
@@ -2124,6 +2177,10 @@ function showResult() {
     <div class="res-head"><h2 class="head">${won ? '討ち取った' : '敗れた'}</h2>
       ${won ? `<div class="rank">${rank}</div>` : s.why ? `<div class="rank lost">${s.why}</div>` : ''}</div>
     ${won ? `<p class="score">${sc}</p>` : ''}
+    <dl class="stats">
+      <dt>最高得点</dt><dd>${bestS || '―'}${newScore ? ' <span class="k-g">更新</span>' : ''}</dd>
+      <dt>最速</dt><dd>${bestT ? fmt(bestT) : '―'}${newTime ? ' <span class="k-g">更新</span>' : ''}</dd>
+    </dl>
     <div class="row">${nextBtn}<button type="button" class="${nextBtn ? 'ghost' : 'primary'}" data-act="retry">もう一度</button>
       <button type="button" class="ghost" data-act="${RUN.mode === 'stage' ? 'select' : 'free'}">${RUN.mode === 'stage' ? '番付へ' : '難易度へ'}</button></div>
   </div>`);
