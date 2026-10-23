@@ -155,7 +155,7 @@ kbd{font-family:var(--mono);font-size:.74rem;color:var(--washi);border:1px solid
   <span>移動 <kbd>WASD</kbd> <kbd>矢印</kbd></span>
   <span>弾き・斬り <kbd>J</kbd> <kbd>Z</kbd> <kbd>左クリック</kbd></span>
   <span>踏み込み <kbd>K</kbd> <kbd>X</kbd> <kbd>Space</kbd> <kbd>右クリック</kbd></span>
-  <span>一時停止 <kbd>Esc</kbd> ・やり直し <kbd>R</kbd> ・音 <kbd>M</kbd></span>
+  <span>一時停止 <kbd>P</kbd> <kbd>Esc</kbd> ・やり直し <kbd>R</kbd> ・音 <kbd>M</kbd></span>
 </footer>
 
 <script>
@@ -1965,7 +1965,7 @@ function render() {
 // =====================================================================
 // screens
 // =====================================================================
-const VERSION = '2.0.1';
+const VERSION = '2.0.2';
 let selN = 1, life = 0, freeDiff = 1, tempUnlock = false;
 const keysBar = $('.keys');
 function show(html) { ov.innerHTML = html; ov.hidden = false; ov.scrollTop = 0; keysBar.hidden = state !== 'title'; }
