@@ -695,7 +695,7 @@ function newGame(run) {
   B = { x: W / 2, y: H * .3, r: 34, hp: F.hp, phase: 1, mode: 'idle', tx: W / 2, ty: H * .3, stagger: 0, staggerMax: STAGGER,
         nextAtk: 1.6, busy: 0, aimT: 0, aimMax: 0, cspd: 0, cx: 0, cy: 0, cvx: 0, cvy: 0, cdist: 0, ctrav: 0, hurtF: 0, spin: 0,
         final: '', barrier: false, seal: false, finalT: 0, finalLen: 1, revived: false, lastHit: 0, vis: 1, fade: 0,
-        shieldA: 0, stance: 0, stCycle: 4, sealOff: 0, guard: false, trail: 0, trailT: 0, iframe: 0 };
+        shieldA: 0, stance: 0, stCycle: 4, sealOff: 0, guard: false, trail: 0, trailT: 0, iframe: 0, pierceN: 0, pierceTot: 0 };
   EM = null;
   bullets = []; lasers = []; zones = []; parts = []; texts = []; after = []; slashes = []; streaks = []; sched = [];
   turrets = []; decoys = []; wells = []; slows = []; stones = null; tether = null; wind = null; launchers = []; inks = [];
@@ -723,7 +723,8 @@ const K = () => F.white ? 'w' : ((kc++ * .618034) % 1) < F.red ? 'r' : 'w';
 const ORG = () => EM || B;
 const aimFrom = (x, y) => Math.atan2(P.y - y, P.x - x);
 const aimAng = () => { const o = ORG(); return aimFrom(o.x, o.y); };
-const mult = () => 1 + Math.min(P.combo, 20) * .04;
+// consecutive successes raise damage by 0.04 each, up to 3x
+const mult = () => Math.min(3, 1 + P.combo * .04);
 const bounds = () => { const k = fx.shrinkK; return { x0: 14 + 150 * k, y0: 44 + 110 * k, x1: W - 14 - 150 * k, y1: H - 14 - 110 * k }; };
 
 function shootFrom(x, y, ang, spd, kind = 'w') {
@@ -1238,6 +1239,7 @@ function reflect(b, d) {
   b.own = 'p'; b.kind = 'w'; b.vx = Math.cos(a) * s; b.vy = Math.sin(a) * s; b.life = 3; b.perfect = perfect;
   b.home = 0; b.stop = null; b.bounce = 0; b.grace = 0; b.acc = null; b.wv = null; b.sp3 = 0; b.orb = null; b.ghost = false; b.needle = false;
   b.dmg = (b.big ? 12 : 2.3) * (perfect ? 1.7 : 1) * mult();
+  b.unit = (b.big ? 12 : 2.3) * mult();   // what the same shot is worth returned normally
   if (b.big) { b.big = false; b.r = 12; } else b.r = 7;
   P.parryHit = true;
   burst(b.x, b.y, C.kin, perfect ? 14 : 7, perfect ? 320 : 200, .35);
@@ -1246,14 +1248,26 @@ function reflect(b, d) {
 }
 const sealForm = () => F.special.includes('sealPform') && !B.sealDone;
 const invulnerable = () => ending || B.barrier || B.seal || B.guard || RL.survive || sealForm();
-// force: the breaking blow itself, which the enemy's brief invulnerability never swallows
-function damageBoss(d, raw, force) {
+// force: the breaking blow itself, which the enemy's brief invulnerability never swallows.
+// pierce: a 極 return, which gets through that invulnerability at a dwindling rate.
+function damageBoss(d, raw, force, pierce) {
   if (invulnerable()) return;
   // 0.2 s of invulnerability after each hit, except while broken
-  if (B.iframe > 0 && B.stagger <= 0 && !force) { sfx('block'); return; }
+  if (B.iframe > 0 && B.stagger <= 0 && !force) {
+    if (!pierce) { sfx('block'); return; }
+    // the first piercing shot counts as a normal return, each next one 75% of the last,
+    // and all of them together within one invulnerable window never pass four normal returns
+    const unit = pierce.unit, cap = 4 * 2.3 * mult();
+    const dd = Math.min(unit * Math.pow(.75, B.pierceN), cap - B.pierceTot);
+    if (dd <= .01) { sfx('block'); return; }
+    B.pierceN++; B.pierceTot += dd;
+    B.hp -= dd; B.hurtF = .07; B.lastHit = gt; B.vis = 1; sfx('hit');
+    if (B.hp <= 0) formDown();
+    return;
+  }
   if (B.stagger > 0 && !raw) d *= 1.6;
   B.hp -= d; B.hurtF = .07; B.lastHit = gt; B.vis = 1; sfx('hit');
-  if (B.stagger <= 0) B.iframe = .2;
+  if (B.stagger <= 0) { B.iframe = .2; B.pierceN = 0; B.pierceTot = 0; }
   if (B.hp <= 0) formDown();
 }
 function formDown() {
@@ -1663,7 +1677,7 @@ function update(dt) {
       if (invulnerable() || (RL.perfectOnly && !b.perfect)) { burst(b.x, b.y, C.washi, 5, 160, .25); sfx('block'); if (RL.perfectOnly && !invulnerable()) pop(B.x, B.y - B.r - 14, '無', C.mute, 18); continue; }
       burst(b.x, b.y, b.perfect ? C.kin : C.washi, b.perfect ? 10 : 5, 180, .3);
       // a 極 return cuts through the enemy's brief invulnerability
-      damageBoss(b.dmg, false, b.perfect);
+      damageBoss(b.dmg, false, false, b.perfect ? { unit: b.unit || b.dmg } : null);
     }
   }
 
@@ -2008,7 +2022,7 @@ function render() {
 // =====================================================================
 // screens
 // =====================================================================
-const VERSION = '2.0.7';
+const VERSION = '2.0.8';
 let selN = 1, life = 0, freeDiff = 1, tempUnlock = false;
 const keysBar = $('.keys');
 function show(html) { ov.innerHTML = html; ov.hidden = false; ov.scrollTop = 0; keysBar.hidden = state !== 'title'; }
