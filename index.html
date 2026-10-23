@@ -1662,7 +1662,8 @@ function update(dt) {
       bullets.splice(i, 1);
       if (invulnerable() || (RL.perfectOnly && !b.perfect)) { burst(b.x, b.y, C.washi, 5, 160, .25); sfx('block'); if (RL.perfectOnly && !invulnerable()) pop(B.x, B.y - B.r - 14, '無', C.mute, 18); continue; }
       burst(b.x, b.y, b.perfect ? C.kin : C.washi, b.perfect ? 10 : 5, 180, .3);
-      damageBoss(b.dmg);
+      // a 極 return cuts through the enemy's brief invulnerability
+      damageBoss(b.dmg, false, b.perfect);
     }
   }
 
@@ -2007,7 +2008,7 @@ function render() {
 // =====================================================================
 // screens
 // =====================================================================
-const VERSION = '2.0.6';
+const VERSION = '2.0.7';
 let selN = 1, life = 0, freeDiff = 1, tempUnlock = false;
 const keysBar = $('.keys');
 function show(html) { ov.innerHTML = html; ov.hidden = false; ov.scrollTop = 0; keysBar.hidden = state !== 'title'; }
