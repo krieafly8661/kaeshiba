@@ -1969,14 +1969,43 @@ function render() {
 // =====================================================================
 // screens
 // =====================================================================
-const VERSION = '2.0.3';
+const VERSION = '2.0.4';
 let selN = 1, life = 0, freeDiff = 1, tempUnlock = false;
 const keysBar = $('.keys');
 function show(html) { ov.innerHTML = html; ov.hidden = false; ov.scrollTop = 0; keysBar.hidden = state !== 'title'; }
 function hideOv() { ov.hidden = true; ov.innerHTML = ''; }
 const nClear = () => Object.keys(save.clr).length;
 
+// ---- 続きから: browsers may throw a background tab away and reload it, so a run in progress is checkpointed ----
+const RESUME_KEY = 'kaeshiba150.resume';
+let resumeData = null, lastCheckpoint = 0;
+function saveResume() {
+  if (!RUN || ending || P.dead || (state !== 'play' && state !== 'pause')) return;
+  const d = { at: Date.now(), run: { mode: RUN.mode, n: RUN.st ? RUN.st.n : 0, life: RUN.life || 0, diff: RUN.diff || 0 },
+              fi, bhp: B.hp, php: P.hp, final: B.final, revived: B.revived, sealDone: B.sealDone, formT: B.formT, stats };
+  try { localStorage.setItem(RESUME_KEY, JSON.stringify(d)); } catch (e) {}
+}
+function clearResume() { resumeData = null; try { localStorage.removeItem(RESUME_KEY); } catch (e) {} }
+function loadResume() {
+  try { const d = JSON.parse(localStorage.getItem(RESUME_KEY) || 'null'); if (d && Date.now() - d.at < 24 * 3600e3) return d; } catch (e) {}
+  return null;
+}
+function resumeLabel(d) {
+  const where = d.run.mode === 'stage' ? `第${d.run.n}番 ${STAGES[d.run.n - 1].name}${d.run.life ? ' ・' + LIFE[d.run.life].name : ''}` : `自由稽古 ${FREE[d.run.diff].name}`;
+  const form = d.final === 'on' ? '終ノ型' : ['一ノ型', '二ノ型', '三ノ型', '四ノ型', '五ノ型', '六ノ型'][d.fi] || '';
+  return `${where} ・ ${form} ・ 命 ${d.php}`;
+}
+function continueRun(d) {
+  startRun(d.run.mode === 'stage' ? { mode: 'stage', st: STAGES[d.run.n - 1], life: d.run.life } : { mode: 'free', diff: d.run.diff });
+  // walk forward to the saved form; its attacks start fresh, the damage done so far is kept
+  while (fi < d.fi && fi < forms.length - 1) { fi++; F = forms[fi]; B.phase = fi + 1; setupForm(); }
+  B.hp = Math.max(1, d.bhp); P.hp = Math.max(1, d.php); Object.assign(stats, d.stats); stats.won = false;
+  B.revived = !!d.revived; B.formT = d.formT || 0; B.sealDone = !!d.sealDone;
+  if (d.final === 'on') { B.hp = 1; startFinal(); }
+  else { if (d.final === 'done') { B.final = 'done'; B.hp = 1; } banner = { txt: '続き', sub: F.name, t: 1.2 }; }
+}
 function titleScreen() {
+  resumeData = loadResume();
   state = 'title'; RUN = null;
   show(`<div class="panel">
     <p class="eyebrow">弾 ・ 踏 ・ 斬</p>
@@ -1990,6 +2019,7 @@ function titleScreen() {
       <li>鬼ごとに固有の弾幕と、仕掛けがある。見て、覚えて、破れ。命は通常5・決死3・泡沫1。</li>
     </ul>
     <div class="modes">
+      ${resumeData ? `<button type="button" class="mode" data-act="continue"><b>続きから</b><span>${resumeLabel(resumeData)}</span></button>` : ''}
       <button type="button" class="mode" data-act="select"><b>番付</b><span>第一番から第百五十番へ。討伐 ${nClear()} / 150</span></button>
       <button type="button" class="mode" data-act="free"><b>自由稽古</b><span>三つの型と終ノ型。見た技がすべて出る。</span></button>
     </div>
@@ -2070,6 +2100,7 @@ function scoreOf(s) {
 }
 function showResult() {
   state = 'over';
+  clearResume();
   for (const id of seenNow) if (!save.seen.includes(id)) save.seen.push(id);
   const s = stats, won = s.won;
   let rec = false;
@@ -2100,6 +2131,9 @@ function showResult() {
 ov.addEventListener('click', e => {
   const a = e.target.closest('[data-act]'); if (!a || a.disabled) return;
   const act = a.dataset.act;
+  // leaving a run from the pause menu abandons it
+  if (state === 'pause' && (act === 'select' || act === 'free' || act === 'title')) clearResume();
+  if (act === 'continue') { if (resumeData) continueRun(resumeData); return; }
   if (act === 'title') titleScreen();
   else if (act === 'select') selectScreen();
   else if (act === 'pick') detailScreen(+a.dataset.v);
@@ -2142,7 +2176,8 @@ addEventListener('keydown', e => {
 });
 addEventListener('keyup', e => { keys[e.code] = false; });
 addEventListener('blur', () => { for (const k in keys) keys[k] = false; pause(); });
-document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { pause(); saveResume(); } });
+addEventListener('pagehide', saveResume);
 
 cv.addEventListener('pointerdown', e => {
   if (e.pointerType === 'touch' || state !== 'play') return;
@@ -2187,7 +2222,10 @@ function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(.05, (now - last) / 1000); last = now;
   try {
-    if (state === 'play') { let rem = dt; while (rem > 1e-6 && state === 'play') { const s = Math.min(rem, 1 / 120); update(s); rem -= s; } }
+    if (state === 'play') {
+      let rem = dt; while (rem > 1e-6 && state === 'play') { const s = Math.min(rem, 1 / 120); update(s); rem -= s; }
+      if (now - lastCheckpoint > 1000) { lastCheckpoint = now; saveResume(); }
+    }
     else if (B) B.spin += dt * .8;
     render();
   } catch (err) { console.error(err); }
