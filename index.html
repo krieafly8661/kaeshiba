@@ -653,7 +653,7 @@ function newGame(run) {
   B = { x: W / 2, y: H * .3, r: 34, hp: F.hp, phase: 1, mode: 'idle', tx: W / 2, ty: H * .3, stagger: 0, staggerMax: STAGGER,
         nextAtk: 1.6, busy: 0, aimT: 0, aimMax: 0, cspd: 0, cx: 0, cy: 0, cvx: 0, cvy: 0, cdist: 0, ctrav: 0, hurtF: 0, spin: 0,
         final: '', barrier: false, seal: false, finalT: 0, finalLen: 1, revived: false, lastHit: 0, vis: 1, fade: 0,
-        shieldA: 0, stance: 0, stCycle: 4, sealOff: 0, guard: false, trail: 0, trailT: 0 };
+        shieldA: 0, stance: 0, stCycle: 4, sealOff: 0, guard: false, trail: 0, trailT: 0, iframe: 0 };
   EM = null;
   bullets = []; lasers = []; zones = []; parts = []; texts = []; after = []; slashes = []; streaks = []; sched = [];
   turrets = []; decoys = []; wells = []; slows = []; stones = null; tether = null; wind = null; launchers = []; inks = [];
@@ -1144,7 +1144,7 @@ function hitLauncher(l, d) {
   if (!launchers.length) {
     // every launcher down: the enemy loses its cover and reels
     B.guard = false; pop(B.x, B.y - B.r - 16, '破', C.kin, 28);
-    damageBoss(F.hp * .3, true);
+    damageBoss(F.hp * .3, true, true);
     if (!ending && B.hp > 0 && !invulnerable()) { B.stagger = B.staggerMax = STAGGER; B.busy = 0; }
   }
 }
@@ -1204,10 +1204,14 @@ function reflect(b, d) {
 }
 const sealForm = () => F.special.includes('sealPform') && !B.sealDone;
 const invulnerable = () => ending || B.barrier || B.seal || B.guard || RL.survive || sealForm();
-function damageBoss(d, raw) {
+// force: the breaking blow itself, which the enemy's brief invulnerability never swallows
+function damageBoss(d, raw, force) {
   if (invulnerable()) return;
+  // 0.2 s of invulnerability after each hit, except while broken
+  if (B.iframe > 0 && B.stagger <= 0 && !force) { sfx('block'); return; }
   if (B.stagger > 0 && !raw) d *= 1.6;
   B.hp -= d; B.hurtF = .07; B.lastHit = gt; B.vis = 1; sfx('hit');
+  if (B.stagger <= 0) B.iframe = .2;
   if (B.hp <= 0) formDown();
 }
 function formDown() {
@@ -1249,7 +1253,7 @@ function chargeParried() {
   }
   sched = []; B.busy = 0; stats.perfects++;
   const f0 = fi;
-  damageBoss(BREAK_DMG * mult());
+  damageBoss(BREAK_DMG * mult(), false, true);
   if (!ending && fi === f0 && !invulnerable() && B.hp > 0) { B.stagger = B.staggerMax = STAGGER; B.nextAtk = .4; }
   pop(mx, my - 20, '崩し', C.kin, 30);
   burst(mx, my, C.kin, 30, 380, .6, 3);
@@ -1427,7 +1431,7 @@ function update(dt) {
   }
 
   // enemy
-  B.hurtF -= dt; B.vis = Math.max(0, B.vis - dt * 1.2); B.fade -= dt;
+  B.hurtF -= dt; B.iframe -= dt; B.vis = Math.max(0, B.vis - dt * 1.2); B.fade -= dt;
   B.spin += dt * (B.stagger > 0 ? .3 : B.barrier ? 3.2 : 1.1 + B.phase * .3);
   if (B.final === 'on') B.finalT += dt;
   if (B.busy > 0 && B.stagger <= 0) B.busy -= dt;
@@ -1961,7 +1965,7 @@ function render() {
 // =====================================================================
 // screens
 // =====================================================================
-const VERSION = '2.0.0';
+const VERSION = '2.0.1';
 let selN = 1, life = 0, freeDiff = 1, tempUnlock = false;
 const keysBar = $('.keys');
 function show(html) { ov.innerHTML = html; ov.hidden = false; ov.scrollTop = 0; keysBar.hidden = state !== 'title'; }
