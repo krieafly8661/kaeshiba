@@ -1,11 +1,4 @@
-<!doctype html>
-<html lang="ja">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
-</head>
-<body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>返し刃 百五十番</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -98,6 +91,9 @@ h2.head{margin:0;font-family:var(--display);font-weight:800;font-size:1.9rem;let
 .cell:hover{border-color:var(--mute)}
 .cell.clr{border-color:var(--kin);color:var(--kin)}
 .cell.kes{background:var(--kin);color:var(--ai);border-color:var(--kin)}
+.cell small{display:block;font-size:.62rem;line-height:1.25;color:var(--mute)}
+.cell.kes small,.cell.uta small{color:inherit;opacity:.8}
+.cell.easy{border-style:dashed;border-color:var(--kin);color:var(--kin)}
 .cell.uta{background:var(--washi);color:var(--ai);border-color:var(--kin);box-shadow:inset 0 0 0 2px var(--kin)}
 .cell[disabled]{opacity:.28;cursor:not-allowed}
 .cell.cur{outline:2px solid var(--washi);outline-offset:1px}
@@ -120,6 +116,8 @@ dl.stats dd{margin:0;font-family:var(--mono);font-variant-numeric:tabular-nums;t
 .newrec{margin:0;color:var(--kin);font-weight:700}
 .score{margin:0;font-family:var(--mono);font-size:2.2rem;font-variant-numeric:tabular-nums;letter-spacing:.04em}
 .note{margin:0;color:var(--mute);font-size:.85rem}
+textarea.code{width:100%;font:500 .72rem/1.4 var(--mono);color:var(--washi);background:var(--ai-2);border:1px solid var(--line);border-radius:3px;padding:8px;resize:vertical;word-break:break-all;-webkit-user-select:text;user-select:text}
+textarea.code:focus-visible{outline:2px solid var(--kin);outline-offset:1px}
 
 .keys{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 18px;color:var(--mute);font-size:.8rem}
 kbd{font-family:var(--mono);font-size:.74rem;color:var(--washi);border:1px solid var(--line);border-bottom-width:2px;border-radius:3px;padding:0 5px;background:var(--ai-2)}
@@ -175,11 +173,19 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const coarse = matchMedia('(pointer: coarse)').matches;
 function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+// Each attack plays out the same way every time this enemy uses it, so its layout can be learned; only where it
+// aims follows the player. Its randomness comes from a stream seeded by the enemy and the attack (actx), which the
+// steps it schedules carry along. Which attack comes next stays random.
+let actx = null;
+const baseRand = Math.random;
+Math.random = () => { if (!actx) return baseRand(); let a = actx.s = (actx.s + 0x6D2B79F5) | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+const hashStr = str => { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h | 0; };
+function withCtx(key, fn) { const prev = actx; actx = { s: hashStr(key) }; try { return fn(); } finally { actx = prev; } }
 
 // ---- the player never changes: same moves, same timings, every stage and every difficulty ----
 const SPEED = 235, DASH_T = .17, DASH_V = 720, DASH_CD = .55;
 const PARRY_WIN = .14, PARRY_CD = .5, WHIFF = .25, PARRY_R = 26, PERFECT_PAD = 12;
-const SLASH_REACH = 50, SLASH_CD = .2, STAGGER = 1.8, FINAL_STAGGER = 4.5, BREAK_DMG = 3.5;
+const SLASH_REACH = 50, SLASH_CD = .2, STAGGER = 1.8, FINAL_STAGGER = 4.5, BREAK_DMG = 4.5;
 
 // =====================================================================
 // gimmicks: every attack and special the enemies can use
@@ -207,6 +213,19 @@ const GIM = {
   needle: { n: '千本', s: '速く細い針', p: 1 },
   redbig: { n: '朱大玉', s: '弾けるまで弾けない大玉', p: 1 },
   redsplit: { n: '朱分裂弾', s: '割れるまで弾けない分裂弾', p: 1 },
+  curve: { n: '曲がり弾', s: '弧を描いて曲がる弾', p: 1 },
+  swirl: { n: '巻き弾', s: '撃たれた場所のまわりを渦を巻いて広がる弾', p: 1 },
+  grow: { n: '膨れ弾', s: '進むほど大きくなる弾', p: 1 },
+  pulse: { n: '脈弾', s: '速さが脈打つ弾', p: 1 },
+  zig: { n: '揺れ弾', s: '左右に折れながら進む弾', p: 1 },
+  decel: { n: '溜め弾', s: '止まりかけてから一気に飛ぶ弾', p: 1 },
+  wallsplit: { n: '壁割れ弾', s: '壁に当たると三つに割れる弾', p: 1 },
+  dropper: { n: '落とし弾', s: '通った跡に弾を置いていく弾', p: 1 },
+  stutter: { n: '刻み弾', s: '止まっては進む弾', p: 1 },
+  colorshift: { n: '移ろい弾', s: '途中で白から朱に変わる弾', p: 1 },
+  cluster: { n: '房弾', s: '衛星を連れて飛ぶ弾', p: 1 },
+  snake: { n: '連弾', s: '列になって同じ道をなぞる弾', p: 1 },
+  blink: { n: '明滅弾', s: '消えている間は当たらない弾', p: 1 },
   charge: { n: '突進', s: '鋭い突進' },
   laser: { n: '光線', s: '狙い澄ました光線' },
   bluebeam: { n: '蒼光', s: '踏み込みでも抜けられない青い光線' },
@@ -263,41 +282,202 @@ const INTRO = {
   50: 'swap', 52: 'turret', 53: 'sealSform', 54: 'reverse', 56: 'fake', 58: 'counter', 59: 'launchers',
   60: 'clones', 62: 'freeze', 64: 'shrink', 66: 'chase', 68: 'lattice', 70: 'regen', 72: 'curse', 74: 'invisible', 76: 'echo', 80: 'revive',
   84: 'sealAll', 90: 'needle', 100: 'mirror', 110: 'tether', 120: 'chainzone',
+  16: 'curve', 49: 'swirl', 51: 'grow', 55: 'pulse', 57: 'zig', 61: 'decel', 63: 'wallsplit', 65: 'dropper', 67: 'stutter', 69: 'colorshift',
+  71: 'cluster', 73: 'snake', 77: 'blink',
 };
 const ATK_IDS = Object.keys(GIM).filter(k => !GIM[k].sp && k !== 'red');
 const isProp = id => id === 'plain' || (GIM[id] && GIM[id].p);
 const introAt = {}; for (const s in INTRO) introAt[INTRO[s]] = +s;
-// how often an entry is picked relative to the others
-const WEIGHT = { wind: .3, plain: .9, uniq: 1.9 };
+// how often an entry is picked relative to the others; unique barrages (u0, u1, u2) weigh 1.5
+const WEIGHT = { wind: .3, plain: .9 };
+const weightOf = id => WEIGHT[id] || (/^u\d$/.test(id) ? 1.5 : 1);
 
-// ---- shapes: every enemy has its own handful, with its own counts, spreads and speeds ----
-const SHAPE_TYPES = ['aimed', 'ring', 'spiral', 'flower', 'stream', 'spray', 'cross', 'rain', 'rows', 'helix', 'star', 'arc'];
+// =====================================================================
+// 汎用弾幕: every layout (撃ち方) crossed with every shot property (弾の性質) that suits it
+// =====================================================================
+// intro: the first stage a layout can appear on; cnt: how many shots one volley carries
+const EMIT = {
+  aimed: { n: '狙い撃ち', intro: 1, cnt: 'lo' },
+  ring: { n: '輪', intro: 1, cnt: 'mid' },
+  spiral: { n: '渦', intro: 2, cnt: 'hi', stream: 1 },
+  gapring: { n: '欠け輪', intro: 3, cnt: 'mid' },
+  flower: { n: '花輪', intro: 5, cnt: 'hi' },
+  stream: { n: '流し', intro: 6, cnt: 'hi', stream: 1 },
+  shotgun: { n: '散弾', intro: 7, cnt: 'mid' },
+  spray: { n: '散らし', intro: 9, cnt: 'hi', stream: 1 },
+  pinwheel: { n: '風車', intro: 10, cnt: 'hi', stream: 1 },
+  cross: { n: '十字', intro: 12, cnt: 'mid' },
+  curtain: { n: '幕', intro: 14, cnt: 'hi' },
+  rain: { n: '雨', intro: 16, cnt: 'hi', stream: 1 },
+  rows: { n: '横列', intro: 17, cnt: 'mid' },
+  pincer: { n: '挟み撃ち', intro: 19, cnt: 'mid', stream: 1 },
+  helix: { n: '螺旋', intro: 21, cnt: 'hi', stream: 1 },
+  sweepfan: { n: '薙ぎ', intro: 23, cnt: 'hi', stream: 1 },
+  star: { n: '星', intro: 25, cnt: 'hi' },
+  firework: { n: '花火', intro: 27, cnt: 'lo' },
+  arc: { n: '弧', intro: 29, cnt: 'mid' },
+  scatter: { n: '群れ撃ち', intro: 32, cnt: 'mid' },
+  lanes: { n: '並木', intro: 36, cnt: 'hi' },
+  vortex: { n: '渦潮', intro: 41, cnt: 'hi' },
+  zigzag: { n: '稲妻', intro: 46, cnt: 'hi', stream: 1 },
+  box: { n: '方陣', intro: 53, cnt: 'mid' },
+};
+const SHAPE_TYPES = Object.keys(EMIT);
 function rollShape(type, r) {
   const R = (a, b) => a + r() * (b - a), I = (a, b) => Math.floor(R(a, b + 1));
+  const dir = () => (r() < .5 ? 1 : -1);
   switch (type) {
     case 'aimed': return { type, n: [1, 3, 5][I(0, 2)], spread: R(.1, .24), vol: I(2, 4), gap: R(.3, .5), spd: R(180, 240) };
     case 'ring': return { type, n: I(10, 20), waves: I(1, 3), gap: R(.35, .6), rot: R(0, 1), spd: R(140, 180) };
-    case 'spiral': return { type, arms: I(2, 4), dur: R(1.8, 2.6), step: R(.06, .09), turn: R(.15, .3), dir: r() < .5 ? 1 : -1, spd: R(130, 160) };
+    case 'spiral': return { type, arms: I(2, 4), dur: R(1.8, 2.6), step: R(.06, .09), turn: R(.15, .3), dir: dir(), spd: R(130, 160) };
+    case 'gapring': return { type, n: I(16, 26), waves: I(2, 3), gap: R(.45, .65), hole: R(.55, .9), spd: R(140, 175) };
     case 'flower': return { type, n: I(12, 20), waves: I(3, 5), gap: R(.3, .42), petals: I(3, 6), spd: R(130, 160) };
     case 'stream': return { type, dur: R(1.2, 1.8), rate: R(.05, .08), wob: R(0, .25), lines: I(1, 3), sep: R(.25, .4), spd: R(220, 280) };
+    case 'shotgun': return { type, n: I(7, 12), cone: R(.35, .6), vol: I(2, 3), gap: R(.5, .7), spd: R(170, 240) };
     case 'spray': return { type, n: I(18, 30), dur: R(1, 1.5), cone: R(.5, 1.0), spd: R(170, 240) };
+    case 'pinwheel': return { type, arms: I(3, 5), dur: R(1.6, 2.4), step: R(.08, .11), turn: R(.12, .22), dir: dir(), bend: R(.2, .5), spd: R(140, 170) };
     case 'cross': return { type, dirs: [4, 6, 8][I(0, 2)], bursts: I(2, 4), len: I(3, 5), gap: R(.4, .55), spd: R(130, 160), rot: R(.2, .6) };
+    case 'curtain': return { type, rows: I(2, 4), hole: R(80, 120), gap: R(.6, .8), spd: R(110, 150) };
     case 'rain': return { type, n: I(20, 30), dur: R(1.6, 2.4), side: ['top', 'top', 'left', 'right'][I(0, 3)], spd: R(170, 210) };
     case 'rows': return { type, vol: I(3, 5), n: I(5, 9), width: R(160, 260), gap: R(.4, .55), spd: R(150, 190) };
+    case 'pincer': return { type, dur: R(1.2, 1.8), rate: R(.08, .11), off: R(70, 120), spd: R(190, 240) };
     case 'helix': return { type, dur: R(1.8, 2.4), step: R(.06, .08), turn: R(.17, .25), spd: R(140, 160) };
+    case 'sweepfan': return { type, dur: R(1.4, 2), rate: R(.05, .07), span: R(1.4, 2.4), lines: I(1, 2), dir: dir(), spd: R(170, 220) };
     case 'star': return { type, pts: I(4, 7), n: I(28, 40), waves: I(1, 2), gap: R(.5, .7), spd: R(140, 165) };
+    case 'firework': return { type, shells: I(2, 4), gap: R(.4, .6), fuse: R(.6, .9), n: I(10, 16), spd: R(150, 190) };
     case 'arc': return { type, n: I(14, 22), span: R(4.2, 5.2), vol: I(2, 3), gap: R(.55, .75), spd: R(160, 190) };
+    case 'scatter': return { type, pts: I(4, 7), vol: I(2, 3), gap: R(.45, .6), rad: R(70, 140), spd: R(180, 230) };
+    case 'lanes': return { type, n: I(6, 10), vol: I(2, 4), gap: R(.55, .75), side: ['top', 'left', 'right'][I(0, 2)], spd: R(150, 190) };
+    case 'vortex': return { type, n: I(14, 22), rad: R(230, 280), spin: R(.7, 1.1) * dir(), spd: R(70, 95) };
+    case 'zigzag': return { type, dur: R(1.2, 1.8), rate: R(.05, .08), amp: R(.4, .7), fr: R(5, 8), spd: R(200, 250) };
+    case 'box': return { type, side: I(4, 6), vol: I(1, 3), gap: R(.6, .8), size: R(40, 70), spin: R(-.8, .8), spd: R(140, 170) };
   }
 }
 // each layout also carries its own shot size
 const withSize = (s, r) => (s.sz = .8 + r() * .6, s);
-function rollShapes(r, n) {
-  const pool = n <= 4 ? ['aimed', 'ring', 'spiral', 'aimed'] : n <= 15 ? SHAPE_TYPES.slice(0, 7) : SHAPE_TYPES;
-  const k = n <= 2 ? 1 : Math.min(4, 2 + Math.floor((n - 1) / 50) + (r() < .4 ? 1 : 0));
-  const out = [];
-  if (n === 1) return [{ type: 'aimed', n: 1, spread: .15, vol: 3, gap: .5, spd: 200 }];
-  while (out.length < k) { const t = pool[Math.floor(r() * pool.length)]; if (!out.some(s => s.type === t) || out.length >= pool.length) out.push(withSize(rollShape(t, r), r)); }
-  return out;
+
+// properties too heavy to put on every shot of a dense volley
+const HEAVY = new Set(['bigorb', 'redbig', 'mines', 'orbit', 'split', 'redsplit', 'wallsplit', 'dropper', 'fake', 'cluster', 'snake']);
+const GENS = [];
+for (const e of SHAPE_TYPES) for (const m of ['plain', ...ATK_IDS.filter(isProp)]) {
+  const E = EMIT[e];
+  if (HEAVY.has(m) && E.cnt === 'hi') continue;
+  if (E.stream && (m === 'orbit' || m === 'mines' || m === 'gravity' || m === 'swirl')) continue;
+  if ((e === 'rain' || e === 'lanes' || e === 'curtain') && (m === 'gravity' || m === 'homing' || m === 'swirl' || m === 'boomerang')) continue;
+  if (e === 'vortex' && (m === 'homing' || m === 'stopgo' || m === 'boomerang' || m === 'accel')) continue;
+  if (e === 'firework' && (m === 'needle' || m === 'orbit')) continue;
+  if ((e === 'rows' || e === 'box' || e === 'curtain' || e === 'lanes' || e === 'arc') && (m === 'split' || m === 'redsplit' || m === 'cluster' || m === 'snake' || m === 'wallsplit')) continue;
+  // a solid line of blue shots is a wall nobody can pass
+  if ((e === 'rows' || e === 'box') && m === 'blue') continue;
+  GENS.push({ id: e + '.' + m, e, m, intro: Math.max(E.intro, m === 'plain' ? 1 : introAt[m]), name: m === 'plain' ? E.n : E.n + 'の' + GIM[m].n });
+}
+const GEN = Object.fromEntries(GENS.map(g => [g.id, g]));
+
+// =====================================================================
+// 固有弾・固有光: what an enemy does to its own shots and beams
+// =====================================================================
+// b: on a share of every volley's shots; l: on every aimed beam. intro: first stage it can be given on.
+const SIG = {
+  twin: { n: '双子弾', k: 'b', intro: 1, s: '寄り添う二つの弾' },
+  heavy: { n: '重弾', k: 'b', intro: 1, s: '大きく遅い弾' },
+  quick: { n: '疾弾', k: 'b', intro: 2, s: '小さく速い弾' },
+  tail: { n: '尾引き', k: 'b', intro: 4, s: '通った跡に小さな弾を落とす' },
+  swerve: { n: '折れ弾', k: 'b', intro: 6, s: '途中で一度こちらへ折れる' },
+  pause: { n: '間弾', k: 'b', intro: 8, s: '一瞬止まってから進む' },
+  bloom: { n: '開花弾', k: 'b', intro: 11, s: '途中で四つに咲く' },
+  thaw: { n: '解け弾', k: 'b', intro: 13, s: '朱から白に解け、弾けるようになる' },
+  spin: { n: '旋弾', k: 'b', intro: 15, s: '螺旋を描いて進む' },
+  shed: { n: '脱皮弾', k: 'b', intro: 18, s: '遅い抜け殻を残す' },
+  rebound: { n: '返り弾', k: 'b', intro: 22, s: '壁で一度跳ね返る' },
+  echo: { n: '谺弾', k: 'b', intro: 26, s: '少し遅れて同じ弾がもう一度来る' },
+  dive: { n: '沈み弾', k: 'b', intro: 31, s: '重さで沈んでいく' },
+  lance: { n: '槍弾', k: 'b', intro: 37, s: '速い針になる' },
+  magnet: { n: '寄せ弾', k: 'b', intro: 44, s: '終わり際にこちらへ寄る' },
+  turn: { n: '翻り弾', k: 'b', intro: 52, s: '白から朱へ翻る' },
+  sweepl: { n: '薙ぎ光', k: 'l', intro: 8, s: '光線が首を振る' },
+  twinl: { n: '双光', k: 'l', intro: 14, s: '光線が二本並ぶ' },
+  branch: { n: '枝光', k: 'l', intro: 20, s: '光線が消えるとき枝のように弾を散らす' },
+  pulsel: { n: '脈光', k: 'l', intro: 27, s: '光線の太さが脈打つ' },
+  glow: { n: '残光', k: 'l', intro: 34, s: '光線の跡に弾が残る' },
+  shard: { n: '砕光', k: 'l', intro: 42, s: '光線が灯ると根元から弾が砕け散る' },
+  flick: { n: '払い光', k: 'l', intro: 50, s: '光線が消え際に払われる' },
+};
+
+// =====================================================================
+// 派生形: beams and charges, each a shape (形) crossed with a habit (癖) or an after-effect (効果)
+// =====================================================================
+const BEAM_SHAPE = {
+  aim: { n: '狙い光線', intro: 8, un: ['眼光', '射抜き'] },
+  fan: { n: '扇光線', intro: 12, un: ['扇光', '開眼'] },
+  rain: { n: '光の雨', intro: 18, un: ['光雨', '天光'] },
+  track: { n: '追い光線', intro: 22, un: ['凝視', '睨み据え'] },
+  sweep: { n: '薙ぎ光線', intro: 26, un: ['薙ぎ光', '払い光'] },
+  spiral: { n: '渦光', intro: 30, un: ['輪転', '渦眼'] },
+  pincer: { n: '挟み光', intro: 35, un: ['挟み光', '十字光'] },
+  side: { n: '横一文字', intro: 40, un: ['一文字', '横光'] },
+  refl: { n: '屈折光', intro: 47, un: ['照り返し', '鏡光'] },
+  cross: { n: '光輪', intro: 18, un: ['光輪', '後光'] },
+  lattice: { n: '格子光', intro: 68, un: ['光格子', '檻'] },
+};
+const BEAM_HABIT = {
+  plain: { n: '', intro: 8 },
+  thin: { n: '細', intro: 14, s: '細く速い' },
+  late: { n: '溜め', intro: 16, s: '長く溜めて太い' },
+  blue: { n: '蒼', intro: 23, s: '踏み込みでも抜けられない' },
+  pulse: { n: '点滅', intro: 24, s: '点いては消える' },
+  twin: { n: '双', intro: 28, s: '二本並ぶ' },
+  glow: { n: '残光', intro: 34, s: '跡に弾が残る' },
+  branch: { n: '枝', intro: 38, s: '消え際に弾を散らす' },
+};
+const CHARGE_PATH = {
+  rush: { n: '突進', intro: 5, un: ['猛進', '体当たり'] },
+  hook: { n: '鉤突進', intro: 11, un: ['鉤爪', '回り込み'] },
+  zig: { n: '稲妻突進', intro: 17, un: ['稲妻駆け', '折れ駆け'] },
+  feint: { n: '見せ突進', intro: 23, un: ['見せ太刀', '空駆け'] },
+  leap: { n: '跳躍', intro: 29, un: ['踏み潰し', '跳び掛かり'] },
+  lane: { n: '横薙ぎ突進', intro: 37, un: ['横薙ぎ', '一文字駆け'] },
+  bound: { n: '壁跳ね突進', intro: 43, un: ['跳ね駆け', '暴れ駆け'] },
+  blink: { n: '瞬突', intro: 50, un: ['影駆け', '瞬き突き'] },
+};
+const CHARGE_EFF = {
+  none: { n: '', intro: 5 },
+  chain: { n: '連', intro: 10, s: '三度続けて来る' },
+  shock: { n: '衝撃', intro: 15, s: '止まった所から弾の輪' },
+  debris: { n: '礫', intro: 20, s: '止まった所からこちらへ礫' },
+  wake: { n: '波', intro: 33, s: '駆けながら両脇へ弾を撒く' },
+  trail: { n: '残影', intro: 45, s: '駆けた跡の弾が後から向かってくる' },
+  quake: { n: '地割れ', intro: 55, s: '駆けた跡に落雷が走る' },
+};
+const VARS = [];
+for (const sh in BEAM_SHAPE) for (const hb in BEAM_HABIT) {
+  if (hb === 'twin' && (sh === 'lattice' || sh === 'rain' || sh === 'side' || sh === 'cross')) continue;
+  if (hb === 'blue' && sh === 'lattice') continue;
+  const S = BEAM_SHAPE[sh], Hb = BEAM_HABIT[hb];
+  VARS.push({ id: 'L:' + sh + '.' + hb, fam: 'L', a: sh, b: hb, intro: Math.max(S.intro, Hb.intro), name: Hb.n ? S.n + '・' + Hb.n : S.n });
+}
+for (const pa in CHARGE_PATH) for (const ef in CHARGE_EFF) {
+  const S = CHARGE_PATH[pa], E = CHARGE_EFF[ef];
+  VARS.push({ id: 'C:' + pa + '.' + ef, fam: 'C', a: pa, b: ef, intro: Math.max(S.intro, E.intro), name: E.n ? S.n + '・' + E.n : S.n });
+}
+const VAR = Object.fromEntries(VARS.map(v => [v.id, v]));
+
+// =====================================================================
+// difficulty: one scale for stages and free play alike. Free play's levels sit at stages 10, 30, 60 and 100.
+// =====================================================================
+function diffAt(lv) {
+  const s = clamp((lv - 1) / 149, 0, 1);
+  return {
+    s,
+    // gentle at first, then climbing hard from the middle on: the middle takes days to learn, the last stretch months.
+    // Same end points at stage 150 as before; the middle now rises earlier.
+    spd: .84 + .3 * s + .57 * Math.pow(s, 1.3),             // shot speed
+    gap: 1.22 - .75 * s - .15 * s * s,                      // rest between attacks
+    den: .9 + .7 * s + 1.4 * Math.pow(s, 1.3),              // shots per volley
+    warn: 1.12 - .5 * s - .1 * s * s,                       // warning time of beams, strikes and charges
+    red: lv < 3 ? 0 : Math.min(.8, .22 + .58 * s),
+    layer: lv < 12 ? 0 : Math.min(.85, .05 + .8 * Math.pow((lv - 12) / 138, .7)),   // chance that a second volley overlaps the first
+    hpK: .85 + .5 * s,
+  };
 }
 
 const NAMES = `小鬼 豆狸 鬼火 狐火 一ツ目 赤舌 河童 唐傘 提灯火 天邪鬼
@@ -319,6 +499,8 @@ const NAMES = `小鬼 豆狸 鬼火 狐火 一ツ目 赤舌 河童 唐傘 提灯
 // hand-placed stages; everything else is composed from what has been introduced so far.
 // seal: forms with a permanent seal — P parry / D dash / S slash, on 'all' forms or the 'last' one.
 const OVR = {
+  // early stages that measured far above their neighbours are evened out (from stage 20 on, spikes are kept on purpose)
+  15: { temper: '均衡', noCharge: true },
   45: { rules: { survive: 40 } },
   55: { seal: { D: 'last' } },
   65: { rules: { limit: true } },
@@ -351,14 +533,14 @@ const FINAL_SEAL = { 30: 'D', 70: 'P', 100: 'D', 120: 'P', 140: 'D', 150: 'A' };
 // enemies that fight through launchers in their last form (count of launchers)
 const LAUNCH = { 59: 7, 75: 5, 109: 6, 142: 8, 147: 5 };
 const FORM_SP = ['shield', 'counter', 'clones', 'regen', 'invisible', 'mirror'];
-// temperaments: how an enemy paces itself (multipliers on the original game's 普通)
+// temperaments: how an enemy paces itself, as multipliers around its stage's level
 const TEMPER = [
-  { name: '速射', spd: [1.15, 1.35], gap: [1.1, 1.4], den: [.8, 1.0], warn: [.9, 1.05] },
-  { name: '連撃', spd: [.75, .9], gap: [.55, .75], den: [.85, 1.05], warn: [.95, 1.1] },
-  { name: '重厚', spd: [.75, .9], gap: [1.1, 1.4], den: [1.3, 1.6], warn: [1.0, 1.15] },
-  { name: '均衡', spd: [.95, 1.1], gap: [.8, 1.0], den: [1.0, 1.2], warn: [.9, 1.05] },
-  { name: '気まぐれ', spd: [.85, 1.25], gap: [.6, 1.3], den: [.9, 1.3], warn: [.85, 1.1], jit: true },
-];
+  { name: '速射', spd: [1.08, 1.18], gap: [1.05, 1.2], den: [.85, .95], warn: [.95, 1.0] },
+  { name: '連撃', spd: [.88, .95], gap: [.75, .88], den: [.92, 1.02], warn: [1.0, 1.05] },
+  { name: '重厚', spd: [.86, .94], gap: [1.08, 1.2], den: [1.15, 1.3], warn: [1.02, 1.08] },
+  { name: '均衡', spd: [.97, 1.03], gap: [.95, 1.05], den: [.97, 1.05], warn: [.97, 1.03] },
+  { name: '気まぐれ', spd: [.9, 1.1], gap: [.8, 1.15], den: [.92, 1.1], warn: [.95, 1.05], jit: true },
+]
 
 // =====================================================================
 // unique barrages (固有弾幕). `gens` are the generic skills that suit each one and get used alongside it.
@@ -376,17 +558,17 @@ const REC = {
   spokes: { gens: ['cross', 'wind'], fn: I => { const arms = Math.round(6 * Math.min(1.4, I)), dir = Math.random() < .5 ? 1 : -1, base = Math.random() * TAU; for (let s = 0, k = 0; s < 2.2; s += .09, k++) { const kk = k; at(s, () => { const o = ORG(); for (let a = 0; a < arms; a++) shootFrom(o.x, o.y, base + dir * kk * .09 + a * TAU / arms, 150 * SPD(), K()); }); } at(0, () => sfx('shot')); return 2.5; } },
   lanternmines: { gens: ['mines', 'chase'], fn: I => { const n = NN(6 * I), cx = P.x, cy = P.y; at(0, () => { const o = ORG(); for (let i = 0; i < n; i++) { const a = i / n * TAU, tx = clamp(cx + Math.cos(a) * 150, 30, W - 30), ty = clamp(cy + Math.sin(a) * 150, 60, H - 30), d = Math.hypot(tx - o.x, ty - o.y); const b = shootFrom(o.x, o.y, Math.atan2(ty - o.y, tx - o.x), d * 3.2, 'r'); b.brake = true; b.mine = 1.6 + i * .12; b.life = 7; } sfx('shot'); }); at(.9, () => fireShape('plain')); return 2.8; } },
   reverseaim: { gens: ['reflow', 'boomerang', 'reverse'], fn: I => { const n = NN(16 * I); for (let w = 0; w < 2; w++) at(w * .7, () => { const o = ORG(), off = Math.random() * TAU; for (let i = 0; i < n; i++) { const b = shootFrom(o.x, o.y, off + i / n * TAU, 190 * SPD(), K()); b.boom = { t: .7 + w * .1, done: false, aim: true }; } sfx('shot'); }); return 2.4; } },
-  crescents: { gens: ['needle', 'accel', 'snipe'], fn: I => { for (let k = 0; k < 3; k++) at(k * .28, () => { const o = ORG(), a0 = aimFrom(o.x, o.y) + (k - 1) * .25, m = Math.round(7 * I); for (let i = 0; i < m; i++) { const b = shootFrom(o.x, o.y, a0 + (i - (m - 1) / 2) * .09, (330 + Math.abs(i - (m - 1) / 2) * 25) * SPD(), K()); b.needle = true; b.r = 4; } sfx('shot'); }); return 1.6; } },
+  crescents: { gens: ['needle', 'accel', 'snipe'], fn: I => { for (let k = 0; k < 3; k++) at(k * .28, () => { const o = ORG(), a0 = aimFrom(o.x, o.y) + (k - 1) * .25, m = Math.round(7 * I); for (let i = 0; i < m; i++) { const b = shootFrom(o.x, o.y, a0 + (i - (m - 1) / 2) * .11, (270 + Math.abs(i - (m - 1) / 2) * 22) * SPD(), K()); b.needle = true; b.r = 4; } sfx('shot'); }); return 1.6; } },
   bite: { gens: ['encircle', 'redbig'], fn: I => { at(0, () => { const cx = P.x, cy = P.y, n = Math.round(12 * I); for (const side of [-1, 1]) for (let i = 0; i < n; i++) { const a = (side < 0 ? Math.PI : 0) + (i / (n - 1) - .5) * 1.6; const b = shootFrom(cx + Math.cos(a) * 230, cy + Math.sin(a) * 230, a + Math.PI, 170 * SPD(), 'r'); b.grace = 3; } sfx('warn'); }); at(.6, () => fireShape('plain', { kind: whiteOnly })); return 2.2; } },
   thunderchain: { gens: ['thunder', 'chainzone', 'chase'], fn: I => { const o = ORG(); for (const off of [-.35, .35]) { const a = aimFrom(o.x, o.y) + off; for (let i = 1; i <= 7; i++) at(i * .12, () => zone(o.x + Math.cos(a) * i * 65, o.y + Math.sin(a) * i * 65, { r: 36, warn: .6 * F.warn })); } at(0, () => sfx('warn')); at(.7, () => zone(P.x, P.y, { r: 46 })); at(1.0, () => fireShape('needle')); return 2.4; } },
   rolltrail: { gens: ['charge', 'trail', 'mines'], fn: I => { startCharge(); B.trail = .07 / I; return 2.4; } },
-  tide: { gens: ['wave', 'wall', 'blue'], fn: I => { const left = Math.random() < .5, x0 = left ? -10 : W + 10, a = left ? 0 : Math.PI; let gy = 150 + Math.random() * 300; const rows = Math.round(4 * I); for (let r = 0; r < rows; r++) at(r * .75, () => { gy = clamp(gy + (Math.random() - .5) * 160, 90, H - 60); for (let y = 40; y < H; y += 16) { if (Math.abs(y - gy) < 46) continue; shootFrom(x0, y, a, 140 * SPD(), K()).grace = 7; } sfx('shot'); }); return rows * .75 + 1; } },
-  shiftrain: { gens: ['wind', 'slow', 'blue'], fn: I => { let gx = P.x; const dur = 2.8, n = Math.round(46 * I), drift = (Math.random() < .5 ? -1 : 1) * 90; for (let i = 0; i < n; i++) at(i / n * dur, () => { gx = clamp(gx + drift * dur / n, 80, W - 80); let x; do x = 20 + Math.random() * (W - 40); while (Math.abs(x - gx) < 55); shootFrom(x, 36, Math.PI / 2, 210 * SPD(), K()); }); at(0, () => sfx('shot')); return dur + .6; } },
+  tide: { gens: ['wave', 'wall', 'blue'], fn: I => { const left = Math.random() < .5, x0 = left ? -10 : W + 10, a = left ? 0 : Math.PI; const gy = cell(150 + Math.random() * 300); const rows = Math.round(4 * I); for (let r = 0; r < rows; r++) at(r * .75, () => { gy.v = clamp(gy.v + (Math.random() - .5) * 160, 90, H - 60); for (let y = 40; y < H; y += 16) { if (Math.abs(y - gy.v) < 46) continue; shootFrom(x0, y, a, 140 * SPD(), K()).grace = 7; } sfx('shot'); }); return rows * .75 + 1; } },
+  shiftrain: { gens: ['wind', 'slow', 'blue'], fn: I => { const gx = cell(P.x); const dur = 2.8, n = Math.round(46 * I), drift = (Math.random() < .5 ? -1 : 1) * 90; for (let i = 0; i < n; i++) at(i / n * dur, () => { gx.v = clamp(gx.v + drift * dur / n, 80, W - 80); let x; do x = 20 + Math.random() * (W - 40); while (Math.abs(x - gx.v) < 55); shootFrom(x, 36, Math.PI / 2, 210 * SPD(), K()); }); at(0, () => sfx('shot')); return dur + .6; } },
   ribbon: { gens: ['wave', 'well', 'orbit'], fn: I => { const cx = P.x, cy = P.y, n = Math.round(36 * I), dir = Math.random() < .5 ? 1 : -1; for (let i = 0; i < n; i++) at(i * .04, () => { const a = dir * i * .35, b = shootFrom(cx + Math.cos(a) * 240, cy + Math.sin(a) * 240, a + Math.PI + dir * .5, 120 * SPD(), K()); b.grace = 4; }); at(0, () => sfx('warn')); return n * .04 + 1.2; } },
   edgewheel: { gens: ['turret', 'cross'], fn: I => { const n = Math.round(30 * I), s0 = Math.random(); for (let i = 0; i < n; i++) at(i * .07, () => { const p = edgePoint((s0 + i / n) % 1); shootFrom(p.x, p.y, aimFrom(p.x, p.y) + (Math.random() - .5) * .3, 170 * SPD(), K()).grace = 1; if (i % 5 === 0) burst(p.x, p.y, C.kin, 3, 80, .3); }); return n * .07 + .6; } },
   hairspray: { gens: ['ghost', 'ink', 'dark'], fn: I => { const n = Math.round(40 * I); for (let i = 0; i < n; i++) at(i * .035, () => { const o = ORG(), b = shootFrom(o.x, o.y, aimFrom(o.x, o.y) + (Math.random() - .5) * 1.8, (60 + Math.random() * 90) * SPD(), K()); b.ghost = Math.random() < .4; }); at(0, () => sfx('shot')); return n * .035 + 1; } },
   cleaver: { gens: ['boomerang', 'bigorb', 'charge'], fn: I => { const m = Math.round(2 * I); for (let i = 0; i < m; i++) at(i * .4, () => { const o = ORG(), b = shootFrom(o.x, o.y, aimFrom(o.x, o.y) + (i - (m - 1) / 2) * .4, 300 * SPD(), 'r'); b.r = 14; b.boom = { t: .75, done: false }; b.life = 4; sfx('shot'); }); at(.3, () => fireShape('plain')); return 2.2; } },
-  serpent: { gens: ['homing', 'wave', 'tether'], fn: I => { let ang = aimAng(); const dur = 2.2, n = Math.round(40 * I); for (let i = 0; i < n; i++) at(i / n * dur, () => { const o = ORG(); let d = aimFrom(o.x, o.y) - ang; d = Math.atan2(Math.sin(d), Math.cos(d)); ang += clamp(d, -.09, .09); shootFrom(o.x, o.y, ang, 230 * SPD(), K()); }); at(0, () => sfx('shot')); return dur + .5; } },
+  serpent: { gens: ['homing', 'wave', 'tether'], fn: I => { const ang = cell(aimAng()); const dur = 2.2, n = Math.round(40 * I); for (let i = 0; i < n; i++) at(i / n * dur, () => { const o = ORG(); let d = aimFrom(o.x, o.y) - ang.v; d = Math.atan2(Math.sin(d), Math.cos(d)); ang.v += clamp(d, -.09, .09); shootFrom(o.x, o.y, ang.v, 230 * SPD(), K()); }); at(0, () => sfx('shot')); return dur + .5; } },
   whitepure: { gens: ['stopgo', 'accel'], fn: I => { const n = NN(18 * I); for (let w = 0; w < 4; w++) at(w * .4, () => { const o = ORG(), off = w * Math.PI / n; for (let i = 0; i < n; i++) shootFrom(o.x, o.y, off + i / n * TAU, (150 + w * 15) * SPD(), 'w'); sfx('shot'); }); return 2.2; } },
   dropfrom: { gens: ['thunder', 'gravity', 'curse'], fn: I => { const k = Math.round(3 * I); for (let j = 0; j < k; j++) at(j * .6, () => { const x = P.x; zone(x, P.y, { r: 40, warn: .7 * F.warn }); for (let i = 0; i < 8; i++) at(.35 + i * .05, () => shootFrom(x + (Math.random() - .5) * 50, 36, Math.PI / 2, (300 + i * 15) * SPD(), K())); }); return k * .6 + 1; } },
   feathers: { gens: ['wind', 'needle', 'split'], fn: I => { for (let w = 0; w < 6; w++) at(w * .22, () => { const o = ORG(), side = w % 2 ? 1 : -1, ox = o.x + side * 40, a0 = aimFrom(ox, o.y), m = Math.round(5 * I); for (let i = 0; i < m; i++) { const b = shootFrom(ox, o.y, a0 + side * .2 + (i - (m - 1) / 2) * .12, 280 * SPD(), K()); b.needle = true; b.r = 4; } sfx('shot'); }); return 1.9; } },
@@ -394,8 +576,8 @@ const REC = {
   rage: { gens: ['charge', 'redonly', 'redsplit'], fn: I => { for (let w = 0; w < 6; w++) at(w * .25, () => { const o = ORG(); if (w % 2) { const n = NN(12 * I), off = Math.random() * TAU; for (let i = 0; i < n; i++) shootFrom(o.x, o.y, off + i / n * TAU, 200 * SPD(), K()); } else { const a0 = aimFrom(o.x, o.y), m = NN(5 * I); for (let i = 0; i < m; i++) shootFrom(o.x, o.y, a0 + (i - (m - 1) / 2) * .15, 250 * SPD(), K()); } sfx('shot'); }); return 2.0; } },
   oniclub: { gens: ['charge', 'redbig', 'shrink'], fn: I => { const k = Math.round(2 * I); for (let j = 0; j < k; j++) at(j * .9, () => { const x = clamp(P.x + (Math.random() - .5) * 120, 60, W - 60), y = clamp(P.y + (Math.random() - .5) * 90, 90, H - 50); zone(x, y, { r: 50, warn: .75 * F.warn }); at(.75 * F.warn, () => { const n = NN(16), off = Math.random() * TAU; for (let i = 0; i < n; i++) shootFrom(x, y, off + i / n * TAU, 150 * SPD(), K()); addShake(6); }); }); return k * .9 + 1.2; } },
   bluetide: { gens: ['blue', 'bluebeam', 'shrink'], fn: I => { const side = ['left', 'right', 'top'][Math.random() * 3 | 0]; at(0, () => { if (side === 'top') { const gx = 120 + Math.random() * (W - 240); for (let x = 4; x < W; x += 15) if (Math.abs(x - gx) >= 50) shootFrom(x, 36, Math.PI / 2, 90 * SPD(), 'b').grace = 9; } else { const gy = 110 + Math.random() * (H - 200), x0 = side === 'left' ? -10 : W + 10, a = side === 'left' ? 0 : Math.PI; for (let y = 40; y < H; y += 15) if (Math.abs(y - gy) >= 50) shootFrom(x0, y, a, 90 * SPD(), 'b').grace = 9; } sfx('warn'); }); at(.8, () => fireShape('plain', { kind: whiteOnly })); at(2.2, () => fireShape('plain', { kind: whiteOnly })); return 3.6; } },
-  bonespear: { gens: ['blue', 'needle', 'sweep'], fn: I => { const k = Math.round(4 * I); for (let j = 0; j < k; j++) at(j * .45, () => { const left = j % 2 === 0, y = clamp(P.y + (Math.random() - .5) * 60, 60, H - 30); for (let i = -2; i <= 2; i++) { const b = shootFrom(left ? -5 : W + 5, y + i * 14, left ? 0 : Math.PI, 330 * SPD(), 'b'); b.needle = true; b.r = 4; b.grace = 3; } sfx('shot'); }); return k * .45 + 1; } },
-  web: { gens: ['slow', 'tether', 'lattice'], fn: I => { const cx = P.x, cy = P.y; at(0, () => { for (let r = 1; r <= 2; r++) { const n = Math.round(10 * r * I); for (let i = 0; i < n; i++) { const a = i / n * TAU, b = shootFrom(cx + Math.cos(a) * r * 85, cy + Math.sin(a) * r * 85, 0, 0, K()); b.grace = 4; b.stop = { t: 1.1, wait: 0, spd: 120 * SPD(), phase: 1 }; } } sfx('warn'); }); return 2.4; } },
+  bonespear: { gens: ['blue', 'needle', 'sweep'], fn: I => { const k = Math.round(3 * I); for (let j = 0; j < k; j++) at(j * .6, () => { const left = j % 2 === 0, y = clamp(P.y + (Math.random() - .5) * 60, 60, H - 30); for (let i = -2; i <= 2; i++) { const b = shootFrom(left ? -5 : W + 5, y + i * 14, left ? 0 : Math.PI, 260 * SPD(), 'b'); b.needle = true; b.r = 4; b.grace = 3; } sfx('shot'); }); return k * .6 + 1; } },
+  web: { gens: ['slow', 'tether', 'lattice'], fn: I => { const cx = P.x, cy = P.y; at(0, () => { for (let r = 1; r <= 2; r++) { const n = Math.round(7 * r * Math.min(1.3, I)); for (let i = 0; i < n; i++) { const a = i / n * TAU, b = shootFrom(cx + Math.cos(a) * r * 85, cy + Math.sin(a) * r * 85, 0, 0, K()); b.grace = 4; b.stop = { t: 1.1, wait: 0, spd: 120 * SPD(), phase: 1 }; } } sfx('warn'); }); return 2.4; } },
   ratswarm: { gens: ['homing', 'split', 'accel'], fn: I => { const n = NN(10 * I); for (let i = 0; i < n; i++) at(i * .06, () => { const o = ORG(), b = shootFrom(o.x, o.y, aimFrom(o.x, o.y) + (Math.random() - .5) * 2.4, 240 * SPD(), K()); b.home = 1.2; b.turn = 3; b.r = 5; }); at(0, () => sfx('shot')); return n * .06 + 1; } },
   mirage: { gens: ['fake', 'swap', 'ghost'], fn: I => { for (let w = 0; w < 3; w++) at(w * .6, () => { const o = ORG(), pts = [{ x: o.x, y: o.y }, { x: W - o.x, y: o.y }, { x: o.x, y: 2 * CY - o.y }], m = NN(5 * I); pts.forEach((p, j) => { const a0 = aimFrom(p.x, p.y); for (let i = 0; i < m; i++) { const b = shootFrom(p.x, p.y, a0 + (i - (m - 1) / 2) * .2, 200 * SPD(), K()); if (j && b.kind === 'w' && Math.random() < .3) b.fake = true; } burst(p.x, p.y, C.mute, 4, 80, .3); }); sfx('shot'); }); return 2.2; } },
   triple: { gens: ['split', 'redsplit', 'swap'], fn: I => { let t = 0; for (const k of ['crescents', 'rage', 'swarmhome']) { at(t, () => REC[k].fn(I * .7)); t += .9; } return t + 1; } },
@@ -409,7 +591,63 @@ const REC = {
   judgment: { gens: ['sealAll', 'lattice', 'sealshot'], fn: I => { at(0, () => ATK.lattice()); at(1.2, () => REC.nails.fn(I * .8)); return 3.0; } },
   eightheads: { gens: ['homing', 'wave', 'redonly'], fn: I => { const base = Math.random() * TAU, m = Math.round(5 * I); for (let h = 0; h < 8; h++) at(h * .22, () => { const a = base + h / 8 * TAU, x = B.x + Math.cos(a) * 60, y = B.y + Math.sin(a) * 60; for (let i = 0; i < m; i++) at(i * .06, () => shootFrom(x, y, aimFrom(x, y), 240 * SPD(), K())); }); at(0, () => sfx('shot')); return 8 * .22 + 1; } },
   kekkai: { gens: ['bluebeam', 'wall', 'shrink'], fn: I => { at(0, () => { for (let i = 0; i < 3; i++) lasers.push({ x: -10, y: CY - 120 + i * 120 + (Math.random() - .5) * 30, ang: 0, warn: .9 * F.warn, act: 1.4, w: 16, t: 0, rot: 0, follow: false, snipe: false, blue: true }); sfx('warn'); }); at(1.0, () => fireShape('plain', { kind: whiteOnly })); return 2.8; } },
-  parade: { gens: [], fn: I => { const ks = Object.keys(REC).filter(k => k !== 'parade' && k !== 'pebbles' && k !== 'triple' && k !== 'judgment'), a = ks[Math.random() * ks.length | 0], b = ks[Math.random() * ks.length | 0]; const d = REC[a].fn(I); at(d * .8, () => REC[b].fn(I)); return d * .8 + 2.2; } },
+  // 百鬼夜行: the bosses of the 番付 file past, each with its own barrage, one on the heels of the last
+  parade: { gens: [], fn: I => { const lim = RUN && RUN.st ? RUN.st.n : 150, bs = BOSSES.filter(b => b < lim), picks = []; while (picks.length < Math.min(3, bs.length)) { const b = bs[Math.random() * bs.length | 0]; if (!picks.includes(b)) picks.push(b); } picks.forEach((b, k) => at(k * 2.1, () => { const e = ENEMY[b - 1]; pop(B.x, B.y - B.r - 18, e.name, C.kin, 16); REC[e.rec].fn(I * .7); })); return picks.length * 2.1 + 1.6; } },
+  // 逢魔の大輪: slow-turning beams with a white and a red spiral turning the other way between them
+  grandwheel: { gens: [], min: 151, fn: I => { const dur = 3.6, n = Math.round(30 * I), dir = Math.random() < .5 ? 1 : -1, base = Math.random() * TAU; at(0, () => { for (let i = 0; i < 4; i++) laser(base + i * TAU / 4, { warn: 1.1 * F.warn, act: dur, w: 16, rot: dir * .4, follow: true }); sfx('warn'); }); for (let k = 0; k < n; k++) at(1.1 + k / n * (dur - .4), () => { const o = ORG(); for (let a = 0; a < 3; a++) { shootFrom(o.x, o.y, base + dir * k * .21 + a * TAU / 3, 150 * SPD(), 'w'); shootFrom(o.x, o.y, base - dir * k * .17 + a * TAU / 3 + .5, 120 * SPD(), 'r'); } }); return dur + 1.6; } },
+  // 百鬼の行列: rings of shots march across the floor in rows, one row always left empty
+  procession: { gens: [], min: 151, fn: I => { const rows = 5, bd = bounds(), step = (bd.y1 - bd.y0 - 40) / rows, free = Math.random() * rows | 0, v = 110 * SPD() * Math.min(1.25, I); let j = 0; for (let r = 0; r < rows; r++) { if (r === free) continue; const y = bd.y0 + 20 + step * (r + .5), left = j++ % 2 === 0; for (let k = 0; k < 3; k++) at(k * .9 + j * .15, () => { const x0 = left ? -20 : W + 20, a = left ? 0 : Math.PI; for (let i = 0; i < 6; i++) { const b = shootFrom(x0, y, 0, 0, K()); b.orbc = { cx: x0, cy: y, vx: Math.cos(a) * v, vy: 0, ang: i / 6 * TAU, w: 2, r: 0 }; b.grace = 9; b.life = 12; } }); } at(.5, () => fireShape('plain', { kind: whiteOnly })); return 3.8; } },
+};
+// the bosses of the 番付 (every tenth stage before the last), whose barrages 百鬼夜行 calls up
+const BOSSES = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140];
+// further unique barrages; min: the first stage that may carry one
+Object.assign(REC, {
+  lotus: { gens: ['stopgo', 'curve'], min: 1, fn: I => { const n = NN(8 * I); for (let w = 0; w < 3; w++) at(w * .45, () => { const o = ORG(), off = Math.random() * TAU, dir = w % 2 ? 1 : -1; for (let i = 0; i < n; i++) for (const k of [.6, 1]) { const b = shootFrom(o.x, o.y, off + i / n * TAU, 150 * k * SPD(), K()); b.curve = dir * .9; b.curveT = 1.1; } sfx('shot'); }); return 2.6; } },
+  pendulum: { gens: ['wave', 'pulse'], min: 4, fn: I => { const dur = 2.6, n = Math.round(44 * I), a0 = aimAng(); for (let i = 0; i < n; i++) at(i / n * dur, () => { const o = ORG(), k = i / n; shootFrom(o.x, o.y, a0 + Math.sin(k * TAU * 1.5) * (.3 + 1.1 * k), 200 * SPD(), K()); }); at(0, () => sfx('shot')); return dur + .5; } },
+  mirrorfan: { gens: ['needle', 'accel'], min: 6, fn: I => { for (let v = 0; v < 3; v++) at(v * .55, () => { const m = NN(5 * I) | 1; for (const x of [40, W - 40]) { const y = clamp(P.y + (Math.random() - .5) * 120, 70, H - 40), a0 = aimFrom(x, y); for (let i = 0; i < m; i++) shootFrom(x, y, a0 + (i - (m - 1) / 2) * .16, 200 * SPD(), K()).grace = 1; } sfx('shot'); }); return 2.1; } },
+  meteor: { gens: ['gravity', 'bigorb'], min: 8, fn: I => { const k = Math.round(3 * I); for (let j = 0; j < k; j++) at(j * .55, () => { const x = clamp(P.x + (Math.random() - .5) * 300, 40, W - 40), v = 170 * SPD(), b = shootFrom(x, 36, Math.PI / 2 + (Math.random() - .5) * .5, v, 'r'); b.r = 14; b.grace = 2; b.burst = { t: Math.max(.6, (P.y - 120) / v), n: NN(10), spd: 150 * SPD() }; sfx('warn'); }); return k * .55 + 1.4; } },
+  petalrain: { gens: ['wave', 'curve'], min: 10, fn: I => { const n = Math.round(36 * I), dur = 2.8; for (let i = 0; i < n; i++) at(i / n * dur, () => { const a = Math.PI / 2 + (Math.random() - .5) * .3, b = shootFrom(20 + Math.random() * (W - 40), 36, a, 0, 'w'); b.wv = { a, s: (110 + Math.random() * 50) * SPD(), amp: 45, fr: 3 + Math.random() * 2, t: 0, ph: Math.random() * 6 }; b.grace = 1; }); at(.6, () => fireShape('plain')); return dur + .6; } },
+  ricochet: { gens: ['bounce', 'wallsplit'], min: 11, fn: I => { for (let v = 0; v < 3; v++) at(v * .5, () => { const o = ORG(), m = NN(4 * I), a0 = aimFrom(o.x, o.y); for (let i = 0; i < m; i++) shootFrom(o.x, o.y, a0 + (i - (m - 1) / 2) * .3, 240 * SPD(), 'w').bounce = 2; sfx('shot'); }); return 2.2; } },
+  clockhand: { gens: ['cross', 'swirl'], min: 12, fn: I => { const dur = 3, base = Math.random() * TAU, dir = Math.random() < .5 ? 1 : -1, n = Math.round(30 * Math.min(1.5, I)); for (let k = 0; k < n; k++) at(k / n * dur, () => { const o = ORG(); shootFrom(o.x, o.y, base + dir * k * .07, 170 * SPD(), K()); shootFrom(o.x, o.y, base + Math.PI + dir * k * .19, 140 * SPD(), K()); }); at(0, () => sfx('shot')); return dur + .4; } },
+  swarmring: { gens: ['ring', 'mines'], min: 13, fn: I => { const k = Math.round(4 * I); for (let j = 0; j < k; j++) at(j * .4, () => { const bd = bounds(); let x, y, tries = 0; do { x = bd.x0 + 60 + Math.random() * (bd.x1 - bd.x0 - 120); y = bd.y0 + 40 + Math.random() * (bd.y1 - bd.y0) * .55; } while (Math.hypot(x - P.x, y - P.y) < 170 && ++tries < 8); if (tries >= 8) return; burstRing(x, y, NN(10), 130 * SPD()); sfx('shot'); }); return k * .4 + 1.2; } },
+  starfall: { gens: ['thunder', 'chainzone'], min: 15, fn: I => { const cx = P.x, cy = P.y; for (let i = 0; i < 5; i++) at(i * .12, () => { const a = -Math.PI / 2 + i * TAU / 5 * 2; zone(cx + Math.cos(a) * 115, cy + Math.sin(a) * 115, { r: 40, warn: .8 * F.warn }); }); at(.75, () => zone(cx, cy, { r: 38, warn: .6 * F.warn })); at(.3, () => sfx('warn')); at(1.0, () => fireShape('plain')); return 2.4; } },
+  twinserp: { gens: ['curve', 'wave'], min: 16, fn: I => { const dur = 2.4, n = Math.round(32 * I); for (const side of [-1, 1]) { const st = cell(aimAng() + side * .9); for (let i = 0; i < n; i++) at(i / n * dur, () => { const o = ORG(), x = o.x + side * 40; let d = aimFrom(x, o.y) - st.v; d = Math.atan2(Math.sin(d), Math.cos(d)); st.v += clamp(d, -.07, .07); shootFrom(x, o.y, st.v, 220 * SPD(), K()); }); } at(0, () => sfx('shot')); return dur + .5; } },
+  shutter: { gens: ['rows', 'stutter'], min: 18, fn: I => { const rows = Math.round(4 * I); for (let r = 0; r < rows; r++) at(r * .7, () => { const left = r % 2 === 0, x0 = left ? -10 : W + 10, a = left ? 0 : Math.PI, gy = clamp(P.y + (Math.random() - .5) * 140, 80, H - 50); for (let y = 50 + (r % 2) * 20; y < H - 10; y += 40) { if (Math.abs(y - gy) < 45) continue; shootFrom(x0, y, a, 170 * SPD(), K()).grace = 6; } sfx('shot'); }); return rows * .7 + 1.2; } },
+  cometchase: { gens: ['homing', 'dropper'], min: 20, fn: I => { const k = Math.round(1.5 * I); for (let j = 0; j < k; j++) at(j * 1.2, () => { const o = ORG(), b = shootFrom(o.x, o.y, aimFrom(o.x, o.y), 120 * SPD(), 'w'); b.r = 16; b.big = true; b.split = 3.2; b.home = 2.8; b.turn = 1.1; b.drop = { every: .24, t: .24, kind: 'r', left: 11 }; sfx('warn'); }); at(.5, () => fireShape('plain')); return k * 1.2 + 2.4; } },
+  lantern2: { gens: ['bigorb', 'mines'], min: 20, fn: I => { const k = Math.round(4 * I); for (let j = 0; j < k; j++) at(j * .4, () => { const o = ORG(), a = aimFrom(o.x, o.y) + (Math.random() - .5) * 1.6, b = shootFrom(o.x, o.y, a, 0, 'w'); b.r = 13; b.burst = { t: 1.6 + Math.random() * .6, n: NN(8), spd: 140 * SPD() }; b.wv = { a, s: 70 * SPD(), amp: 25, fr: 2, t: 0, ph: Math.random() * 6 }; }); at(0, () => sfx('warn')); return k * .4 + 2.4; } },
+  bellring: { gens: ['stopgo', 'decel'], min: 22, fn: I => { const n = NN(20 * I); for (let w = 0; w < 2; w++) at(w * 1.0, () => { const o = ORG(), off = Math.random() * TAU; for (let i = 0; i < n; i++) { const a = off + i / n * TAU, b = shootFrom(o.x, o.y, a, 260 * SPD(), K()); b.stop = { t: .45, wait: .5, spd: 150 * SPD(), phase: 0, ang: a + (i % 2 ? .25 : -.25) }; } sfx('shot'); }); return 2.6; } },
+  thornwall: { gens: ['redonly', 'stutter'], min: 24, fn: I => { const rows = Math.round(3 * I); let g0 = P.x; for (let r = 0; r < rows; r++) { const gx = clamp(g0 + (r % 2 ? 1 : -1) * (110 + Math.random() * 70), 80, W - 80); g0 = gx; at(r * .9, () => { for (let x = 6; x < W; x += 15) { if (Math.abs(x - gx) < 52) continue; shootFrom(x, 36, Math.PI / 2, 120 * SPD(), (x / 15 | 0) % 3 ? 'r' : 'w').grace = 6; } sfx('warn'); }); } return rows * .9 + 1.6; } },
+  dragonbreath: { gens: ['grow', 'redonly'], min: 26, fn: I => { const dur = 2.2, n = Math.round(50 * I), a0 = aimAng(), dir = Math.random() < .5 ? 1 : -1; for (let i = 0; i < n; i++) at(i / n * dur, () => { const o = ORG(), k = i / n, b = shootFrom(o.x, o.y, a0 + dir * (k - .5) * 1.6 + (Math.random() - .5) * .35, (150 + Math.random() * 80) * SPD(), K()); b.growR = { to: b.r * 1.8, rate: 9 }; }); at(0, () => sfx('shot')); return dur + .5; } },
+  gate: { gens: ['laser', 'lattice'], min: 28, fn: I => { const gx = clamp(P.x, 160, W - 160); at(0, () => { for (const dx of [-95, 95]) lasers.push({ x: gx + dx, y: 30, ang: Math.PI / 2, warn: .9 * F.warn, act: 2.2, w: 18, t: 0, rot: 0, follow: false, snipe: false }); sfx('warn'); }); for (let k = 0; k < 4; k++) at(1.0 + k * .4, () => { for (let i = 0; i < 3; i++) shootFrom(gx + (i - 1) * 40, 36, Math.PI / 2, 190 * SPD(), K()).grace = 2; }); return 3.4; } },
+  whirlpool: { gens: ['swirl', 'curve'], min: 30, fn: I => { const n = NN(18 * I), dir = Math.random() < .5 ? 1 : -1; for (let w = 0; w < 2; w++) at(w * 1.1, () => { for (let i = 0; i < n; i++) { const a = i / n * TAU + w * .3, x = W / 2 + Math.cos(a) * 300, y = CY + Math.sin(a) * 225, b = shootFrom(x, y, a + Math.PI + dir * .9, 110 * SPD(), K()); b.grace = 4; b.curve = -dir * .35; b.curveT = 3; } sfx('warn'); }); return 3.4; } },
+  echoshot: { gens: ['echo', 'needle'], min: 33, fn: I => { const m = NN(5 * I) | 1; for (let v = 0; v < 3; v++) { at(v * .7, () => { const o = ORG(), a0 = aimFrom(o.x, o.y); for (let i = 0; i < m; i++) shootFrom(o.x, o.y, a0 + (i - (m - 1) / 2) * .14, 210 * SPD(), K()); sfx('shot'); }); at(v * .7 + .35, () => { const o = ORG(), x = W - o.x, a0 = aimFrom(x, o.y); for (let i = 0; i < m; i++) shootFrom(x, o.y, a0 + (i - (m - 1) / 2) * .14, 210 * SPD(), K()); }); } return 2.6; } },
+  scissor: { gens: ['rows', 'needle'], min: 34, fn: I => { const m = Math.round(9 * I); for (let v = 0; v < 2; v++) at(v * 1.1, () => { for (const x0 of [30, W - 30]) { const y0 = 50, a = aimFrom(x0, y0), px = -Math.sin(a), py = Math.cos(a); for (let i = 0; i < m; i++) { const off = (i - (m - 1) / 2) * 26; shootFrom(x0 + px * off, y0 + py * off, a, 190 * SPD(), K()).grace = 2; } } sfx('shot'); }); return 2.8; } },
+  fold: { gens: ['boomerang', 'stopgo'], min: 35, fn: I => { const n = NN(14 * I); for (let w = 0; w < 2; w++) at(w * .8, () => { const o = ORG(), off = Math.random() * TAU, dir = w % 2 ? 1 : -1; for (let i = 0; i < n; i++) { const a = off + i / n * TAU, b = shootFrom(o.x, o.y, a, 220 * SPD(), K()); b.stop = { t: .5, wait: .25, spd: 170 * SPD(), phase: 0, ang: a + dir * 2.3 }; } sfx('shot'); }); return 2.6; } },
+  mandala: { gens: ['curve', 'swirl'], min: 38, fn: I => { const n = NN(12 * I); for (let w = 0; w < 4; w++) at(w * .35, () => { const o = ORG(), off = w * Math.PI / n, dir = w % 2 ? 1 : -1; for (let i = 0; i < n; i++) { const b = shootFrom(o.x, o.y, off + i / n * TAU, (120 + w * 18) * SPD(), K()); b.curve = dir * .5; b.curveT = 2; } sfx('shot'); }); return 2.4; } },
+  spiderline: { gens: ['needle', 'snipe'], min: 40, fn: I => { const k = Math.round(5 * I); for (let j = 0; j < k; j++) at(j * .35, () => { let p, tries = 0; do p = edgePoint(Math.random()); while (Math.hypot(p.x - P.x, p.y - P.y) < 260 && ++tries < 10); const s = 300 * SPD(), T = Math.hypot(P.x - p.x, P.y - p.y) / s, a = Math.atan2(P.y + P.lvy * T * .6 - p.y, P.x + P.lvx * T * .6 - p.x); for (let i = 0; i < 4; i++) { const b = shootFrom(p.x - Math.cos(a) * i * 14, p.y - Math.sin(a) * i * 14, a, s, K()); b.needle = true; b.r = 4; b.grace = 2; } sfx('shot'); }); return k * .35 + 1.2; } },
+  bloomburst: { gens: ['split', 'wallsplit'], min: 42, fn: I => { const k = Math.round(5 * I); for (let j = 0; j < k; j++) at(j * .35, () => { const o = ORG(), b = shootFrom(o.x, o.y, aimFrom(o.x, o.y) + (Math.random() - .5) * 1.4, 230 * SPD(), 'w'); b.r = 10; b.brake = true; b.burst = { t: .8 + Math.random() * .3, n: NN(12), spd: 150 * SPD() }; }); at(0, () => sfx('shot')); return k * .35 + 1.6; } },
+  tidecross: { gens: ['cross', 'pulse'], min: 45, fn: I => { const dur = 2.6, base = Math.random() * TAU, dir = Math.random() < .5 ? 1 : -1, n = Math.round(32 * Math.min(1.4, I)); for (let k = 0; k < n; k++) at(k / n * dur, () => { const o = ORG(), a = base + dir * Math.sin(k * .12) * 1.2; for (let d = 0; d < 4; d++) shootFrom(o.x, o.y, a + d * Math.PI / 2, 180 * SPD(), K()); }); at(0, () => sfx('shot')); return dur + .4; } },
+});
+// names a unique barrage can take when it is not an enemy's signature one: '<enemy>の<name>'
+const REC_NM = {
+  pebbles: ['石つぶて', '礫打ち'], calm: ['静寂', '波紋'], swarmhome: ['群れ火', '迷い火'], surround: ['取り囲み', '輪縛り'],
+  gazebeam: ['睨み', '眼光'], whip: ['鞭打ち', '舌打ち'], gravityarc: ['放り投げ', '水礫'], spokes: ['車輪', '傘回し'],
+  lanternmines: ['置き火', '灯し'], reverseaim: ['手返し', '裏返し'], crescents: ['三日月', '連鎌'], bite: ['噛み付き', '挟み込み'],
+  thunderchain: ['雷走り', '稲光'], rolltrail: ['轍', '転がり'], tide: ['引き潮', '高波'], shiftrain: ['にわか雨', '涙雨'],
+  ribbon: ['巻き付き', '渦紐'], edgewheel: ['火の輪', '縁回り'], hairspray: ['撒き散らし', '煙巻き'], cleaver: ['大鉈', '投げ刃'],
+  serpent: ['蛇行', '絡み付き'], whitepure: ['白波', '白嵐'], dropfrom: ['落とし', '降らし'], feathers: ['羽搏き', '羽根撃ち'],
+  predict: ['先回り', '読み撃ち'], rage: ['乱れ打ち', '怒涛'], oniclub: ['踏み鳴らし', '金棒'], bluetide: ['蒼波', '青潮'],
+  bonespear: ['骨槍', '串刺し'], web: ['蜘蛛の巣', '網張り'], ratswarm: ['群れ走り', '鼠算'], mirage: ['幻影', '影写し'],
+  triple: ['三面', '三つ巴'], sevenpts: ['七つ星', '行列'], ninetails: ['尾扇', '九尾'], timewarp: ['刻喰い', '時渡り'],
+  cage: ['籠目', '格子'], nails: ['釘打ち', '封じ札'], drunk: ['酔い舞', '千鳥足'], blizzard: ['吹雪', '雪礫'],
+  judgment: ['責め苦', '裁き'], eightheads: ['八つ首', '首振り'], kekkai: ['結界', '封門'], parade: ['夜行', '百鬼'],
+  lotus: ['蓮華', '蓮池'], pendulum: ['振り子', '揺り籠'], mirrorfan: ['合わせ鏡', '双扇'], meteor: ['流星', '隕石'],
+  petalrain: ['花吹雪', '桜吹雪'], ricochet: ['跳弾', '跳ね返り'], clockhand: ['時計回り', '針回し'], swarmring: ['群輪', '波紋撃ち'],
+  starfall: ['星降り', '五芒'], twinserp: ['双蛇', '二匹蛇'], shutter: ['格子戸', '引き戸'], cometchase: ['彗星', '箒星'],
+  lantern2: ['灯籠流し', '送り火'], bellring: ['鐘鳴り', '梵鐘'], thornwall: ['茨垣', '茨道'], dragonbreath: ['竜の息', '業火'],
+  gate: ['鳥居', '門'], whirlpool: ['鳴門', '大渦'], echoshot: ['木霊撃ち', '山彦撃ち'], scissor: ['鋏', '交差'],
+  fold: ['折り鶴', '折り返し'], mandala: ['曼荼羅', '輪廻'], spiderline: ['糸引き', '張り糸'], bloomburst: ['百花', '花火'],
+  tidecross: ['渦十字', '逆十字'],
 };
 // every enemy: its unique barrage and the name of that skill
 const ENEMY = `pebbles 小石投げ|pebbles 豆鉄砲|swarmhome 鬼火漂い|surround 狐火の輪|gazebeam 一ツ目の凝視|whip 赤舌なめ|gravityarc 河童の水礫|spokes 唐傘回し|lanternmines 提灯並べ|reverseaim 天邪鬼の手返し
@@ -446,65 +684,132 @@ const TACTICS = {
   creep: { need: ['mines'], fn: () => { for (let w = 0; w < 5; w++) at(w * .55, () => { const o = ORG(), n = NN(14), off = w * .2; for (let i = 0; i < n; i++) shootFrom(o.x, o.y, off + i / n * TAU, 90 * SPD(), K()); if (w % 2) { const b = shootFrom(o.x, o.y, aimFrom(o.x, o.y), 180, 'r'); b.brake = true; b.mine = 2.2; } sfx('shot'); }); return 3.4; } },
 };
 
-function buildStage(n) {
-  const rng = mulberry32(n * 7919 + 13), t = (n - 1) / 149, o = OVR[n] || {};
+// attacks that only a dash gets through: never used while the dash is sealed
+const ND = new Set(['wall', 'encircle', 'tac:herd', 'tac:pinsnipe']);
+// the first stage each unique recipe may be carried on
+const recMin = {};
+ENEMY.forEach((e, i) => { if (!(e.rec in recMin)) recMin[e.rec] = i + 1; });
+for (const k in REC) if (!(k in recMin)) recMin[k] = REC[k].min || 1;
+const META_REC = new Set(['parade', 'pebbles', 'triple', 'judgment']);
+// how long a final lasts: 20 s and up, bosses (every tenth) half as long again, the last one far longer
+const finalTarget = n => Math.round((20 + n * .75) * (n % 10 === 0 ? 1.35 : 1) * (n === 150 ? 1.5 : 1));
+
+// opt.free: a free-play bout at level n, drawn fresh each time
+function buildStage(n, opt = {}) {
+  const free = !!opt.free;
+  const rng = mulberry32(free ? opt.seed : n * 7919 + 13), t = (n - 1) / 149, o = free ? {} : OVR[n] || {};
   const pick = arr => arr[Math.floor(rng() * arr.length)];
   const R = (a, b) => a + rng() * (b - a);
+  const D = diffAt(n);
   const avail = ATK_IDS.filter(id => introAt[id] <= n);
-  const en = ENEMY[n - 1], rec = REC[en.rec];
-  // every enemy has its own barrage; only some carry it as a named skill of their own (固有技)
-  const skill = n === 150 || (n > 4 && (n % 10 === 0 || rng() < .33));
-  // generic skills that suit the unique barrage, used alongside it
-  let gens = (o.gens || rec.gens).filter(id => introAt[id] <= n);
-  if (en.rec === 'parade') gens = avail.slice();
-  const shapes = rollShapes(mulberry32(n * 104729 + 3), n);
-  // The stage number does not make shots faster, volleys closer, forms more numerous or life longer.
-  // Those come from the enemy's temperament; only the first few stages are held gentle.
-  const arch = pick(TEMPER);
-  const ease = Math.min(1, (n - 1) / 5);
-  const blend = (calm, v) => calm + (v - calm) * ease;
+  const techs = avail.filter(id => !isProp(id));
+  const en = free ? ENEMY[Math.floor(rng() * n)] : ENEMY[n - 1], name = free ? '自由稽古' : NAMES[n - 1] || ('鬼' + n);
+  // ---- unique barrages: the enemy's own, then one or two more of its kind ----
+  const I0 = 1 + Math.max(0, n - 90) / 60 * .6;
+  let ucount = free ? 3 : n <= 8 ? 1 : n <= 30 ? (rng() < .45 ? 2 : 1) : n <= 80 ? (rng() < .2 ? 3 : 2) : (rng() < .55 ? 3 : 2);
+  if (!free && n % 10 === 0) ucount = Math.min(3, ucount + 1);
+  const uniqs = [{ rec: en.rec, name: free ? en.name : en.name, I: I0 * 1.15 }];
+  const usedRec = new Set([en.rec]);
+  const vAvail = VARS.filter(v => v.intro <= n);
+  while (uniqs.length < ucount) {
+    // some unique skills are the enemy's own, stronger take on a beam or a charge
+    if (vAvail.length && rng() < .35) {
+      const v = pick(vAvail), un = (v.fam === 'L' ? BEAM_SHAPE : CHARGE_PATH)[v.a].un;
+      const nm = free ? v.name : name + 'の' + pick(un);
+      if (!uniqs.some(u => u.name === nm)) { uniqs.push({ var: v.id, name: nm, I: I0 * R(1, 1.15) }); continue; }
+    }
+    const cand = Object.keys(REC).filter(k => recMin[k] <= n && !usedRec.has(k) && !META_REC.has(k));
+    if (!cand.length) break;
+    const k = pick(cand); usedRec.add(k);
+    if (free) { const e2 = ENEMY.slice(0, n).find(e => e.rec === k); uniqs.push({ rec: k, name: e2 ? e2.name : REC_NM[k][0], I: I0 * R(.95, 1.1) }); }
+    else uniqs.push({ rec: k, name: name + 'の' + pick(REC_NM[k]), I: I0 * R(.9, 1.1) });
+  }
+  // 百鬼夜行 carries its own three
+  if (n === 150 && !free) uniqs.splice(0, uniqs.length, { rec: 'parade', name: '百鬼夜行', I: I0 * 1.1 }, { rec: 'grandwheel', name: '逢魔の大輪', I: I0 }, { rec: 'procession', name: '百鬼の行列', I: I0 });
+  // generic skills that suit the unique barrages, used alongside them
+  let gens = [...new Set(uniqs.flatMap(u => !u.rec ? [] : (o.gens && u === uniqs[0] ? o.gens : REC[u.rec].gens)))].filter(id => introAt[id] <= n);
+  if (en.rec === 'parade' || free) gens = avail.slice();
+  // ---- 汎用弾幕: this enemy's own handful, newer ones more likely ----
+  const rg = mulberry32((free ? opt.seed : n) * 104729 + 3);
+  const gAvail = GENS.filter(g => g.intro <= n), gRecent = gAvail.filter(g => g.intro >= n - 25);
+  const gk = n === 1 ? 2 : clamp(4 + Math.floor(n / 18), 4, 12);
+  const gset = [];
+  const emitN = {};
+  for (let tries = 0; gset.length < gk && tries < 400; tries++) {
+    const src = gRecent.length && rg() < .5 ? gRecent : gAvail, g = src[Math.floor(rg() * src.length)];
+    if (gset.includes(g.id) || (emitN[g.e] || 0) >= 2) continue;
+    if (n <= 2 && g.m !== 'plain') continue;
+    gset.push(g.id); emitN[g.e] = (emitN[g.e] || 0) + 1;
+  }
+  if (!gset.some(id => GEN[id].m === 'plain')) { const pl = gAvail.filter(g => g.m === 'plain'); gset[0] = pl[Math.floor(rg() * pl.length)].id; }
+  const ginst = {};
+  for (const id of gset) ginst[id] = withSize(rollShape(GEN[id].e, rg), rg);
+  // the plain layouts its covering fire is drawn from: one per layout it knows
+  const shapes = [...new Set(gset.map(id => GEN[id].e))].map(e => ginst[gset.find(id => GEN[id].e === e)]);
+  // ---- 派生形 it knows: a few beams and charges, more of them later on ----
+  const vset = [];
+  for (const [fam, cnt] of [['L', free ? 3 : n < 8 ? 0 : n < 40 ? 1 : n < 90 ? 2 : 3], ['C', free ? 3 : n < 5 ? 0 : n < 30 ? 1 : n < 80 ? 2 : 3]]) {
+    const src = vAvail.filter(v => v.fam === fam), recent = src.filter(v => v.intro >= n - 25);
+    for (let t = 0; t < 60 && src.length && vset.filter(id => VAR[id].fam === fam).length < cnt; t++) {
+      const from = recent.length && rng() < .5 ? recent : src, v = from[Math.floor(rng() * from.length)];
+      if (!vset.includes(v.id) && !vset.some(id => VAR[id].a === v.a)) vset.push(v.id);
+    }
+  }
+  // ---- 固有弾・固有光 ----
+  const bs = Object.keys(SIG).filter(k => SIG[k].k === 'b' && SIG[k].intro <= n), ls = Object.keys(SIG).filter(k => SIG[k].k === 'l' && SIG[k].intro <= n);
+  const bsig = pick(bs), lsig = n >= 8 && ls.length ? pick(ls) : '', sigEvery = pick([2, 3, 3, 4]);
+  // temperament: how the enemy paces itself around the stage's level
+  let arch = pick(TEMPER);
+  if (o.temper) arch = TEMPER.find(t => t.name === o.temper) || arch;
   const base = { spd: R(...arch.spd), gap: R(...arch.gap), den: R(...arch.den), warn: R(...arch.warn) };
-  const k = o.forms || (n <= 3 ? 1 : n <= 9 ? 1 + (rng() < .5 ? 1 : 0) : pick([1, 2, 2, 3, 3, 3, 4, 4, 5, 6]));
+  const k = o.forms || (free ? 3 : n <= 2 ? 1 : n <= 6 ? 2 : n <= 20 ? pick([2, 2, 3]) : n <= 50 ? pick([2, 3, 3, 4]) : n <= 100 ? pick([3, 3, 4, 4, 5]) : pick([3, 4, 5, 5, 6]));
   const survive = o.rules && o.rules.survive;
-  // the unique barrage grows heavier from stage 90, and stages 100+ are built to be learned
-  const I = 1 + Math.max(0, n - 90) / 60 * .6;
   const tacAvail = n >= 25 ? Object.keys(TACTICS).filter(id => TACTICS[id].need.every(x => introAt[x] <= n)) : [];
   const tacN = n < 25 ? 0 : n < 60 ? 1 : n < 100 ? 2 : 3;
   const tacs = []; for (let j = 0; j < tacN && tacAvail.length; j++) tacs.push('tac:' + pick(tacAvail));
   // this enemy's own take on every skill: how many, how big, how fast (shots, lightning, beams)
-  const vr = mulberry32(n * 2654435 + 11), VR = (a, b) => n <= 3 ? 1 : a + vr() * (b - a);
-  const V = { vn: VR(.75, 1.35), vsz: VR(.75, 1.5), vsp: VR(.85, 1.2), vz: VR(.75, 1.45), vw: VR(.7, 1.6) };
+  const vr = mulberry32((free ? opt.seed : n) * 2654435 + 11), VR = (a, b) => a + vr() * (b - a);
+  const V = { vn: VR(.85, 1.2), vsz: VR(.8, 1.35), vsp: VR(.92, 1.1), vz: VR(.85, 1.3), vw: VR(.8, 1.4) };
+  // toughness is one total for the enemy, set by its level alone; forms only split it where the attacks change
+  const total = Math.round((45 + 1.4 * n + .012 * n * n) * R(.9, 1.1));
+  const shares = Array.from({ length: k }, () => R(.8, 1.2)), shareSum = shares.reduce((a, b) => a + b, 0);
   const forms = [];
   for (let i = 0; i < k; i++) {
-    const hp = n === 1 ? 22 : n <= 5 ? Math.round(R(24, 34) + n * 3) : Math.round(R(30, 75));
-    const step = i * .04 * ease;
+    const hp = Math.max(8, Math.round(total * shares[i] / shareSum));
     let pool;
-    if (n <= 2) pool = ['uniq', 'plain'];
-    else if (o.old) pool = ['uniq', 'plain', 'charge', 'homing', 'stopgo'];
+    const us = uniqs.map((u, j) => 'u' + j).filter((u, j) => j <= i || i === k - 1);
+    // a few of the enemy's generic barrages, a different few each form
+    const gn = Math.min(gset.length, 2 + Math.min(i, 3));
+    const gs = []; for (let j = 0; j < gn; j++) gs.push('g:' + gset[(i * 2 + j) % gset.length]);
+    for (let j = 0; j < Math.min(vset.length, 1 + (i > 0)); j++) gs.push('v:' + vset[(i + j) % vset.length]);
+    if (n <= 2) pool = [...us, 'plain', ...gs];
+    else if (o.old) pool = [...us, 'plain', 'charge', 'homing', 'stopgo', ...gs.slice(0, 2)];
     else {
-      pool = ['uniq', 'plain', ...gens.slice(0, 2 + Math.min(i, 2))];
+      pool = [...us, 'plain', ...gs, ...gens.slice(0, 2 + Math.min(i, 2))];
       const extra = 1 + Math.floor(t * 2) + Math.min(i, 1);
-      for (let j = 0; j < extra; j++) pool.push(rng() < .55 ? pick(avail.slice(-10)) : pick(avail));
-      if (introAt.charge <= n && rng() < .45) pool.push('charge');
+      for (let j = 0; j < extra && techs.length; j++) pool.push(rng() < .55 ? pick(techs.slice(-8)) : pick(techs));
+      if (introAt.charge <= n && rng() < .45 && !o.noCharge) pool.push('charge');
       pool.push(...tacs.slice(0, 1 + i));
     }
     pool = [...new Set(pool.filter(Boolean))];
+    if (o.noCharge) pool = pool.filter(p => p !== 'charge');
     forms.push({
       name: ['一ノ型', '二ノ型', '三ノ型', '四ノ型', '五ノ型', '六ノ型'][i],
-      pool, gens, shapes, uniq: en.rec, uname: skill ? en.name : '', I,
-      spd: blend(.62, base.spd) * (1 + step), gap: blend(1.8, base.gap), warn: blend(1.35, base.warn),
-      den: blend(.5, (o.old ? .5 : 0) + base.den) * (1 + .35 * t) + step * 2,
-      red: o.white ? 0 : n < 6 ? 0 : Math.min(.82, .25 + .5 * t + step),
-      white: !!o.white, tier: 0, jit: !!arch.jit, ...V,
+      pool, gens, shapes, ginst, uniqs, bsig, lsig, sigEvery,
+      spd: D.spd * base.spd * (1 + i * .03), gap: D.gap * base.gap * (1 - i * .03), warn: D.warn * base.warn,
+      den: D.den * base.den * (1 + i * .05), red: o.white ? 0 : Math.min(.82, D.red + i * .02), layer: D.layer,
+      white: !!o.white, jit: !!arch.jit, ...V,
       hp, special: [],
     });
   }
   // specials
   const sp = new Set(o.special || []);
-  if (INTRO[n] === 'stones' || FORM_SP.includes(INTRO[n])) sp.add(INTRO[n]);
-  const specAvail = FORM_SP.filter(id => introAt[id] <= n);
-  if (!o.special && !INTRO[n] && n > 41 && specAvail.length && rng() < .28) sp.add(pick(specAvail));
-  if (!o.special && n > 90 && specAvail.length && rng() < .15) sp.add(pick(specAvail));
+  if (!free) {
+    if (INTRO[n] === 'stones' || FORM_SP.includes(INTRO[n])) sp.add(INTRO[n]);
+    const specAvail = FORM_SP.filter(id => introAt[id] <= n);
+    if (!o.special && !INTRO[n] && n > 41 && specAvail.length && rng() < .28) sp.add(pick(specAvail));
+    if (!o.special && n > 90 && specAvail.length && rng() < .15) sp.add(pick(specAvail));
+  }
   for (const s of sp) {
     const fi = k > 1 ? 1 + Math.floor(rng() * (k - 1)) : 0;
     const f = s === 'stones' || o.special ? forms[k - 1] : forms[fi];
@@ -514,35 +819,49 @@ function buildStage(n) {
   }
   // permanent seals only on these enemies' named forms
   const seal = Object.assign({}, o.seal || {});
-  if (INTRO[n] === 'sealPform') seal.P = 'last';
-  if (INTRO[n] === 'sealDform') seal.D = 'last';
-  if (INTRO[n] === 'sealSform') seal.S = 'last';
+  if (!free) {
+    if (INTRO[n] === 'sealPform') seal.P = 'last';
+    if (INTRO[n] === 'sealDform') seal.D = 'last';
+    if (INTRO[n] === 'sealSform') seal.S = 'last';
+  }
   for (const [key, id] of [['P', 'sealPform'], ['D', 'sealDform'], ['S', 'sealSform']]) {
     if (!seal[key]) continue;
     for (const f of seal[key] === 'all' ? forms : [forms[k - 1]]) { f.special.push(id); if (id === 'sealPform') f.surviveT = Math.round(R(22, 32)); }
   }
-  if (LAUNCH[n]) { const f = forms[k - 1]; f.special.push('launchers'); f.lcount = LAUNCH[n]; }
-  for (const f of forms) if (!f.pool.length) f.pool = ['uniq'];
-  const final = !survive && (o.final || n % 10 === 0 || (n > 60 && rng() < .3));
-  const revive = !survive && (o.revive || n === 80 || (n > 80 && rng() < .12));
+  // a form that can never dash never gets the attacks only a dash passes
+  for (const f of forms) if (f.special.includes('sealDform')) f.pool = f.pool.filter(p => !ND.has(p));
+  if (LAUNCH[n] && !free) { const f = forms[k - 1]; f.special.push('launchers'); f.lcount = LAUNCH[n]; }
+  for (const f of forms) if (!f.pool.length) f.pool = ['u0'];
+  // a new form always brings a different set of attacks
+  const extraPool = [...gset.map(id => 'g:' + id), ...techs, 'plain'];
+  for (let i = 1; i < k; i++) {
+    const prev = new Set(forms[i - 1].pool), cur = forms[i].pool;
+    if (cur.length === prev.size && cur.every(p => prev.has(p))) {
+      const add = extraPool.find(p => !prev.has(p) && !(forms[i].special.includes('sealDform') && ND.has(p)));
+      if (add) cur.push(add); else cur.splice(cur.indexOf('plain'), 1);
+    }
+  }
+  const final = free || (!survive && (o.final || n % 10 === 0 || (n > 30 && n <= 60 && rng() < .22) || (n > 60 && rng() < .3)));
+  const revive = !free && !survive && (o.revive || n === 80 || (n > 80 && rng() < .12));
   const rules = Object.assign({}, o.rules || {});
   const totalHp = forms.reduce((a, f) => a + f.hp, 0);
-  if (rules.limit) rules.limit = Math.round(totalHp * .5 + 45 + (final ? 50 : 0));
+  const finalLen = final ? finalTarget(n) : 0;
+  if (rules.limit) rules.limit = Math.round(totalHp * .5 + 45 + finalLen * 1.1);
   return {
-    n, name: NAMES[n - 1] || ('鬼' + n), glyph: (NAMES[n - 1] || '鬼')[0], forms, final, revive, rules,
-    finalSeed: n * 31 + 7, t, shapes, temper: arch.name, uniq: en.rec, uname: skill ? en.name : '', skill, fseal: final ? FINAL_SEAL[n] || '' : '',
+    n, name, glyph: free ? '鬼' : (NAMES[n - 1] || '鬼')[0], forms, final, revive, rules, free,
+    finalSeed: free ? opt.seed : n * 31 + 7, finalLen, t, shapes, temper: arch.name, uniqs, gset, ginst, vset, bsig, lsig, sigEvery,
+    fseal: final && !free ? FINAL_SEAL[n] || '' : '',
   };
 }
 const STAGES = []; for (let n = 1; n <= 150; n++) STAGES.push(buildStage(n));
 
-// free play: the third form and the final, with every gimmick seen so far (and all of stages 1-20)
+// free play: a fresh enemy at the level of one stage, with three forms and a final
 const FREE = [
-  { name: '簡単', hp: 5, spd: .78, gap: 1.35, warn: 1.2, den: .7, red: .25, tier: 0, bhp: 80 },
-  { name: '普通', hp: 5, spd: 1.0, gap: 1.0, warn: 1.0, den: 1.0, red: .4, tier: 0, bhp: 100 },
-  { name: '修羅', hp: 5, spd: 1.22, gap: .72, warn: .8, den: 1.3, red: .5, tier: 1, bhp: 110 },
-  { name: '阿修羅', hp: 3, spd: 1.42, gap: .55, warn: .68, den: 1.6, red: .6, tier: 2, bhp: 130 },
+  { name: '簡単', lv: 10, hp: 5 },
+  { name: '普通', lv: 30, hp: 5 },
+  { name: '修羅', lv: 60, hp: 5 },
+  { name: '阿修羅', lv: 100, hp: 3 },
 ];
-const BASE20 = new Set(Object.keys(INTRO).filter(s => +s <= 20).map(s => INTRO[s]));
 
 // ---- save ----
 const SAVE_KEY = 'kaeshiba150.v1';
@@ -558,8 +877,8 @@ const minPos = (a, b) => a > 0 && b > 0 ? Math.min(a, b) : (a > 0 ? a : b > 0 ? 
 function mergeRecords(r) {
   for (const n in r.clr || {}) {
     const a = save.clr[n] || {}, b = r.clr[n] || {};
-    const hs = [0, 1, 2].map(i => Math.max((a.hs || [])[i] || 0, (b.hs || [])[i] || 0));
-    save.clr[n] = { t: minPos(a.t, b.t), kt: minPos(a.kt, b.kt), ut: minPos(a.ut, b.ut), k: a.k || b.k ? 1 : 0, u: a.u || b.u ? 1 : 0, hs };
+    const hs = [0, 1, 2, 3].map(i => Math.max((a.hs || [])[i] || 0, (b.hs || [])[i] || 0));
+    save.clr[n] = { t: minPos(a.t, b.t), kt: minPos(a.kt, b.kt), ut: minPos(a.ut, b.ut), et: minPos(a.et, b.et), k: a.k || b.k ? 1 : 0, u: a.u || b.u ? 1 : 0, hs };
   }
   for (const d in r.free || {}) save.free[d] = minPos(save.free[d], r.free[d]);
   save.freeHS = save.freeHS || {};
@@ -664,43 +983,41 @@ function sfx(n) {
 // =====================================================================
 let state = 'title';
 let RUN = null;        // { mode: 'stage'|'free', st, life (0 通常 / 1 決死 / 2 泡沫), diff }
-const LIFE = [{ name: '通常', hp: 5 }, { name: '決死', hp: 3 }, { name: '泡沫', hp: 1 }];
+// index is what records are stored under; LIFE_ORDER is how the choices are shown.
+// 簡単: life slowly comes back, half a diamond at a time, after a while without being hit
+const LIFE = [{ name: '通常', hp: 5 }, { name: '決死', hp: 3 }, { name: '泡沫', hp: 1 }, { name: '簡単', hp: 5, regen: true }];
+const LIFE_ORDER = [3, 0, 1, 2], LIFE_TK = ['t', 'kt', 'ut', 'et'];
+const REGEN_T = 6;
 let forms, fi, F, RL;  // form list, current form index, current form, stage rules
 let P, B, EM, bullets, lasers, zones, parts, texts, after, slashes, streaks, wind, sched, gt, stats, shake, hitstop, flash, banner, ending, lastAtk;
 let fx, turrets, decoys, wells, slows, stones, tether, seenNow, kc, launchers, inks;
+// cells: state that scheduled attack steps keep between firings; sigN counts shots toward the enemy's own shot
+let cells = [], sigN = 0;
+const cell = v => { const c = { v }; cells.push(c); return c; };
+// a seeded random stream that lives in a cell, for fixed sequences inside attacks
+const crng = seed => { const c = cell(seed | 0); return () => { let a = c.v = (c.v + 0x6D2B79F5) | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
 const input = { parry: false, dash: false };
 
 function newGame(run) {
   RUN = run;
-  if (run.mode === 'stage') {
-    forms = run.st.forms; RL = run.st.rules;
-  } else {
-    const d = FREE[run.diff];
-    const pool = ['plain', ...ATK_IDS.filter(id => BASE20.has(id) || save.seen.includes(id))];
-    const special = ['shield', 'counter', 'regen'].filter(id => save.seen.includes(id));
-    const fr = mulberry32(4242), shapes = ['aimed', 'ring', 'spiral', 'flower', 'stream', 'arc'].map(t => rollShape(t, fr));
-    // three forms, each a step harder; the last carries the difficulty's full weight
-    forms = [0, 1, 2].map(i => ({
-      name: ['一ノ型', '二ノ型', '三ノ型'][i], pool, gens: [], shapes, I: 1,
-      spd: d.spd * (.88 + i * .06), gap: d.gap * (1.15 - i * .075), warn: d.warn, den: d.den * (.82 + i * .09),
-      red: Math.min(.8, d.red * (.75 + i * .125)), white: false, tier: i === 2 ? d.tier : Math.max(0, d.tier - 1),
-      hp: Math.round(d.bhp * .55), special: i === 2 ? special : [],
-    }));
-    RL = {};
-  }
+  // free play draws a fresh enemy at its level; a retry keeps the same one
+  if (run.mode === 'free' && !run.st) run.st = buildStage(FREE[run.diff].lv, { free: true, seed: (Math.random() * 2147483647) | 0 });
+  forms = run.st.forms; RL = run.mode === 'stage' ? run.st.rules : {};
   fi = 0; F = forms[0];
   const php = run.mode === 'stage' ? LIFE[run.life || 0].hp : FREE[run.diff].hp;
   P = { x: W / 2, y: H * .8, r: 9, fx: 0, fy: -1, hp: php, max: php, inv: 0, dashT: 0, dashCD: 0, dvx: 0, dvy: 0, dashHit: false,
-        parryT: 0, parryCD: 0, parryHit: false, slashCD: 0, combo: 0, dead: false, px: W / 2, py: H * .8, lvx: 0, lvy: 0 };
-  B = { x: W / 2, y: H * .3, r: 34, hp: F.hp, phase: 1, mode: 'idle', tx: W / 2, ty: H * .3, stagger: 0, staggerMax: STAGGER,
+        parryT: 0, parryCD: 0, parryHit: false, slashCD: 0, combo: 0, dead: false, px: W / 2, py: H * .8, lvx: 0, lvy: 0,
+        regen: run.mode === 'stage' && !!LIFE[run.life || 0].regen, regenT: 0 };
+  B = { x: W / 2, y: H * .3, r: 34, hp: topOf(0), phase: 1, mode: 'idle', tx: W / 2, ty: H * .3, stagger: 0, staggerMax: STAGGER,
         nextAtk: 1.6, busy: 0, aimT: 0, aimMax: 0, cspd: 0, cx: 0, cy: 0, cvx: 0, cvy: 0, cdist: 0, ctrav: 0, hurtF: 0, spin: 0,
         final: '', barrier: false, seal: false, finalT: 0, finalLen: 1, revived: false, lastHit: 0, vis: 1, fade: 0,
         shieldA: 0, stance: 0, stCycle: 4, sealOff: 0, guard: false, trail: 0, trailT: 0, iframe: 0, pierceN: 0, pierceTot: 0 };
+  if (run.mode === 'stage' && run.st.n === 150) B.r = 42;
   EM = null;
   bullets = []; lasers = []; zones = []; parts = []; texts = []; after = []; slashes = []; streaks = []; sched = [];
   turrets = []; decoys = []; wells = []; slows = []; stones = null; tether = null; wind = null; launchers = []; inks = [];
   fx = { sealP: 0, sealD: 0, rev: 0, dark: 0, swap: 0, freeze: 0, shrink: 0, shrinkK: 0 };
-  gt = 0; shake = 0; hitstop = 0; flash = 0; banner = null; ending = 0; lastAtk = ''; lastRun = null; lastShape = null; lastShot = -1; kc = 0;
+  gt = 0; shake = 0; hitstop = 0; flash = 0; banner = null; ending = 0; lastAtk = ''; lastRun = null; lastShape = null; lastShot = -1; kc = 0; cells = []; sigN = 0;
   stats = { time: 0, parries: 0, perfects: 0, slashes: 0, hits: 0, maxCombo: 0, won: false, why: '' };
   seenNow = new Set();
   input.parry = input.dash = false;
@@ -716,8 +1033,12 @@ function setupForm() {
   if (sp.includes('clones')) decoys = [{ x: B.x, y: B.y }, { x: B.x, y: B.y }];
   if (F.red > 0) seenNow.add('red');
 }
-const at = (d, fn) => sched.push({ t: gt + d, fn });
-const SPD = () => F.spd * (F.vsp || 1) * (B.final === 'on' ? 1.12 : 1);
+const at = (d, fn) => sched.push({ t: gt + d, fn, ctx: actx });
+// the enemy's life is one total; form i holds the stretch between floorOf(i) and topOf(i)
+const floorOf = i => { let s = 0; for (let j = i + 1; j < forms.length; j++) s += forms[j].hp; return s; };
+const topOf = i => floorOf(i) + forms[i].hp;
+const totalHp = () => topOf(0);
+const SPD = () => F.spd * (F.vsp || 1);
 const NN = n => Math.max(1, Math.round(n * F.den * (F.vn || 1)));
 const K = () => F.white ? 'w' : ((kc++ * .618034) % 1) < F.red ? 'r' : 'w';
 const ORG = () => EM || B;
@@ -749,6 +1070,63 @@ function laser(ang, o = {}) {
   const L = Object.assign({ x: org.x, y: org.y, ang, warn: .8 * F.warn, act: .3, w: 26, t: 0, rot: 0, follow: false, snipe: false, fired: false }, o);
   if (!L.snipe) L.w *= F.vw || 1;
   lasers.push(L);
+  // 固有光: the enemy's own touch on its beams
+  if (F.lsig && !L.snipe) {
+    L.sig = F.lsig; L.fdir = Math.random() < .5 ? 1 : -1;
+    if (F.lsig === 'twinl' && !o.noTwin) twinOf(L);
+  }
+  return L;
+}
+// a second beam alongside the first
+function twinOf(L) {
+  const L2 = Object.assign({}, L, { off: 36, sig: '' });
+  if (!L2.follow) { L2.x -= Math.sin(L.ang) * 36; L2.y += Math.cos(L.ang) * 36; L2.off = 0; }
+  lasers.push(L2);
+}
+// a beam with one of the habits (癖) of the 派生形
+function vlaser(ang, o, hb) {
+  o = Object.assign({}, o);
+  const w0 = o.w || 26, warn0 = o.warn || .8 * F.warn;
+  if (hb === 'thin') { o.warn = warn0 * .75; o.w = w0 * .6; }
+  if (hb === 'late') { o.warn = warn0 * 1.4; o.w = w0 * 1.5; }
+  if (hb === 'blue') o.blue = true;
+  if (hb === 'pulse') { o.pulse = true; o.act = Math.max(.9, o.act || .3); }
+  if (hb === 'twin') o.noTwin = true;
+  const L = laser(ang, o);
+  if (hb === 'glow' || hb === 'branch') L.sig = hb;
+  if (hb === 'twin') twinOf(L);
+  return L;
+}
+// the stretches of floor a beam covers: one line, or two when it reflects off a wall (屈折光)
+function beamSegs(L) {
+  const c = Math.cos(L.ang), s = Math.sin(L.ang);
+  if (!L.refl) return [[L.x, L.y, L.x + c * 1200, L.y + s * 1200]];
+  let t = 1e9, vert = false;
+  if (c > 1e-6) { const k = (W - L.x) / c; if (k < t) { t = k; vert = true; } } else if (c < -1e-6) { const k = -L.x / c; if (k < t) { t = k; vert = true; } }
+  if (s > 1e-6) { const k = (H - L.y) / s; if (k < t) { t = k; vert = false; } } else if (s < -1e-6) { const k = (30 - L.y) / s; if (k < t) { t = k; vert = false; } }
+  t = Math.max(0, t);
+  const qx = L.x + c * t, qy = L.y + s * t, c2 = vert ? -c : c, s2 = vert ? s : -s;
+  return [[L.x, L.y, qx, qy], [qx, qy, qx + c2 * 1200, qy + s2 * 1200]];
+}
+const segDist = (px, py, x0, y0, x1, y1) => { const dx = x1 - x0, dy = y1 - y0, l2 = dx * dx + dy * dy || 1, k = clamp(((px - x0) * dx + (py - y0) * dy) / l2, 0, 1); return Math.hypot(px - x0 - dx * k, py - y0 - dy * k); };
+// 点滅: a pulsing beam is dark (harmless) every other beat
+const beamDark = L => L.pulse && Math.floor((L.t - L.warn) / .16) % 2 === 1;
+// what a 固有光 does as its beam lights up
+function beamOn(L) {
+  L.w0 = L.w;
+  if (L.sig === 'glow') beamShots(L, 'glow');
+  else if (L.sig === 'shard') { const off = Math.random() * TAU, n = NN(10); for (let k = 0; k < n; k++) shootFrom(L.x, L.y, off + k / n * TAU, 140 * SPD(), K()); }
+}
+// shots strung along a beam's line, never right on top of the player
+function beamShots(L, how) {
+  const c = Math.cos(L.ang), s = Math.sin(L.ang);
+  for (let d = 70; d < 900; d += 70) {
+    const x = L.x + c * d, y = L.y + s * d;
+    if (x < 0 || x > W || y < 30 || y > H) continue;
+    if (Math.hypot(x - P.x, y - P.y) < 70) continue;
+    if (how === 'glow') { const b = shootFrom(x, y, 0, 0, 'w'); b.life = 1.6; }
+    else for (const side of [-1, 1]) shootFrom(x, y, L.ang + side * Math.PI / 2, 110 * SPD(), K());
+  }
 }
 function zone(x, y, o = {}) {
   const b = bounds();
@@ -760,24 +1138,51 @@ function makeWall(side, spd = 185 * F.spd) {
   const step = 14;
   if (side === 'top' || side === 'bottom') {
     const y = side === 'top' ? 36 : H + 10, a = side === 'top' ? Math.PI / 2 : -Math.PI / 2;
-    for (let x = 4; x < W; x += step) shootFrom(x, y, a, spd, 'r').grace = 7;
+    for (let x = 4; x < W; x += step) { const b = shootFrom(x, y, a, spd, 'r'); b.grace = 7; b.nd = true; }
   } else {
     const x = side === 'left' ? -10 : W + 10, a = side === 'left' ? 0 : Math.PI;
-    for (let y = 40; y < H; y += step) shootFrom(x, y, a, spd, 'r').grace = 7;
+    for (let y = 40; y < H; y += step) { const b = shootFrom(x, y, a, spd, 'r'); b.grace = 7; b.nd = true; }
   }
   sfx('warn');
 }
 function encircle(R = 220, spd = 150 * F.spd) {
   const cx = P.x, cy = P.y, n = 58;
-  for (let i = 0; i < n; i++) { const a = i / n * TAU; shootFrom(cx + Math.cos(a) * R, cy + Math.sin(a) * R, a + Math.PI, spd, 'r').grace = 4; }
+  for (let i = 0; i < n; i++) { const a = i / n * TAU, b = shootFrom(cx + Math.cos(a) * R, cy + Math.sin(a) * R, a + Math.PI, spd, 'r'); b.grace = 4; b.nd = true; }
   sfx('warn');
 }
 function burstRing(x, y, n, spd, kindFn = K) {
   const off = Math.random() * TAU;
   for (let i = 0; i < n; i++) shootFrom(x, y, off + i / n * TAU, spd, typeof kindFn === 'string' ? kindFn : kindFn());
 }
-function startCharge(aim = .78 * F.warn, spd = 950 * F.spd) {
-  B.mode = 'aim'; B.aimMax = B.aimT = aim; B.cspd = spd; B.cx = P.x; B.cy = P.y; B.vis = 1; sfx('warn');
+// 突進: a bull's rush. It bends a little toward the player on the way, scatters debris where it hits a wall,
+// and from stage 10 turns round to come again (twice, from stage 90 three times), each time on a shorter wind-up.
+const chargeChain = () => { const lv = RUN && RUN.st ? RUN.st.n : 1; return lv < 10 ? 1 : lv < 90 ? 2 : 3; };
+function startCharge(aim = .78 * F.warn, spd = 950 * F.spd, chain = chargeChain(), cv = { pa: 'rush', ef: 'none' }) {
+  B.mode = 'aim'; B.aimMax = B.aimT = aim; B.cspd = spd; B.cx = P.x; B.cy = P.y; B.vis = 1; B.chain = chain; B.cv = cv; sfx('warn');
+  const bd = bounds();
+  if (cv.pa === 'blink') {
+    // 瞬突: appears off to one side of the player, then rushes on a shorter wind-up
+    let x, y, t = 0; do { const a = Math.random() * TAU; x = P.x + Math.cos(a) * 260; y = P.y + Math.sin(a) * 260; } while ((x < bd.x0 + 50 || x > bd.x1 - 50 || y < bd.y0 + 50 || y > bd.y1 - 50) && ++t < 20);
+    burst(B.x, B.y, C.mute, 12, 200, .4); B.x = clamp(x, bd.x0 + 50, bd.x1 - 50); B.y = clamp(y, bd.y0 + 50, bd.y1 - 50); B.fade = .2;
+    B.aimMax = B.aimT = aim * .7;
+  } else if (cv.pa === 'lane') {
+    // 横薙ぎ: from the far side wall, along the player's row
+    B.x = P.x < W / 2 ? W - 60 : 60; B.y = clamp(P.y, bd.y0 + 40, bd.y1 - 40); B.fade = .2;
+  } else if (cv.pa === 'leap') {
+    // 跳躍: up and out of reach; it comes down on the marked circle
+    B.mode = 'leap'; B.air = true; B.airT = aim + .25;
+    zone(P.x, P.y, { r: 64, warn: aim + .25 });
+    const z = zones[zones.length - 1]; B.lx = z.x; B.ly = z.y;
+  }
+  B.bounces = cv.pa === 'bound' ? 2 : 0; B.zigDone = false; B.wakeT = 0; B.qd = 0;
+  if (cv.ef === 'trail') B.trail = .06;
+}
+// what a charge leaves where it stops, and whether it comes again
+function chargeEnd() {
+  const ef = B.cv ? B.cv.ef : 'none';
+  if (ef === 'shock') { burstRing(B.x, B.y, NN(14), 150 * SPD()); sfx('zap'); }
+  else if (ef === 'debris') fan(clamp(Math.round(4 + F.den * 2), 5, 8), .2, 240 * SPD(), whiteOnly);
+  if (B.chain > 1 && !P.dead && !ending) startCharge(.5 * F.warn, B.cspd * 1.05, B.chain - 1, B.cv);
 }
 function blink() {
   const b = bounds(); let x, y, tries = 0;
@@ -821,11 +1226,29 @@ function spawner(prop, kindFn) {
       case 'sealshot': b.sealHit = Math.random() < .5 ? 'P' : 'D'; break;
       case 'gravity': b.grav = 240; b.vy -= s * .55; b.grace = 2; break;
       case 'boomerang': b.boom = { t: .65 + Math.random() * .3, done: false, aim: Math.random() < .5 }; break;
+      case 'curve': b.curve = (Math.random() < .5 ? 1 : -1) * (.7 + Math.random() * .5); b.curveT = 1.6; break;
+      case 'swirl': b.swirl = { cx: x, cy: y, w: (bigCount % 2 ? 1 : -1) * .9 }; break;
+      case 'grow': b.growR = { to: b.r * 2.1, rate: 7 }; b.vx *= .85; b.vy *= .85; break;
+      case 'pulse': b.pulse = { s, t: Math.random() * 6 }; break;
+      case 'zig': b.zig = { a, s, t: 0, per: .32, amp: .55 }; break;
+      case 'decel': b.vx *= 1.5; b.vy *= 1.5; b.decel = { t: .55, wait: .3, spd: s * 1.35 }; break;
+      case 'wallsplit': b.wsplit = 1; break;
+      case 'dropper': b.drop = { every: .28, t: .28, kind: b.kind === 'w' ? 'r' : 'w', left: 4 }; break;
+      case 'stutter': b.stut = { on: .3, off: .22, t: 0, s }; break;
+      case 'colorshift': if (b.kind === 'w') b.shift = { t: .75, to: 'r' }; break;
+      // 房弾: four shots turning round a centre that flies on
+      case 'cluster': { const w = (bigCount % 2 ? 1 : -1) * 2.6, vx = b.vx, vy = b.vy; b.vx = b.vy = 0; b.orbc = { cx: x, cy: y, vx, vy, ang: 0, w, r: 0 }; for (let k = 1; k < 4; k++) { const c = shootFrom(x, y, 0, 0, b.kind); c.r = b.r * .85; c.orbc = { cx: x, cy: y, vx, vy, ang: k * TAU / 4, w, r: 0 }; } break; }
+      // 連弾: three more follow down the same line
+      case 'snake': { const k0 = b.kind, r0 = b.r; for (let k = 1; k <= 3; k++) at(.07 * k, () => { const c = shootFrom(x, y, a, s, k0); c.r = r0; }); break; }
+      case 'blink': b.blink = .3 + Math.random() * .1; b.blinkPh = Math.random(); break;
     }
+    // 固有弾: every few shots carry the enemy's own touch
+    if (F.bsig && prop !== 'blue' && b.kind !== 'b' && sigN++ % (F.sigEvery || 3) === 0) applySig(b, F.bsig);
     return b;
   };
 }
 // each layout schedules its volleys and returns how long the enemy stays committed
+const angDiff = (a, b) => { const d = a - b; return Math.atan2(Math.sin(d), Math.cos(d)); };
 const SHAPES = {
   aimed(p, sp, og) {
     for (let v = 0; v < p.vol; v++) at(v * p.gap, () => { const o = og, a0 = aimFrom(og.x, og.y), m = NN(p.n) | 1; for (let i = 0; i < m; i++) sp(o.x, o.y, a0 + (i - (m - 1) / 2) * p.spread, p.spd * SPD()); sfx('shot'); });
@@ -869,7 +1292,8 @@ const SHAPES = {
     return p.dur + .5;
   },
   rows(p, sp, og) {
-    for (let v = 0; v < p.vol; v++) at(v * p.gap, () => { const o = og, a = aimFrom(og.x, og.y), m = NN(p.n), px = -Math.sin(a), py = Math.cos(a); for (let i = 0; i < m; i++) { const off = (i / Math.max(1, m - 1) - .5) * p.width; sp(o.x + px * off, o.y + py * off, a, p.spd * SPD()); } sfx('shot'); });
+    // each row leaves a gap of a few shots somewhere along it
+    for (let v = 0; v < p.vol; v++) at(v * p.gap, () => { const o = og, a = aimFrom(og.x, og.y), m = NN(p.n), px = -Math.sin(a), py = Math.cos(a), h = m > 4 ? Math.floor(Math.random() * (m - 2)) : -9; for (let i = 0; i < m; i++) { if (i >= h && i < h + 3) continue; const off = (i / Math.max(1, m - 1) - .5) * p.width; sp(o.x + px * off, o.y + py * off, a, p.spd * SPD()); } sfx('shot'); });
     return p.vol * p.gap + .5;
   },
   helix(p, sp, og) {
@@ -886,7 +1310,122 @@ const SHAPES = {
     for (let v = 0; v < p.vol; v++) at(v * p.gap, () => { const o = og, m = NN(p.n), a0 = aimFrom(og.x, og.y) + Math.PI - p.span / 2 + (Math.random() - .5) * .8; for (let i = 0; i < m; i++) sp(o.x, o.y, a0 + i / (m - 1) * p.span, p.spd * SPD()); sfx('shot'); });
     return p.vol * p.gap + .4;
   },
+  // a ring with a hole somewhere near the player's side
+  gapring(p, sp, og) {
+    for (let w = 0; w < p.waves; w++) at(w * p.gap, () => { const o = og, m = NN(p.n), h = aimFrom(o.x, o.y) + (Math.random() - .5) * 2.4, off = Math.random() * TAU; for (let i = 0; i < m; i++) { const a = off + i / m * TAU; if (Math.abs(angDiff(a, h)) < p.hole / 2) continue; sp(o.x, o.y, a, p.spd * SPD()); } sfx('shot'); });
+    return p.waves * p.gap + .4;
+  },
+  shotgun(p, sp, og) {
+    for (let v = 0; v < p.vol; v++) at(v * p.gap, () => { const o = og, m = NN(p.n), a0 = aimFrom(o.x, o.y); for (let i = 0; i < m; i++) sp(o.x, o.y, a0 + (Math.random() - .5) * 2 * p.cone, p.spd * SPD() * (.7 + Math.random() * .6)); sfx('shot'); });
+    return p.vol * p.gap + .5;
+  },
+  // arms that leave the body at a slant, like the blades of a pinwheel
+  pinwheel(p, sp, og) {
+    const arms = Math.max(2, Math.round(p.arms * Math.min(1.3, F.den)));
+    let k = 0;
+    for (let s = 0; s < p.dur; s += p.step) { const kk = k++; at(s, () => { const o = og; for (let a = 0; a < arms; a++) { const ang = p.dir * kk * p.turn + a * TAU / arms; sp(o.x + Math.cos(ang + p.bend) * 26, o.y + Math.sin(ang + p.bend) * 26, ang, p.spd * SPD()); } }); }
+    at(0, () => sfx('shot'));
+    return p.dur + .3;
+  },
+  // a falling curtain with one opening
+  curtain(p, sp, og) {
+    const step = clamp(48 - F.den * 8, 34, 44);
+    for (let r = 0; r < p.rows; r++) at(r * p.gap, () => { const gx = clamp(P.x + (Math.random() - .5) * 300, 70, W - 70); for (let x = 10 + (r % 2) * step / 2; x < W - 4; x += step) { if (Math.abs(x - gx) < p.hole / 2) continue; const b = sp(x, 36, Math.PI / 2, p.spd * SPD()); if (b) b.grace = 6; } sfx('shot'); });
+    return p.rows * p.gap + 1;
+  },
+  // two streams from either side of the body
+  pincer(p, sp, og) {
+    for (let s = 0; s < p.dur; s += p.rate) at(s, () => { const o = og; for (const side of [-1, 1]) { const x = o.x + side * p.off; sp(x, o.y, aimFrom(x, o.y), p.spd * SPD()); } });
+    at(0, () => sfx('shot'));
+    return p.dur + .4;
+  },
+  // a stream swept across the player's side
+  sweepfan(p, sp, og) {
+    const lines = Math.max(1, Math.round(p.lines * Math.min(1.3, F.den))), a0 = aimFrom(og.x, og.y), N = Math.max(2, Math.round(p.dur / p.rate));
+    for (let k = 0; k < N; k++) at(k * p.rate, () => { const o = og, ang = a0 + p.dir * (k / (N - 1) - .5) * p.span; for (let l = 0; l < lines; l++) sp(o.x, o.y, ang + (l - (lines - 1) / 2) * .22, p.spd * SPD()); });
+    at(0, () => sfx('shot'));
+    return p.dur + .4;
+  },
+  // shells that burst into rings
+  firework(p, sp, og) {
+    for (let j = 0; j < p.shells; j++) at(j * p.gap, () => { const o = og, b = sp(o.x, o.y, aimFrom(o.x, o.y) + (Math.random() - .5) * .9, p.spd * SPD() * 1.2); if (b) { b.burst = { t: p.fuse, n: NN(p.n), spd: p.spd * SPD() * .8 }; b.r *= 1.3; } sfx('shot'); });
+    return p.shells * p.gap + p.fuse + .4;
+  },
+  // single aimed shots from points scattered around the body
+  scatter(p, sp, og) {
+    const pts = Math.max(2, Math.round(p.pts * Math.min(1.4, F.den)));
+    for (let v = 0; v < p.vol; v++) at(v * p.gap, () => { const o = og; for (let i = 0; i < pts; i++) { const a = Math.random() * TAU, r = p.rad * (.5 + Math.random() * .5), x = o.x + Math.cos(a) * r, y = o.y + Math.sin(a) * r; sp(x, y, aimFrom(x, y), p.spd * SPD()); } sfx('shot'); });
+    return p.vol * p.gap + .5;
+  },
+  // evenly spaced lines from one edge, shifted half a step each volley
+  lanes(p, sp, og) {
+    for (let v = 0; v < p.vol; v++) at(v * p.gap, () => {
+      const m = Math.min(14, NN(p.n));
+      if (p.side === 'top') { const st = (W - 80) / m; for (let i = 0; i < m; i++) { const b = sp(40 + (v % 2) * st / 2 + i * st, 36, Math.PI / 2, p.spd * SPD()); if (b) b.grace = 6; } }
+      else { const left = p.side === 'left', st = (H - 100) / m; for (let i = 0; i < m; i++) { const b = sp(left ? 0 : W, 60 + (v % 2) * st / 2 + i * st, left ? 0 : Math.PI, p.spd * SPD()); if (b) b.grace = 6; } }
+      sfx('shot');
+    });
+    return p.vol * p.gap + 1;
+  },
+  // a wide ring around the player that spirals inward
+  vortex(p, sp, og) {
+    at(0, () => {
+      const m = Math.min(26, NN(p.n)), cx = P.x, cy = P.y, off = Math.random() * TAU;
+      for (let i = 0; i < m; i++) { const a = off + i / m * TAU, vx = -Math.cos(a) - p.spin * Math.sin(a), vy = -Math.sin(a) + p.spin * Math.cos(a); const b = sp(cx + Math.cos(a) * p.rad, cy + Math.sin(a) * p.rad, Math.atan2(vy, vx), p.spd * SPD() * Math.hypot(1, p.spin)); if (b) b.grace = 4; }
+      sfx('warn');
+    });
+    return 3.0;
+  },
+  // a stream that zigzags around its aim
+  zigzag(p, sp, og) {
+    const a0 = aimFrom(og.x, og.y), N = Math.max(2, Math.round(p.dur / p.rate));
+    for (let k = 0; k < N; k++) at(k * p.rate, () => { const o = og, ph = (k * p.rate * p.fr) % 2, tri = ph < 1 ? ph * 2 - 1 : 3 - ph * 2; sp(o.x, o.y, a0 + tri * p.amp, p.spd * SPD()); });
+    at(0, () => sfx('shot'));
+    return p.dur + .4;
+  },
+  // a square block of shots marching at the player
+  box(p, sp, og) {
+    for (let v = 0; v < p.vol; v++) at(v * p.gap, () => {
+      const o = og, a = aimFrom(o.x, o.y), c = Math.cos(a + p.spin), s = Math.sin(a + p.spin), n = p.side;
+      for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) { if (i && j && i < n - 1 && j < n - 1) continue; const u = (i / (n - 1) - .5) * p.size, w = (j / (n - 1) - .5) * p.size; sp(o.x + u * c - w * s, o.y + u * s + w * c, a, p.spd * SPD()); }
+      sfx('shot');
+    });
+    return p.vol * p.gap + .5;
+  },
 };
+// 固有弾: the enemy's own touch on one shot
+function applySig(b, id) {
+  if (b.big || b.mine || b.orb || b.orbc) return;
+  const s = Math.hypot(b.vx, b.vy), a = Math.atan2(b.vy, b.vx);
+  b.sig = id;
+  switch (id) {
+    case 'twin': { const px = -Math.sin(a) * 9, py = Math.cos(a) * 9, c = shootFrom(b.x + px, b.y + py, a, s, b.kind); c.r = b.r; c.grace = b.grace; b.x -= px; b.y -= py; break; }
+    case 'heavy': b.r *= 1.45; b.vx *= .78; b.vy *= .78; break;
+    case 'quick': b.r *= .8; b.vx *= 1.3; b.vy *= 1.3; break;
+    case 'tail': b.drop = { every: .3, t: .3, kind: b.kind, left: 3, still: true }; break;
+    case 'swerve': b.swerve = .55; break;
+    case 'pause': b.stut = { on: .4, off: .35, t: 0, s, once: true }; break;
+    case 'bloom': b.burst = { t: .9, n: 4, spd: s * .8 }; break;
+    case 'thaw': if (b.kind === 'r') b.shift = { t: .9, to: 'w' }; break;
+    case 'spin': if (!b.wv) b.wv = { a, s, amp: 16, fr: 10, t: 0, ph: 0 }; break;
+    case 'shed': b.shed = .5; break;
+    case 'rebound': b.bounce = Math.max(b.bounce, 1); break;
+    case 'echo': { const x = b.x, y = b.y, k = b.kind, r = b.r; at(.45, () => { const c = shootFrom(x, y, a, s, k); c.r = r; }); break; }
+    case 'dive': b.grav = 140; break;
+    case 'lance': b.needle = true; b.r = 4; b.vx *= 1.6; b.vy *= 1.6; break;
+    case 'magnet': b.magnet = .7; break;
+    case 'turn': if (b.kind === 'w') b.shift = { t: .55, to: 'r' }; break;
+  }
+}
+// 汎用弾幕: one of the enemy's generic barrages, with that enemy's own counts and speeds
+function fireGen(id, opts = {}) {
+  const g = GEN[id], p = (F.ginst && F.ginst[id]) || withSize(rollShape(g.e, Math.random), Math.random);
+  if (g.m !== 'plain') seenNow.add(g.m);
+  bigCount = 0;
+  const sp = spawner(g.m, opts.kind), sz = p.sz || 1;
+  const sized = (x, y, a, v) => { const b = sp(x, y, a, v); if (b && !b.big && !b.needle) b.r *= sz; return b; };
+  return SHAPES[g.e](p, sized, opts.og || ORG());
+}
 let lastShape = null;
 function fireShape(prop, opts = {}) {
   const list = F.shapes;
@@ -907,10 +1446,11 @@ const whiteOnly = () => 'w';
 // techniques: moves in their own right
 // =====================================================================
 const ATK = {
+  // one rush; the chain of turn-and-rush-again comes from startCharge itself
   charge() {
-    const n = clamp(Math.floor(F.den), 1, 3);
-    for (let i = 0; i < n; i++) at(i * 1.6, () => startCharge());
-    return (n - 1) * 1.6 + 1.5;
+    const c = chargeChain();
+    startCharge(.78 * F.warn, 950 * F.spd, c);
+    return 1.5 + (c - 1) * 1.2;
   },
   bluebeam() {
     const n = clamp(Math.round(F.den * 1.4), 1, 3);
@@ -918,9 +1458,10 @@ const ATK = {
     at(.7, () => cover(whiteOnly));
     return n * .5 + 1.2;
   },
+  // a blue beam turns no faster than a player well away from the enemy can keep ahead of it
   sweep() {
     const dir = Math.random() < .5 ? 1 : -1;
-    laser(aimAng() - dir * 1.1, { blue: true, warn: .9 * F.warn, act: 1.6, w: 20, rot: dir * 1.35, follow: true });
+    laser(aimAng() - dir * .9, { blue: true, warn: .9 * F.warn, act: 1.6, w: 20, rot: dir * .75, follow: true });
     sfx('warn');
     at(1.0, () => cover());
     return 3.0;
@@ -932,8 +1473,8 @@ const ATK = {
     return 2.4;
   },
   converge() {
-    const cx = P.x, cy = P.y, n = NN(22), T = 1.7;
-    at(0, () => { for (let i = 0; i < n; i++) { const p = edgePoint(i / n), d = Math.hypot(cx - p.x, cy - p.y); const b = shootFrom(p.x, p.y, Math.atan2(cy - p.y, cx - p.x), d / T, K()); b.grace = 3; } sfx('warn'); });
+    const cx = P.x, cy = P.y, n = NN(16), T = 1.7;
+    at(0, () => { for (let i = 0; i < n; i++) { const p = edgePoint(i / n), d = Math.hypot(cx - p.x, cy - p.y); if (d < 140) continue; const b = shootFrom(p.x, p.y, Math.atan2(cy - p.y, cx - p.x), d / T, K()); b.grace = 3; } sfx('warn'); });
     return 2.6;
   },
   ink() {
@@ -1081,10 +1622,53 @@ const ATK = {
     return 2.0;
   },
 };
+// ---- 派生形 ----
+function runVar(id, I) {
+  const v = VAR[id];
+  seenNow.add(v.fam === 'L' ? 'laser' : 'charge');
+  return v.fam === 'L' ? runBeam(v.a, v.b, I) : runCharge(v.a, v.b, I);
+}
+function runBeam(sh, hb, I) {
+  const dir = Math.random() < .5 ? 1 : -1, w8 = F.warn;
+  const L = (ang, o = {}) => vlaser(ang, o, hb);
+  switch (sh) {
+    case 'aim': { const n = clamp(Math.round(F.den * 1.4 * I), 1, 4); for (let i = 0; i < n; i++) at(i * .45, () => { L(aimAng()); sfx('warn'); }); at(.6, () => cover()); return n * .45 + 1.1; }
+    case 'fan': { const k = clamp(Math.round(2 + F.den * I), 3, 6); for (let w = 0; w < 2; w++) at(w * .9, () => { const a0 = aimAng() + (w ? .16 : 0); for (let i = 0; i < k; i++) L(a0 + (i - (k - 1) / 2) * .32, { warn: .9 * w8, act: .35 }); sfx('warn'); }); return 2.7; }
+    // vertical beams from the top, always leaving a lane near the player
+    case 'rain': { for (let w = 0; w < 2; w++) at(w * 1.0, () => { const k = clamp(Math.round(4 + F.den * 2 * I), 5, 10), lane = clamp(P.x + (Math.random() - .5) * 240, 60, W - 60), xs = []; for (let t = 0; xs.length < k && t < 80; t++) { const x = 30 + Math.random() * (W - 60); if (Math.abs(x - lane) < 50 || xs.some(q => Math.abs(q - x) < 46)) continue; xs.push(x); } for (const x of xs) L(Math.PI / 2, { x, y: 30, warn: .9 * w8, act: .35, w: 22 }); sfx('warn'); }); return 2.5; }
+    case 'track': { L(aimAng(), { track: .8 * SPD() * I, follow: true, warn: 1.0 * w8, act: 1.6, w: 24 }); sfx('warn'); at(1.2, () => cover()); return 3.0; }
+    case 'sweep': { L(aimAng() - dir * (hb === 'blue' ? .9 : 1.1), { warn: .9 * w8, act: 1.6, w: 20, rot: dir * (hb === 'blue' ? .75 : 1.2), follow: true }); sfx('warn'); at(1.0, () => cover()); return 3.0; }
+    case 'spiral': { const a0 = aimAng() + dir * 1.4, o = { warn: 1.0 * w8, act: 3.0, w: 18, rot: dir * (hb === 'blue' ? .6 : .85), follow: true }; L(a0, o); if (F.den * I > 1.3) L(a0 + Math.PI, o); sfx('warn'); at(1.4, () => cover(whiteOnly)); return 4.2; }
+    // from both side walls at where the player stands
+    case 'pincer': { for (let w = 0; w < 2; w++) at(w * .9, () => { const tx = P.x, ty = P.y; for (const x of [0, W]) { const y = clamp(ty + (Math.random() - .5) * 300, 60, H - 40); L(Math.atan2(ty - y, tx - x), { x, y, follow: false, warn: .85 * w8, act: .35 }); } sfx('warn'); }); return 2.4; }
+    // two beams either side of the player, then one straight through
+    case 'side': { const y = P.y; at(0, () => { for (const dy of [-70, 70]) L(0, { x: -10, y: clamp(y + dy, 50, H - 20), follow: false, warn: .85 * w8, act: .4, w: 22 }); sfx('warn'); }); at(1.2, () => { L(0, { x: -10, y: P.y, follow: false, warn: .85 * w8, act: .4, w: 22 }); sfx('warn'); }); return 2.6; }
+    case 'refl': { const n = clamp(Math.round(F.den * 1.3 * I), 1, 3); for (let i = 0; i < n; i++) at(i * .7, () => { L(aimAng() + (Math.random() - .5) * .7, { refl: true, warn: .9 * w8, act: .45 }); sfx('warn'); }); at(.5, () => cover()); return n * .7 + 1.2; }
+    case 'cross': { const base = Math.random() * TAU, rot = dir * (.5 + F.den * .15) * (F.vsp || 1) * (hb === 'blue' ? .7 : 1), arms = clamp(Math.round((F.den * I > 1.3 ? 6 : 4) * (F.vn || 1)), 3, 8); for (let i = 0; i < arms; i++) L(base + i * TAU / arms, { warn: 1.0 * w8, act: 1.7, w: 20, rot, follow: true }); sfx('warn'); at(1.2, () => cover(whiteOnly)); return 3.0; }
+    case 'lattice': { for (let w = 0; w < 2; w++) at(w * 1.2, () => { const off = w * 70; for (let x = 60 + off; x < W; x += 140) L(Math.PI / 2, { x, y: 30, warn: .9 * w8, act: .35, w: 18 }); if (F.den * I > 1.1) for (let y = 90 + off; y < H; y += 140) L(0, { x: -10, y, warn: .9 * w8, act: .35, w: 18 }); sfx('warn'); }); return 2.8; }
+  }
+  return 1;
+}
+function runCharge(pa, ef, I) {
+  const chain = ef === 'chain' ? 3 : chargeChain();
+  startCharge(.78 * F.warn, 950 * F.spd * (I > 1 ? 1.06 : 1), chain, { pa, ef });
+  return 1.6 + (chain - 1) * 1.25 + (pa === 'leap' ? .5 : 0);
+}
 let lastRun = null;
+// seals that would leave a dash-only attack with no way through
+const SEALING = new Set(['sealDash', 'sealAll', 'tac:sealring']);
+const ndAlive = () => bullets.some(b => b.nd && b.own === 'b');
+function safeId(id) {
+  if (ND.has(id) && dashSealed()) return 'plain';
+  if (SEALING.has(id) && ndAlive()) return 'plain';
+  return id;
+}
 function runAttack(id, fromEcho) {
+  id = safeId(id);
   if (!fromEcho && id !== 'echo') lastRun = { id };
-  if (id === 'uniq') { if (F.uname) pop(ORG().x, ORG().y - B.r - 18, F.uname, C.kin, 16); return REC[F.uniq].fn(F.I * (F.uname ? 1.15 : 1)); }
+  if (/^u\d$/.test(id)) { const u = F.uniqs[+id[1]]; pop(ORG().x, ORG().y - B.r - 18, u.name, C.kin, 16); return u.var ? runVar(u.var, u.I * 1.2) : REC[u.rec].fn(u.I); }
+  if (id.startsWith('g:')) return fireGen(id.slice(2));
+  if (id.startsWith('v:')) return runVar(id.slice(2), 1);
   if (id.startsWith('tac:')) return TACTICS[id.slice(4)].fn();
   if (isProp(id)) return fireShape(id);
   seenNow.add(id);
@@ -1092,9 +1676,9 @@ function runAttack(id, fromEcho) {
 }
 function pickAttack(pl, avoid) {
   let total = 0;
-  for (const id of pl) if (id !== avoid || pl.length === 1) total += WEIGHT[id] || 1;
+  for (const id of pl) if (id !== avoid || pl.length === 1) total += weightOf(id);
   let r = Math.random() * total;
-  for (const id of pl) { if (id === avoid && pl.length > 1) continue; r -= WEIGHT[id] || 1; if (r <= 0) return id; }
+  for (const id of pl) { if (id === avoid && pl.length > 1) continue; r -= weightOf(id); if (r <= 0) return id; }
   return pl[0];
 }
 function startAttack() {
@@ -1104,9 +1688,13 @@ function startAttack() {
   if (decoys.length) { const all = [B, ...decoys]; EM = all[Math.random() * all.length | 0]; } else EM = null;
   if (k === 'charge' || k === 'trail' || k.startsWith('tac:')) EM = null;
   B.vis = 1;
-  let dur = runAttack(k);
-  // only the hardest free-play tier ever layers two volleys, and only two plain shot layouts
-  if (F.tier === 2 && k === 'plain' && Math.random() < .2) dur = Math.max(dur, fireShape('plain', { any: true }));
+  const key = (RUN && RUN.st ? RUN.st.finalSeed : 0) + ':' + fi + ':';
+  let dur = withCtx(key + k, () => runAttack(k));
+  // from the middle stages on, a generic volley sometimes comes with a second, lighter one on top
+  if (F.layer && (k === 'plain' || k.startsWith('g:')) && Math.random() < F.layer) {
+    const gl = F.pool.filter(p => p.startsWith('g:') && p !== k && !HEAVY.has(GEN[p.slice(2)].m));
+    if (gl.length) { const g2 = gl[Math.random() * gl.length | 0]; dur = Math.max(dur, withCtx(key + g2 + ':layer', () => fireGen(g2.slice(2)))); }
+  }
   B.busy = dur;
   B.nextAtk = F.gap * (F.jit ? .55 + Math.random() * .9 : 1);
 }
@@ -1117,9 +1705,9 @@ function startAttack() {
 const FSEG = {
   spiral: { need: null, fn: T => { for (let s = 0, k = 0; s < 3.5; s += .06, k++) { const kk = k; at(T + s, () => { for (let a = 0; a < 4; a++) shoot(kk * .19 + a * TAU / 4, 160 * SPD(), kk % 7 ? 'r' : 'w'); sfx('shot'); }); } return 3.9; } },
   laser: { need: 'laser', fn: T => { for (let w = 0; w < 4; w++) at(T + w * .8, () => { const a0 = aimAng(); for (let i = -2; i <= 2; i++) laser(a0 + i * .32 + (w % 2 ? .16 : 0), { warn: .6 * F.warn, act: .25, w: 22 }); sfx('warn'); }); at(T + 1.6, () => ring(24, 180 * SPD(), 'r', .2)); return 3.6; } },
-  charge: { need: 'charge', fn: T => { for (let i = 0; i < 5; i++) at(T + i * .95, () => startCharge(.42 * F.warn, 1250 * F.spd)); return 5.4; } },
-  wheel: { need: 'cross', fn: T => { at(T, () => { for (let i = 0; i < 6; i++) laser(.3 + i * TAU / 6, { warn: 1.0, act: 3.4, w: 18, rot: .7, follow: true }); sfx('warn'); }); for (let k = 0; k < 3; k++) at(T + 1.3 + k * .9, () => fan(3, .2, 200 * SPD(), 'w')); return 4.6; } },
-  storm: { need: 'thunder', fn: T => { const r = mulberry32(99); for (let k = 0; k < 6; k++) at(T + k * .55, () => { zone(P.x, P.y); zone(P.x + (r() - .5) * 260, P.y + (r() - .5) * 200); sfx('warn'); }); for (let k = 0; k < 30; k++) at(T + k * .1, () => shootFrom(30 + r() * 740, 36, Math.PI / 2 + (r() - .5) * .3, 220 * SPD(), 'r')); return 3.8; } },
+  charge: { need: 'charge', fn: T => { for (let i = 0; i < 5; i++) at(T + i * .95, () => startCharge(.42 * F.warn, 1250 * F.spd, 1)); return 5.4; } },
+  wheel: { need: 'cross', fn: T => { at(T, () => { for (let i = 0; i < 6; i++) laser(.3 + i * TAU / 6, { warn: 1.0, act: 3.4, w: 18, rot: .55, follow: true }); sfx('warn'); }); for (let k = 0; k < 3; k++) at(T + 1.3 + k * .9, () => fan(3, .2, 200 * SPD(), 'w')); return 4.6; } },
+  storm: { need: 'thunder', fn: T => { const r = crng(99); for (let k = 0; k < 6; k++) at(T + k * .55, () => { zone(P.x, P.y); zone(P.x + (r() - .5) * 260, P.y + (r() - .5) * 200); sfx('warn'); }); for (let k = 0; k < 30; k++) at(T + k * .1, () => shootFrom(30 + r() * 740, 36, Math.PI / 2 + (r() - .5) * .3, 220 * SPD(), 'r')); return 3.8; } },
   spin: { need: 'wall', fn: T => { at(T, () => { for (let i = 0; i < 2; i++) laser(1.1 + i * Math.PI, { warn: 1.1, act: 5.2, w: 22, rot: 1.6 + (F.den > 1.3 ? .5 : 0), follow: true }); sfx('warn'); }); at(T + 1.1, () => { makeWall('left', 115 * F.spd); makeWall('right', 115 * F.spd); }); return 6.6; } },
   homing: { need: 'homing', fn: T => { for (let w = 0; w < 4; w++) at(T + w * .7, () => { const n = 10; for (let i = 0; i < n; i++) { const b = shoot(i / n * TAU, 160 * SPD(), 'w'); b.home = 1.6; b.turn = 2.6; } sfx('shot'); }); at(T + 1.4, () => ring(20, 150 * SPD(), 'r')); return 3.6; } },
   mines: { need: 'mines', fn: T => { at(T, () => { for (let i = 0; i < 14; i++) { const b = shoot(i / 14 * TAU, 260, 'r'); b.brake = true; b.mine = 2 + (i % 4) * .4; } sfx('shot'); }); for (let k = 0; k < 4; k++) at(T + .5 + k * .7, () => fan(5, .18, 230 * SPD(), 'w')); return 4.0; } },
@@ -1127,33 +1715,89 @@ const FSEG = {
   snipe: { need: 'snipe', fn: T => { for (let i = 0; i < 6; i++) at(T + i * .55, () => { laser(aimAng(), { snipe: true, warn: .7, act: 0, w: 2, follow: true }); sfx('warn'); }); at(T + 1.5, () => ring(20, 150 * SPD(), 'r')); return 4.2; } },
   encircle: { need: 'encircle', fn: T => { at(T, () => encircle()); at(T + 1.6, () => encircle(200, 170 * F.spd)); at(T + .8, () => fan(5, .2, 210 * SPD(), 'w')); return 3.6; } },
   freeze: { need: 'freeze', fn: T => { for (let k = 0; k < 3; k++) { at(T + k * 1.6, () => ring(26, 170 * SPD(), 'r', k * .12)); at(T + k * 1.6 + .25, () => { fx.freeze = 1.0; }); at(T + k * 1.6 + .5, () => ring(26, 170 * SPD(), 'r', k * .12 + .12)); } return 5.2; } },
-  uniq: { need: 'never', fn: T => { at(T, () => { if (F.uname) pop(B.x, B.y - B.r - 18, F.uname, C.kin, 18); REC[F.uniq].fn(F.I * 1.3); }); at(T + 2.4, () => REC[F.uniq].fn(F.I * 1.3)); return 5.0; } },
   needle: { need: 'needle', fn: T => { for (let w = 0; w < 6; w++) at(T + w * .4, () => { const a0 = aimAng(); for (let i = 0; i < 9; i++) { const b = shoot(a0 + (i - 4) * .09, 470 * SPD(), 'w'); b.needle = true; b.r = 4; } sfx('shot'); }); at(T + 1.2, () => ring(24, 150 * SPD(), 'r')); return 3.4; } },
 };
-const FREE_FINAL = ['spiral', 'laser', 'charge', 'wheel', 'storm', 'spin'];
+// set pieces that only a dash gets through
+const FSEG_ND = new Set(['spin', 'encircle']);
 function burstSeg(T) { for (let k = 0; k < 3; k++) at(T + k * .7, () => ring(F.den > 1.2 ? 40 : 30, 170 * SPD(), 'r', k * .08)); return 3.4; }
+// A final is a fixed sequence for each enemy, as long as its stage asks for: it opens with the enemy's own barrage,
+// then plain generic volleys take turns with twisted pieces (its other barrages, two generic ones at once, set pieces),
+// with a breather every fourth step.
 function finalPlan() {
-  if (RUN.mode === 'free') return FREE_FINAL;
   const st = RUN.st, r = mulberry32(st.finalSeed), have = new Set(ATK_IDS.filter(id => introAt[id] <= st.n));
-  const cand = Object.keys(FSEG).filter(k => !FSEG[k].need || have.has(FSEG[k].need));
-  const n = Math.min(cand.length, 3 + Math.floor(st.t * 4));
-  // the enemy's own barrage opens its final, then fixed segments follow
-  const out = ['uniq'];
-  while (out.length < n + 1) { const k = cand[Math.floor(r() * cand.length)]; if (!out.includes(k)) out.push(k); }
-  return out;
+  const noDash = st.fseal === 'D' || st.fseal === 'A';
+  const fsegs = Object.keys(FSEG).filter(k => (!FSEG[k].need || have.has(FSEG[k].need)) && !(noDash && FSEG_ND.has(k)));
+  const gens = st.gset, nu = st.uniqs.length;
+  const pk = arr => arr[Math.floor(r() * arr.length)];
+  const plan = [{ k: 'u', i: 0 }];
+  if (st.n === 150 && !st.free) return lastFinalPlan(st, r, fsegs);
+  // rough lengths, only to size the plan; the real ones come from each piece as it starts
+  const EST = { u: 3.4, g: 4.2, pair: 3.2, f: 4.3, rest: 2.3, v: 3.2 };
+  let T = EST.u, step = 0, lastF = '';
+  while (T < st.finalLen - 3) {
+    step++;
+    let seg;
+    if (step % 4 === 0) seg = { k: 'rest' };
+    else if (step % 2 === 1) seg = { k: 'g', id: pk(gens), reps: 2 + Math.floor(r() * 2) };
+    else {
+      const roll = r();
+      if (roll < .3) seg = { k: 'u', i: Math.floor(r() * nu) };
+      else if (roll < .42 && st.vset.length) seg = { k: 'v', id: pk(st.vset) };
+      else if (roll < .65 && fsegs.length) { let f = pk(fsegs); if (f === lastF && fsegs.length > 1) f = pk(fsegs); lastF = f; seg = { k: 'f', id: f }; }
+      else {
+        // two at once only from the middle stages on, and only light ones
+        const light = gens.filter(id => !HEAVY.has(GEN[id].m)), a = pk(light.length ? light : gens), b = pk(light.length ? light : gens);
+        seg = st.n >= 40 && a !== b ? { k: 'pair', a, b } : { k: 'g', id: a, reps: 2 };
+      }
+    }
+    plan.push(seg);
+    T += EST[seg.k];
+  }
+  return plan;
+}
+// 百鬼夜行's final: every boss of the 番付 comes again in order, with its own barrage; between them come the
+// last boss's own great techniques, set pieces and short breathers; it ends on everything at once
+function lastFinalPlan(st, r, fsegs) {
+  const pk = arr => arr[Math.floor(r() * arr.length)];
+  const plan = [{ k: 'u', i: 0 }];
+  let T = 6, step = 0, bi = 0;
+  while (T < st.finalLen - 12) {
+    plan.push({ k: 'boss', n: BOSSES[bi++ % BOSSES.length] }); T += 3.6; step++;
+    if (step % 4 === 0) { plan.push({ k: 'rest' }); T += 2.3; }
+    else if (step % 2 === 0) { plan.push(r() < .5 ? { k: 'u', i: 1 + Math.floor(r() * 2) } : { k: 'f', id: pk(fsegs) }); T += 4.2; }
+    else { plan.push({ k: 'g', id: pk(st.gset), reps: 2 }); T += 4; }
+  }
+  plan.push({ k: 'rest' }, { k: 'climax' });
+  return plan;
+}
+// starts one piece of the final now and returns how long it runs
+function runSeg(sg) {
+  switch (sg.k) {
+    case 'u': { const u = F.uniqs[sg.i] || F.uniqs[0]; pop(B.x, B.y - B.r - 18, u.name, C.kin, 18); return u.var ? runVar(u.var, u.I * 1.2) : REC[u.rec].fn(u.I * 1.1); }
+    case 'v': return runVar(sg.id, 1.1);
+    case 'boss': { const e = ENEMY[sg.n - 1]; pop(B.x, B.y - B.r - 18, `第${sg.n}番 ${e.name}`, C.kin, 18); return REC[e.rec].fn(1.25); }
+    case 'climax': { pop(B.x, B.y - B.r - 18, '百鬼夜行・明け', C.shu, 22); REC.grandwheel.fn(1.1); at(4.2, () => REC.procession.fn(1.1)); return 8.6; }
+    case 'g': { const d = fireGen(sg.id); for (let j = 1; j < sg.reps; j++) at(d * j + .2 * j, () => fireGen(sg.id)); return d * sg.reps + .2 * (sg.reps - 1); }
+    case 'pair': return Math.max(fireGen(sg.a), fireGen(sg.b)) + .3;
+    case 'f': return FSEG[sg.id].fn(0);
+    default: at(.3, () => fireShape('plain', { kind: whiteOnly })); return 2.0;
+  }
 }
 function startFinal() {
   B.final = 'on'; B.barrier = true; B.finalT = 0; seenNow.add('final');
   clearHostile();
   B.mode = 'idle'; B.stagger = 0; B.busy = 99; EM = null; decoys = []; B.seal = false; stones = null; launchers = []; B.guard = false;
-  banner = { txt: '終ノ型', sub: RUN.mode === 'stage' ? RUN.st.uname : '', t: 2.4 };
-  if (RUN.mode === 'free') { F.uniq = 'parade'; F.I = 1; }
+  banner = { txt: '終ノ型', sub: RUN.st.n === 150 && !RUN.st.free ? '百鬼夜行 ・ 夜明けまで耐え抜け' : RUN.st.uniqs[0].name, t: 2.4 };
   addShake(10); sfx('phase');
-  let T = 2.4;
-  for (const k of finalPlan()) T += FSEG[k].fn(T);
-  T += burstSeg(T);
-  at(T, endFinal);
-  B.finalLen = T;
+  // the pieces run one after another: each starts when the last one's time is up
+  B.fplan = finalPlan(); B.fstep = 0; B.fnext = 2.4; B.fburst = false;
+  B.finalLen = 2.4 + RUN.st.finalLen + 3.4;
+}
+function stepFinal() {
+  if (B.finalT < B.fnext || ending) return;
+  if (B.fstep < B.fplan.length) { const k = B.fstep++; B.fnext = B.finalT + withCtx(RUN.st.finalSeed + ':final:' + k, () => runSeg(B.fplan[k])) + .35; return; }
+  if (!B.fburst) { B.fburst = true; B.fnext = B.finalT + burstSeg(0); B.finalLen = Math.max(B.finalLen, B.fnext); return; }
+  endFinal();
 }
 function endFinal() {
   B.final = 'done'; B.barrier = false; B.busy = 0; B.mode = 'idle';
@@ -1208,7 +1852,7 @@ function addShake(v) { shake = Math.max(shake, reduced ? v * .3 : v); }
 // pierce: blue shots and beams, which a dash does not pass through
 function hurt(n = 1, pierce = false) {
   if (P.inv > 0 || (P.dashT > 0 && !pierce) || P.dead || ending) return false;
-  P.hp -= n; stats.hits += n; P.inv = 1.1; P.combo = 0;
+  P.hp -= n; stats.hits += n; P.inv = 1.1; P.combo = 0; P.regenT = 0;
   addShake(n > 1 ? 16 : 12); hitstop = .09; flash = reduced ? 0 : .35;
   burst(P.x, P.y, C.shu, 18 * n, 260);
   if (n > 1) pop(P.x, P.y - 24, '−' + n, C.shu, 22);
@@ -1238,6 +1882,7 @@ function reflect(b, d) {
   P.combo++; stats.parries++; stats.maxCombo = Math.max(stats.maxCombo, P.combo);
   b.own = 'p'; b.kind = 'w'; b.vx = Math.cos(a) * s; b.vy = Math.sin(a) * s; b.life = 3; b.perfect = perfect;
   b.home = 0; b.stop = null; b.bounce = 0; b.grace = 0; b.acc = null; b.wv = null; b.sp3 = 0; b.orb = null; b.ghost = false; b.needle = false;
+  b.orbc = null; b.blink = 0; b.curve = 0; b.swirl = null; b.pulse = null; b.zig = null; b.decel = null; b.stut = null; b.shift = null; b.swerve = 0; b.magnet = 0; b.shed = 0; b.drop = null; b.burst = null; b.wsplit = 0; b.grav = 0; b.boom = null; b.growR = null;
   b.dmg = (b.big ? 12 : 2.3) * (perfect ? 1.7 : 1) * mult();
   b.unit = (b.big ? 12 : 2.3) * mult();   // what the same shot is worth returned normally
   if (b.big) { b.big = false; b.r = 12; } else b.r = 7;
@@ -1262,13 +1907,13 @@ function damageBoss(d, raw, force, pierce) {
     if (dd <= .01) { sfx('block'); return; }
     B.pierceN++; B.pierceTot += dd;
     B.hp -= dd; B.hurtF = .07; B.lastHit = gt; B.vis = 1; sfx('hit');
-    if (B.hp <= 0) formDown();
+    if (B.hp <= floorOf(fi)) formDown();
     return;
   }
   if (B.stagger > 0 && !raw) d *= 1.6;
   B.hp -= d; B.hurtF = .07; B.lastHit = gt; B.vis = 1; sfx('hit');
   if (B.stagger <= 0) { B.iframe = .2; B.pierceN = 0; B.pierceTot = 0; }
-  if (B.hp <= 0) formDown();
+  if (B.hp <= floorOf(fi)) formDown();
 }
 function formDown() {
   if (fi < forms.length - 1) return nextForm();
@@ -1283,7 +1928,7 @@ function formDown() {
   win();
 }
 function nextForm() {
-  fi++; F = forms[fi]; B.hp = F.hp; B.phase = fi + 1;
+  fi++; F = forms[fi]; B.hp = clamp(B.hp, floorOf(fi) + .5, topOf(fi)); B.phase = fi + 1;
   clearHostile();
   B.mode = 'idle'; B.busy = 0; B.stagger = 0; B.nextAtk = 1.7;
   banner = { txt: F.name, t: 1.6 };
@@ -1380,8 +2025,9 @@ function readMove() {
 const parrySealed = () => fx.sealP > 0 || sealForm() || finalSeal('P');
 const dashSealed = () => fx.sealD > 0 || F.special.includes('sealDform') || finalSeal('D');
 const slashSealed = () => F.special.includes('sealSform');
-// some finals keep a seal on for their whole length
-const finalSeal = k => B.final === 'on' && RUN && RUN.mode === 'stage' && (RUN.st.fseal === k || RUN.st.fseal === 'A');
+// some finals keep a seal on through their first part (about the first 45%)
+const finalSealLeft = () => RUN && RUN.st && RUN.st.fseal && B.final === 'on' ? 2.4 + RUN.st.finalLen * .45 - B.finalT : 0;
+const finalSeal = k => finalSealLeft() > 0 && (RUN.st.fseal === k || RUN.st.fseal === 'A');
 function tryParry() {
   if (P.dead || ending) return;
   if (parrySealed()) { pop(P.x, P.y - 22, '封', C.shu, 16); return; }
@@ -1415,6 +2061,34 @@ function tryDash(mv) {
 // =====================================================================
 // simulation
 // =====================================================================
+// the newer shot behaviours; returns true when the shot is used up (it burst or split)
+function stepShot(b, dt) {
+  const age = b.age;
+  if (b.orbc) { const c = b.orbc; c.cx += c.vx * dt; c.cy += c.vy * dt; c.ang += c.w * dt; c.r = Math.min(16, c.r + 40 * dt); b.x = c.cx + Math.cos(c.ang) * c.r; b.y = c.cy + Math.sin(c.ang) * c.r; }
+  if (b.curve && b.curveT > 0) { b.curveT -= dt; const c = Math.cos(b.curve * dt), s = Math.sin(b.curve * dt), vx = b.vx; b.vx = vx * c - b.vy * s; b.vy = vx * s + b.vy * c; }
+  if (b.swirl) { const w = b.swirl, dx = b.x - w.cx, dy = b.y - w.cy, c = Math.cos(w.w * dt), s = Math.sin(w.w * dt); b.x = w.cx + dx * c - dy * s; b.y = w.cy + dx * s + dy * c; const vx = b.vx; b.vx = vx * c - b.vy * s; b.vy = vx * s + b.vy * c; }
+  if (b.growR && b.r < b.growR.to) b.r = Math.min(b.growR.to, b.r + b.growR.rate * dt);
+  if (b.pulse) { const p = b.pulse; p.t += dt; const s = Math.hypot(b.vx, b.vy) || 1, ns = p.s * (.55 + .45 * (1 + Math.sin(p.t * 7))); b.vx *= ns / s; b.vy *= ns / s; }
+  if (b.zig) { const z = b.zig; z.t += dt; const side = Math.floor(z.t / z.per) % 2 ? 1 : -1, a = z.a + side * z.amp; b.vx = Math.cos(a) * z.s; b.vy = Math.sin(a) * z.s; }
+  if (b.decel) { const d = b.decel; if (d.t > 0) { d.t -= dt; const k = Math.max(0, 1 - dt * 4.5); b.vx *= k; b.vy *= k; } else if ((d.wait -= dt) <= 0) { const a = aimFrom(b.x, b.y); b.vx = Math.cos(a) * d.spd; b.vy = Math.sin(a) * d.spd; b.decel = null; } }
+  if (b.stut) {
+    const u = b.stut; u.t += dt;
+    if (u.a === undefined) u.a = Math.atan2(b.vy, b.vx);
+    const per = u.on + u.off, moving = (u.t % per) < u.on || (u.once && u.t > per), v = moving ? u.s : 0;
+    b.vx = Math.cos(u.a) * v; b.vy = Math.sin(u.a) * v;
+    if (u.once && u.t > per) b.stut = null;
+  }
+  if (b.shift && age >= b.shift.t) { b.kind = b.shift.to; b.shift = null; }
+  if (b.swerve && age >= b.swerve) { b.swerve = 0; const a = Math.atan2(b.vy, b.vx), s = Math.hypot(b.vx, b.vy), na = a + clamp(angDiff(aimFrom(b.x, b.y), a), -.8, .8); b.vx = Math.cos(na) * s; b.vy = Math.sin(na) * s; }
+  if (b.magnet && age >= b.magnet) { b.magnet = 0; b.home = .7; b.turn = 1.8; }
+  if (b.shed && age >= b.shed) { b.shed = 0; const c = shootFrom(b.x, b.y, Math.atan2(b.vy, b.vx), Math.hypot(b.vx, b.vy) * .5, b.kind); c.r = b.r * .8; }
+  if (b.drop && b.drop.left > 0) {
+    const d = b.drop; d.t -= dt;
+    if (d.t <= 0) { d.t = d.every; d.left--; const c = shootFrom(b.x, b.y, 0, 0, d.kind); c.r = b.r * .7; c.life = 1.6; if (!d.still) c.stop = { t: 0, wait: .8, spd: 120 * SPD(), phase: 1 }; }
+  }
+  if (b.burst && age >= b.burst.t) { const bu = b.burst, off = Math.random() * TAU; for (let k = 0; k < bu.n; k++) shootFrom(b.x, b.y, off + k / bu.n * TAU, bu.spd, K()); sfx('zap'); return true; }
+  return false;
+}
 function update(dt) {
   shake = Math.max(0, shake - dt * 45); flash = Math.max(0, flash - dt * 2.5);
   if (hitstop > 0) { hitstop -= dt; return; }
@@ -1432,11 +2106,11 @@ function update(dt) {
   // 封弾の型: endured for its set time, then the seal lifts and the form falls
   if (!ending && !RL.survive && sealForm() && B.final !== 'on') {
     B.formT += dt;
-    if (B.formT >= F.surviveT) { B.sealDone = true; B.hp = 0; formDown(); }
+    if (B.formT >= F.surviveT) { B.sealDone = true; B.hp = floorOf(fi); formDown(); }
   }
 
   const due = sched.filter(s => s.t <= gt);
-  if (due.length) { sched = sched.filter(s => s.t > gt); due.forEach(s => s.fn()); }
+  if (due.length) { sched = sched.filter(s => s.t > gt); for (const s of due) { const prev = actx; actx = s.ctx; try { s.fn(); } finally { actx = prev; } } }
 
   // status timers
   for (const k of ['sealP', 'sealD', 'rev', 'dark', 'swap', 'freeze', 'shrink']) if (fx[k] > 0) fx[k] -= dt;
@@ -1481,15 +2155,18 @@ function update(dt) {
   // smoothed velocity, for enemies that read where you are heading
   P.lvx += ((P.x - P.px) / dt - P.lvx) * Math.min(1, dt * 8); P.lvy += ((P.y - P.py) / dt - P.lvy) * Math.min(1, dt * 8); P.px = P.x; P.py = P.y;
   P.inv -= dt; P.dashCD -= dt; P.parryCD -= dt; P.slashCD -= dt;
+  if (P.regen && !P.dead && !ending && P.hp < P.max) { P.regenT += dt; if (P.regenT >= REGEN_T) { P.regenT = 0; P.hp = Math.min(P.max, P.hp + .5); } }
   if (P.parryT > 0) {
     P.parryT -= dt;
     if (P.parryT <= 0 && !P.parryHit) { P.parryCD = Math.max(0, P.parryCD) + WHIFF; P.combo = 0; pop(P.x, P.y - 22, '空', C.mute, 16); sfx('whiff'); }
   }
 
   // enemy
+  if (B.mode !== 'leap') B.air = false;
+  B.landT -= dt;
   B.hurtF -= dt; B.iframe -= dt; B.vis = Math.max(0, B.vis - dt * 1.2); B.fade -= dt;
   B.spin += dt * (B.stagger > 0 ? .3 : B.barrier ? 3.2 : 1.1 + B.phase * .3);
-  if (B.final === 'on') B.finalT += dt;
+  if (B.final === 'on') { B.finalT += dt; stepFinal(); }
   if (B.busy > 0 && B.stagger <= 0) B.busy -= dt;
   const sp = F.special;
   if (sp.includes('shield')) B.shieldA += .9 * dt;
@@ -1497,7 +2174,7 @@ function update(dt) {
     if (B.stance > 0) B.stance -= dt;
     else { B.stCycle -= dt; if (B.stCycle <= 0) { B.stance = 1.6; B.stCycle = 5.2; sfx('warn'); } }
   } else B.stance = 0;
-  if (sp.includes('regen') && !invulnerable() && gt - B.lastHit > 1.5 && B.hp < F.hp && B.hp > 0) B.hp = Math.min(F.hp, B.hp + 2.5 * dt);
+  if (sp.includes('regen') && !invulnerable() && gt - B.lastHit > 1.5 && B.hp < topOf(fi) && B.hp > 0) B.hp = Math.min(topOf(fi), B.hp + 2.5 * dt);
   if (stones) {
     stones.show -= dt;
     stepStones();
@@ -1509,13 +2186,33 @@ function update(dt) {
     B.stagger -= dt;
   } else if (B.mode === 'aim') {
     B.aimT -= dt; B.vis = 1;
-    if (B.aimT > B.aimMax * .35) { B.cx = P.x; B.cy = P.y; }
+    const pa = B.cv ? B.cv.pa : 'rush';
+    if (pa === 'lane') { if (B.aimT > B.aimMax * .35) B.y = clamp(P.y, bounds().y0 + 40, bounds().y1 - 40); B.cx = B.x < W / 2 ? W - 40 : 40; B.cy = B.y; }
+    else if (B.aimT > B.aimMax * .35) { B.cx = P.x; B.cy = P.y; }
     if (B.aimT <= 0) {
       const dx = B.cx - B.x, dy = B.cy - B.y, d = Math.hypot(dx, dy) || 1;
-      B.mode = 'dash'; B.cvx = dx / d * B.cspd; B.cvy = dy / d * B.cspd; B.cdist = d + 90; B.ctrav = 0;
+      B.mode = 'dash'; B.cvx = dx / d * B.cspd; B.cvy = dy / d * B.cspd; B.cdist = d + 90; B.ctrav = 0; B.hookT = 0;
+      if (pa === 'hook') { const a = Math.atan2(B.cvy, B.cvx) + (Math.random() < .5 ? .8 : -.8); B.cvx = Math.cos(a) * B.cspd; B.cvy = Math.sin(a) * B.cspd; B.hookT = .4; }
+      if (pa === 'feint') B.cdist = d * .45;
+      if (pa === 'lane') B.cdist = W;
+    }
+  } else if (B.mode === 'leap') {
+    B.airT -= dt;
+    if (B.airT <= 0) {
+      B.x = B.lx; B.y = B.ly; B.mode = 'idle'; B.air = false; B.landT = .3; addShake(8);
+      chargeEnd();
     }
   } else if (B.mode === 'dash') {
     B.vis = 1;
+    // it bends toward the player while the player is still ahead of it (a hook bends hard at first; a lane rush holds its row)
+    const cvp = B.cv ? B.cv.pa : 'rush';
+    B.hookT -= dt;
+    if (cvp !== 'lane') { const tx = P.x - B.x, ty = P.y - B.y; if (tx * B.cvx + ty * B.cvy > 0 || B.hookT > 0) { const a = Math.atan2(B.cvy, B.cvx), sp = Math.hypot(B.cvx, B.cvy), w = B.hookT > 0 ? 3.2 : dashSealed() ? .45 : 1.1, na = a + clamp(angDiff(Math.atan2(ty, tx), a), -w * dt, w * dt); B.cvx = Math.cos(na) * sp; B.cvy = Math.sin(na) * sp; } }
+    // 稲妻: one sharp turn halfway
+    if (cvp === 'zig' && !B.zigDone && B.ctrav >= B.cdist * .45) { B.zigDone = true; const a = Math.atan2(B.cvy, B.cvx), sp = Math.hypot(B.cvx, B.cvy), na = a + (angDiff(aimFrom(B.x, B.y), a) > 0 ? .85 : -.85); B.cvx = Math.cos(na) * sp; B.cvy = Math.sin(na) * sp; B.cdist += 140; }
+    const cef = B.cv ? B.cv.ef : 'none';
+    if (cef === 'wake') { B.wakeT -= dt; if (B.wakeT <= 0) { B.wakeT = .1; const a = Math.atan2(B.cvy, B.cvx); for (const sd of [-1, 1]) shootFrom(B.x, B.y, a + sd * Math.PI / 2, 110 * SPD(), K()); } }
+    if (cef === 'quake') { B.qd += Math.hypot(B.cvx, B.cvy) * dt; if (B.qd >= 70) { B.qd = 0; zone(B.x, B.y, { r: 30, warn: .6 * F.warn }); } }
     B.x += B.cvx * dt; B.y += B.cvy * dt; B.ctrav += Math.hypot(B.cvx, B.cvy) * dt;
     if (Math.random() < .7) parts.push({ x: B.x, y: B.y, vx: 0, vy: 0, life: .25, max: .25, col: C.shu, size: 6 });
     // 残影: shots left along the charge, which wait and then turn on the player
@@ -1525,7 +2222,16 @@ function update(dt) {
     const d = Math.hypot(B.x - P.x, B.y - P.y);
     if (P.parryT > 0 && d < B.r + P.r + 30) chargeParried();
     else if (d < B.r + P.r - 4) hurt(2);
-    if (B.mode === 'dash' && (B.ctrav >= B.cdist || out)) { B.mode = 'idle'; B.trail = 0; if (out) addShake(5); }
+    // 壁跳ね: bounces off the walls instead of stopping
+    if (B.mode === 'dash' && out && B.bounces > 0) {
+      B.bounces--; if (B.x <= m || B.x >= W - m) B.cvx = -B.cvx; if (B.y <= m + 30 || B.y >= H - m) B.cvy = -B.cvy;
+      B.ctrav = 0; B.cdist = 520; addShake(4); burstRing(B.x, B.y, NN(6), 120 * SPD()); sfx('zap');
+    } else if (B.mode === 'dash' && (B.ctrav >= B.cdist || out)) {
+      B.mode = 'idle'; B.trail = 0;
+      if (out) { addShake(5); burstRing(B.x, B.y, NN(8), 125 * SPD()); sfx('zap'); }
+      if (B.cv && B.cv.pa === 'feint') fan(5, .2, 240 * SPD());
+      chargeEnd();
+    }
   } else if (B.final === 'on') {
     const dx = W / 2 - B.x, dy = H * .4 - B.y, d = Math.hypot(dx, dy);
     if (d > 1) { const s = Math.min(d, 520 * dt); B.x += dx / d * s; B.y += dy / d * s; }
@@ -1543,7 +2249,8 @@ function update(dt) {
   }
   for (const l of launchers) {
     l.a += dt; l.next -= dt;
-    if (l.next <= 0 && !P.dead && !ending && B.final !== 'on') { l.next = F.gap * 2.2 + .6 + Math.random() * 1.2; fireShape(Math.random() < .5 ? 'plain' : (F.gens.find(g => isProp(g)) || 'plain'), { og: l, any: true }); }
+    // they take turns: never two firing within 0.8 s of each other
+    if (l.next <= 0 && !P.dead && !ending && B.final !== 'on' && gt - (B.lastLaunch || -9) > .8) { B.lastLaunch = gt; l.next = F.gap * 2.2 + .6 + Math.random() * 1.2; fireShape(Math.random() < .5 ? 'plain' : (F.gens.find(g => isProp(g)) || 'plain'), { og: l, any: true }); }
   }
   for (let i = inks.length - 1; i >= 0; i--) { inks[i].life -= dt; inks[i].t += dt; if (inks[i].life <= 0) inks.splice(i, 1); }
   // decoys turn around the arena centre in step with the real one
@@ -1551,8 +2258,8 @@ function update(dt) {
   // touching the body costs 2 except while broken
   if (!stats.won && !P.dead) {
     const dx = P.x - B.x, dy = P.y - B.y, d = Math.hypot(dx, dy) || 1, min = B.r + P.r;
-    if (d < min - 4 && B.stagger <= 0 && B.mode !== 'dash') hurt(2);
-    if (d < min) { P.x = B.x + dx / d * min; P.y = B.y + dy / d * min; }
+    if (d < min - 4 && B.stagger <= 0 && B.mode !== 'dash' && !B.air && !(B.landT > 0)) hurt(2);
+    if (d < min && !B.air) { P.x = B.x + dx / d * min; P.y = B.y + dy / d * min; }
   }
 
   // lasers
@@ -1567,14 +2274,21 @@ function update(dt) {
       continue;
     }
     // a tracking beam (凝視) turns toward the player at a limited rate
-    if (L.track) { let da = aimFrom(L.x, L.y) - L.ang; da = Math.atan2(Math.sin(da), Math.cos(da)); L.ang += clamp(da, -L.track * dt, L.track * dt); }
-    if (!L.on && L.t >= L.warn) { L.on = true; sfx(L.blue ? 'bluebeam' : 'beam'); }
-    if (L.t > L.warn && L.t < L.warn + L.act) {
-      const c = Math.cos(L.ang), s = Math.sin(L.ang), dx = P.x - L.x, dy = P.y - L.y, proj = dx * c + dy * s;
-      const d = proj < 0 ? Math.hypot(dx, dy) : Math.abs(dx * s - dy * c);
+    if (L.off && L.follow) { L.x -= Math.sin(L.ang) * L.off; L.y += Math.cos(L.ang) * L.off; }
+    // a tracking beam (凝視) turns toward the player, never faster than the player can run around it
+    if (L.track) { const da = angDiff(aimFrom(L.x, L.y), L.ang), tr = Math.min(L.track, .72 * SPEED / Math.max(60, Math.hypot(P.x - L.x, P.y - L.y))); L.ang += clamp(da, -tr * dt, tr * dt); }
+    if (!L.on && L.t >= L.warn) { L.on = true; sfx(L.blue ? 'bluebeam' : 'beam'); beamOn(L); }
+    if (L.sig && L.t > L.warn) {
+      const u = L.t - L.warn;
+      if (L.sig === 'sweepl') L.ang += .8 * Math.cos(u * 4) * dt;
+      else if (L.sig === 'pulsel') L.w = L.w0 * (.75 + .35 * Math.sin(u * 9));
+      else if (L.sig === 'flick' && u > L.act - .3) L.ang += 2 * L.fdir * dt;
+    }
+    if (L.t > L.warn && L.t < L.warn + L.act && !beamDark(L)) {
+      let d = 1e9; for (const g of beamSegs(L)) d = Math.min(d, segDist(P.x, P.y, ...g));
       if (d < L.w / 2 + P.r - 3) hurt(1, !!L.blue);
     }
-    if (L.t > L.warn + L.act) lasers.splice(i, 1);
+    if (L.t > L.warn + L.act) { if (L.sig === 'branch') beamShots(L, 'branch'); lasers.splice(i, 1); }
   }
 
   // strike zones (落雷, 追い雷, 呪印, 連雷)
@@ -1629,7 +2343,7 @@ function update(dt) {
       if (b.stop) {
         const st = b.stop; st.t -= dt;
         if (st.phase === 0) { const k = Math.max(0, 1 - dt * 5); b.vx *= k; b.vy *= k; if (st.t <= 0) { st.phase = 1; st.t = st.wait; } }
-        else if (st.t <= 0) { const a = aimFrom(b.x, b.y); b.vx = Math.cos(a) * st.spd; b.vy = Math.sin(a) * st.spd; b.stop = null; }
+        else if (st.t <= 0) { const a = st.ang !== undefined ? st.ang : aimFrom(b.x, b.y); b.vx = Math.cos(a) * st.spd; b.vy = Math.sin(a) * st.spd; b.stop = null; }
       }
       if (b.acc) { const s = Math.hypot(b.vx, b.vy) || 1, ns = Math.min(b.acc.max, s + b.acc.a * dt); b.vx *= ns / s; b.vy *= ns / s; }
       if (b.grav) b.vy += b.grav * dt;
@@ -1643,6 +2357,7 @@ function update(dt) {
       }
       if (b.wv) { const w = b.wv; w.t += dt; const lat = Math.cos(w.t * w.fr + w.ph) * w.amp * w.fr * .5; b.vx = Math.cos(w.a) * w.s - Math.sin(w.a) * lat; b.vy = Math.sin(w.a) * w.s + Math.cos(w.a) * lat; }
       if (b.brake) { const k = Math.max(0, 1 - dt * 3.2); b.vx *= k; b.vy *= k; }
+      if (stepShot(b, dt)) { bullets.splice(i, 1); continue; }
       if (b.mine) {
         b.mine -= dt;
         if (b.mine <= 0 || (b.age > .8 && Math.hypot(P.x - b.x, P.y - b.y) < 60)) { burstRing(b.x, b.y, 8, 170 * SPD()); sfx('zap'); bullets.splice(i, 1); continue; }
@@ -1654,6 +2369,12 @@ function update(dt) {
     if (b.bounce > 0) {
       if (b.x < 6 || b.x > W - 6) { b.vx = -b.vx; b.x = clamp(b.x, 6, W - 6); b.bounce--; }
       else if (b.y < 36 || b.y > H - 6) { b.vy = -b.vy; b.y = clamp(b.y, 36, H - 6); b.bounce--; }
+    }
+    // 壁割れ弾: on reaching a wall, three pieces come back off it
+    if (b.wsplit && b.own === 'b' && b.age > .2 && (b.x < 8 || b.x > W - 8 || b.y < 38 || b.y > H - 8)) {
+      const nx = b.x < 8 ? 1 : b.x > W - 8 ? -1 : 0, ny = b.y < 38 ? 1 : b.y > H - 8 ? -1 : 0, a = Math.atan2(ny, nx), sp = Math.hypot(b.vx, b.vy) * .8;
+      for (const da of [-.6, 0, .6]) shootFrom(clamp(b.x, 10, W - 10), clamp(b.y, 40, H - 10), a + da, sp, b.kind === 'b' ? 'b' : 'r');
+      bullets.splice(i, 1); continue;
     }
     if (b.grace > 0) b.grace -= dt;
     if (b.life <= 0 || (b.grace <= 0 && (b.x < -30 || b.x > W + 30 || b.y < -30 || b.y > H + 30))) { bullets.splice(i, 1); continue; }
@@ -1691,7 +2412,10 @@ function update(dt) {
   for (let i = streaks.length - 1; i >= 0; i--) { streaks[i].life -= dt; if (streaks[i].life <= 0) streaks.splice(i, 1); }
   if (banner) { banner.t -= dt; if (banner.t <= 0) banner = null; }
 }
+// 明滅弾: harmless while it is dark
+const blinkOff = b => b.blink && Math.floor(b.age / b.blink + b.blinkPh) % 2 === 1;
 function checkHitPlayer(b, i) {
+  if (blinkOff(b)) return;
   const d = Math.hypot(b.x - P.x, b.y - P.y);
   if (P.parryT > 0 && parryable(b) && d < P.r + b.r + PARRY_R) { reflect(b, d); return; }
   if (d < P.r + b.r - 2 && hurt(1, b.kind === 'b')) {
@@ -1704,6 +2428,7 @@ function checkHitPlayer(b, i) {
 // drawing
 // =====================================================================
 function diamond(x, y, r) { ctx.beginPath(); ctx.moveTo(x, y - r); ctx.lineTo(x + r, y); ctx.lineTo(x, y + r); ctx.lineTo(x - r, y); ctx.closePath(); }
+const fmtLen = t => t >= 60 ? `${Math.floor(t / 60)}分${Math.round(t % 60) ? Math.round(t % 60) + '秒' : ''}` : `${Math.round(t)}秒`;
 function fmt(t) { const m = Math.floor(t / 60), s = t - m * 60; return m + ':' + (s < 10 ? '0' : '') + s.toFixed(1); }
 const glyph = () => RUN && RUN.mode === 'stage' ? RUN.st.glyph : '鬼';
 
@@ -1792,7 +2517,8 @@ function render() {
   }
 
   for (const L of lasers) {
-    const c = Math.cos(L.ang), s = Math.sin(L.ang), ex = L.x + c * 1200, ey = L.y + s * 1200;
+    const c = Math.cos(L.ang), s = Math.sin(L.ang), ex = L.x + c * 1200, ey = L.y + s * 1200, segs = beamSegs(L);
+    const line = () => { ctx.beginPath(); for (const g of segs) { ctx.moveTo(g[0], g[1]); ctx.lineTo(g[2], g[3]); } ctx.stroke(); };
     ctx.lineCap = 'butt';
     if (L.snipe) {
       const k = L.t / L.warn;
@@ -1802,13 +2528,13 @@ function render() {
       const k = L.t / L.warn;
       ctx.strokeStyle = L.blue ? C.ao : C.shu; ctx.globalAlpha = .35 + .5 * k; ctx.lineWidth = 1 + k * 2;
       ctx.setLineDash([10, 8]); ctx.lineDashOffset = -gt * 60;
-      ctx.beginPath(); ctx.moveTo(L.x, L.y); ctx.lineTo(ex, ey); ctx.stroke(); ctx.setLineDash([]);
+      line(); ctx.setLineDash([]);
     } else {
-      const k = Math.min(1, (L.warn + L.act - L.t) / .1);
+      const k = Math.min(1, (L.warn + L.act - L.t) / .1) * (beamDark(L) ? .18 : 1);
       ctx.globalAlpha = .9 * k; ctx.strokeStyle = L.blue ? C.ao : C.shu; ctx.lineWidth = L.w;
-      ctx.beginPath(); ctx.moveTo(L.x, L.y); ctx.lineTo(ex, ey); ctx.stroke();
+      line();
       ctx.strokeStyle = C.washi; ctx.lineWidth = L.w * .3;
-      ctx.beginPath(); ctx.moveTo(L.x, L.y); ctx.lineTo(ex, ey); ctx.stroke();
+      line();
     }
     ctx.globalAlpha = 1;
   }
@@ -1834,7 +2560,7 @@ function render() {
     for (const dc of decoys) drawEnemy(dc.x, dc.y, 1, false);
     const crouch = B.mode === 'aim' ? Math.sin(gt * 70) * 2 : 0;
     const bx = B.x + (B.stagger > 0 ? Math.sin(gt * 50) * 2.5 : crouch), by = B.y;
-    let alpha = B.fade > 0 ? .25 : 1;
+    let alpha = B.air ? .12 : B.fade > 0 ? .25 : 1;
     if (F.special.includes('invisible') && B.stagger <= 0 && !B.barrier) alpha = Math.max(.05, Math.min(1, B.vis * 1.4));
     if (B.mode === 'aim') {
       const k = Math.max(0, B.aimT / B.aimMax), locked = B.aimT <= B.aimMax * .35;
@@ -1895,6 +2621,7 @@ function render() {
   for (const b of bullets) {
     let a = 1;
     if (b.ghost && b.own === 'b') { const d = Math.hypot(b.x - P.x, b.y - P.y); a = b.age < .35 ? 1 : d < 120 ? 1 - (d - 60) / 60 : 0; a = clamp(a, 0, 1); if (a <= .02) continue; }
+    if (b.own === 'b' && blinkOff(b)) a = .18;
     ctx.globalAlpha = a;
     if (b.own === 'p') {
       ctx.strokeStyle = C.kin; ctx.lineWidth = b.perfect ? 4 : 3; ctx.lineCap = 'round';
@@ -1930,6 +2657,9 @@ function render() {
       }
     }
     if (b.sealHit && b.own === 'b') { ctx.strokeStyle = C.murasaki; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(b.x, b.y, b.r + 5, 0, TAU); ctx.stroke(); }
+    // the enemy's own shot wears a thin gold ring; a shot about to change colour shows the colour it will turn
+    if (b.own === 'b' && b.sig) { ctx.strokeStyle = C.kin; ctx.globalAlpha = .6 * a; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(b.x, b.y, b.r + 3, 0, TAU); ctx.stroke(); ctx.globalAlpha = a; }
+    if (b.own === 'b' && b.shift) { ctx.strokeStyle = b.shift.to === 'r' ? C.shu : C.washi; ctx.lineWidth = 1.5; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.arc(b.x, b.y, b.r + 5, 0, TAU); ctx.stroke(); ctx.setLineDash([]); }
     ctx.globalAlpha = 1;
   }
   // 墨: clouds that hide whatever passes under them
@@ -1954,6 +2684,11 @@ function render() {
     ctx.fillStyle = g; ctx.fillRect(-20, -20, W + 40, H + 40);
   }
   if (fx.freeze > 0) { ctx.fillStyle = 'rgba(143,154,176,0.10)'; ctx.fillRect(0, 0, W, H); }
+  if (RUN && RUN.st && RUN.st.n === 150 && !RUN.st.free && B.final === 'on') {
+    const g = ctx.createRadialGradient(W / 2, H / 2, 220, W / 2, H / 2, 560);
+    g.addColorStop(0, 'rgba(228,87,63,0)'); g.addColorStop(1, `rgba(228,87,63,${.22 + .08 * Math.sin(gt * 2)})`);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  }
   ctx.restore();
 
   if (flash > 0) { ctx.globalAlpha = flash * .5; ctx.fillStyle = C.washi; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1; }
@@ -1966,7 +2701,10 @@ function render() {
     const k = RL.survive ? stats.time / RL.survive : B.formT / F.surviveT;
     ctx.fillStyle = C.kin; ctx.fillRect(x0, y0, bw * Math.min(1, k), 8);
   } else {
-    ctx.fillStyle = B.stagger > 0 ? C.kin : B.seal ? C.mute : C.washi; ctx.fillRect(x0, y0, bw * clamp(B.hp / F.hp, 0, 1), 8);
+    const tot = totalHp();
+    ctx.fillStyle = B.stagger > 0 ? C.kin : B.seal ? C.mute : C.washi; ctx.fillRect(x0, y0, bw * clamp(B.hp / tot, 0, 1), 8);
+    // where the attacks change
+    ctx.fillStyle = C.kin; for (let i = 0; i < forms.length - 1; i++) ctx.fillRect(x0 + bw * floorOf(i) / tot - 1, y0 - 3, 2, 14);
   }
   for (let i = 0; i < forms.length; i++) { diamond(x0 + bw + 16 + i * 13, y0 + 4, 4.5); if (i >= fi) { ctx.fillStyle = C.washi; ctx.fill(); } else { ctx.strokeStyle = C.line; ctx.lineWidth = 1; ctx.stroke(); } }
   if (B.final === 'on') {
@@ -1984,13 +2722,16 @@ function render() {
 
   // HUD: player life, combo, status chips
   for (let i = 0; i < P.max; i++) {
-    diamond(26 + i * 22, H - 24, 7);
-    if (i < P.hp) { ctx.fillStyle = C.shu; ctx.fill(); } else { ctx.strokeStyle = C.line; ctx.lineWidth = 1.5; ctx.stroke(); }
+    const x = 26 + i * 22, y = H - 24;
+    diamond(x, y, 7); ctx.strokeStyle = C.line; ctx.lineWidth = 1.5; ctx.stroke();
+    const fill = clamp(P.hp - i, 0, 1);
+    if (fill > 0) { ctx.save(); ctx.beginPath(); ctx.rect(x - 8, y - 8, 16 * fill, 16); ctx.clip(); diamond(x, y, 7); ctx.fillStyle = C.shu; ctx.fill(); ctx.restore(); }
   }
+  if (P.regen && P.hp < P.max && !P.dead) { const x = 26 + Math.floor(P.hp) * 22; ctx.strokeStyle = C.kin; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x, H - 24, 11, -Math.PI / 2, -Math.PI / 2 + TAU * P.regenT / REGEN_T); ctx.stroke(); }
   const chips = [];
-  if (sealForm() && !RL.survive) chips.push(['封 弾', F.surviveT - B.formT]); else if (sealForm() || finalSeal('P')) chips.push(['封 弾', 0]); else if (fx.sealP > 0) chips.push(['封 弾', fx.sealP]);
+  if (sealForm() && !RL.survive) chips.push(['封 弾', F.surviveT - B.formT]); else if (sealForm()) chips.push(['封 弾', 0]); else if (finalSeal('P')) chips.push(['封 弾', finalSealLeft()]); else if (fx.sealP > 0) chips.push(['封 弾', fx.sealP]);
   if (slashSealed()) chips.push(['封 斬', 0]);
-  if (F.special.includes('sealDform') || finalSeal('D')) chips.push(['封 踏', 0]); else if (fx.sealD > 0) chips.push(['封 踏', fx.sealD]);
+  if (F.special.includes('sealDform')) chips.push(['封 踏', 0]); else if (finalSeal('D')) chips.push(['封 踏', finalSealLeft()]); else if (fx.sealD > 0) chips.push(['封 踏', fx.sealD]);
   if (fx.rev > 0) chips.push(['逆さ', fx.rev]);
   if (fx.swap > 0) chips.push(['反転', fx.swap]);
   if (RL.perfectOnly) chips.push(['極のみ', 0]);
@@ -2022,8 +2763,10 @@ function render() {
 // =====================================================================
 // screens
 // =====================================================================
-const VERSION = '2.0.8';
+const VERSION = '3.0.0 仮';
 let selN = 1, life = 0, freeDiff = 1, tempUnlock = false;
+const bestTime = c => Math.min(...LIFE_TK.map(k => c[k] || Infinity));
+const bestScore = c => Math.max(0, ...(c.hs || []));
 const keysBar = $('.keys');
 function show(html) { ov.innerHTML = html; ov.hidden = false; ov.scrollTop = 0; keysBar.hidden = state !== 'title'; }
 function hideOv() { ov.hidden = true; ov.innerHTML = ''; }
@@ -2034,7 +2777,8 @@ const RESUME_KEY = 'kaeshiba150.resume';
 let resumeData = null, lastCheckpoint = 0;
 function saveResume() {
   if (!RUN || ending || P.dead || (state !== 'play' && state !== 'pause')) return;
-  const d = { at: Date.now(), run: { mode: RUN.mode, n: RUN.st ? RUN.st.n : 0, life: RUN.life || 0, diff: RUN.diff || 0 },
+  // free play keeps the seed of the enemy it drew, so the same one comes back
+  const d = { at: Date.now(), run: { mode: RUN.mode, n: RUN.st ? RUN.st.n : 0, life: RUN.life || 0, diff: RUN.diff || 0, seed: RUN.st && RUN.st.free ? RUN.st.finalSeed : undefined },
               fi, bhp: B.hp, php: P.hp, final: B.final, revived: B.revived, sealDone: B.sealDone, formT: B.formT, stats };
   try { localStorage.setItem(RESUME_KEY, JSON.stringify(d)); } catch (e) {}
 }
@@ -2049,7 +2793,8 @@ function resumeLabel(d) {
   return `${where} ・ ${form} ・ 命 ${d.php}`;
 }
 function continueRun(d) {
-  startRun(d.run.mode === 'stage' ? { mode: 'stage', st: STAGES[d.run.n - 1], life: d.run.life } : { mode: 'free', diff: d.run.diff });
+  startRun(d.run.mode === 'stage' ? { mode: 'stage', st: STAGES[d.run.n - 1], life: d.run.life }
+    : { mode: 'free', diff: d.run.diff, st: d.run.seed !== undefined ? buildStage(FREE[d.run.diff].lv, { free: true, seed: d.run.seed }) : undefined });
   // walk forward to the saved form; its attacks start fresh, the damage done so far is kept
   while (fi < d.fi && fi < forms.length - 1) { fi++; F = forms[fi]; B.phase = fi + 1; setupForm(); }
   B.hp = Math.max(1, d.bhp); P.hp = Math.max(1, d.php); Object.assign(stats, d.stats); stats.won = false;
@@ -2069,12 +2814,13 @@ function titleScreen() {
       <li><b class="k-b">○ 青い弾</b>と青い光線は弾けず、踏み込みでも抜けられない。避けるしかない。<b class="k-m">紫の輪</b>の弾に当たると、弾きか踏み込みを封じられる。</li>
       <li>突進をぶつかる瞬間に弾けば鬼が<b class="k-g">崩れ</b>、近づいて弾きで斬れる。鬼の体に触れると2減る。</li>
       <li>発射台は近づいて弾きで斬るか、跳ね返した弾で割る。</li>
-      <li>鬼ごとに固有の弾幕と、仕掛けがある。見て、覚えて、破れ。命は通常5・決死3・泡沫1。</li>
+      <li>命は簡単5（しばらく当たらなければ半分ずつ戻る）・通常5・決死3・泡沫1。</li>
+      <li>鬼ごとに一から三の固有弾幕と、固有の弾・光線の癖（<b class="k-g">金の輪</b>の弾）がある。見て、覚えて、破れ。</li>
     </ul>
     <div class="modes">
       ${resumeData ? `<button type="button" class="mode" data-act="continue"><b>続きから</b><span>${resumeLabel(resumeData)}</span></button>` : ''}
       <button type="button" class="mode" data-act="select"><b>番付</b><span>第一番から第百五十番へ。討伐 ${nClear()} / 150</span></button>
-      <button type="button" class="mode" data-act="free"><b>自由稽古</b><span>三つの型と終ノ型。見た技がすべて出る。</span></button>
+      <button type="button" class="mode" data-act="free"><b>自由稽古</b><span>見知らぬ鬼と三つの型と終ノ型。簡単は第十番、普通は第三十番、修羅は第六十番、阿修羅は第百番の強さ。</span></button>
     </div>
   </div>
   <p class="ver">ver ${VERSION}</p>`);
@@ -2085,15 +2831,53 @@ function selectScreen(keepUnlock) {
   if (!keepUnlock) tempUnlock = false;
   const cells = STAGES.map(s => {
     const c = save.clr[s.n], ok = unlocked(s.n);
-    const cls = ['cell', c ? (c.u ? 'uta' : c.k ? 'kes' : 'clr') : '', s.n === selN ? 'cur' : ''].join(' ');
-    return `<button type="button" class="${cls}" data-act="pick" data-v="${s.n}" ${ok ? '' : 'disabled'} aria-label="第${s.n}番 ${ok ? s.name : '未解放'}">${s.n}</button>`;
+    const cls = ['cell', c ? (c.u ? 'uta' : c.k ? 'kes' : c.t ? 'clr' : 'easy') : '', s.n === selN ? 'cur' : ''].join(' ');
+    const rec = c ? `<small>${bestTime(c) < Infinity ? fmt(bestTime(c)) : '―'}</small><small>${bestScore(c) || '―'}</small>` : '';
+    return `<button type="button" class="${cls}" data-act="pick" data-v="${s.n}" ${ok ? '' : 'disabled'} aria-label="第${s.n}番 ${ok ? s.name : '未解放'}">${s.n}${rec}</button>`;
   }).join('');
   show(`<div class="panel wide">
-    <div class="row" style="justify-content:space-between"><h2 class="head">番付</h2><button type="button" class="ghost" data-act="title">戻る</button></div>
+    <div class="row" style="justify-content:space-between"><h2 class="head">番付</h2><div class="row"><button type="button" class="ghost" data-act="transfer">引き継ぎ</button><button type="button" class="ghost" data-act="title">戻る</button></div></div>
     <p class="best">${nClear()} / 150</p>
     <div class="grid">${cells}</div>
   </div>`);
   const cur = ov.querySelector('.cell.cur'); if (cur) cur.scrollIntoView({ block: 'center' });
+}
+// ---- 引き継ぎ: the clear record as a code to carry between sites, apps and devices ----
+const CODE_TAG = 'KB1:';
+function recordCode() {
+  const r2 = v => v ? Math.round(v * 100) / 100 : 0, clr = {};
+  for (const n in save.clr) { const c = save.clr[n]; clr[n] = { t: r2(c.t), kt: r2(c.kt), ut: r2(c.ut), et: r2(c.et), k: c.k ? 1 : 0, u: c.u ? 1 : 0, hs: c.hs || [] }; }
+  const free = {}; for (const d in save.free || {}) free[d] = r2(save.free[d]);
+  return CODE_TAG + btoa(JSON.stringify({ clr, free, freeHS: save.freeHS || {} }));
+}
+function readCode(text) {
+  const s = (text || '').replace(/\s+/g, '');
+  if (!s.startsWith(CODE_TAG)) return null;
+  let r;
+  try { r = JSON.parse(atob(s.slice(CODE_TAG.length))); } catch (e) { return null; }
+  if (!r || typeof r.clr !== 'object') return null;
+  // only numbers for known stages and levels come through
+  const num = v => (typeof v === 'number' && isFinite(v) && v > 0 ? v : 0);
+  const out = { clr: {}, free: {}, freeHS: {} };
+  for (const k in r.clr) {
+    const n = +k, c = r.clr[k] || {};
+    if (!(n >= 1 && n <= 150 && Number.isInteger(n))) continue;
+    const e = { t: num(c.t), kt: num(c.kt), ut: num(c.ut), et: num(c.et), k: c.k ? 1 : 0, u: c.u ? 1 : 0, hs: [0, 1, 2, 3].map(i => Math.round(num((c.hs || [])[i]))) };
+    // a stage counts as cleared only with a time in some mode
+    if (e.t || e.kt || e.ut || e.et) out.clr[n] = e;
+  }
+  for (let d = 0; d < FREE.length; d++) { out.free[d] = num((r.free || {})[d]); out.freeHS[d] = Math.round(num((r.freeHS || {})[d])); }
+  return out;
+}
+function transferScreen() {
+  state = 'transfer';
+  show(`<div class="panel">
+    <h2 class="head">引き継ぎ</h2>
+    <textarea id="tcode" class="code" readonly rows="4">${recordCode()}</textarea>
+    <div class="row"><button type="button" class="primary" data-act="copycode">写す</button><span class="hint" id="tcopied" aria-live="polite"></span></div>
+    <textarea id="tin" class="code" rows="4" placeholder="${CODE_TAG}…" aria-label="引き継ぎコード"></textarea>
+    <div class="row"><button type="button" class="primary" data-act="importcode">読み込む</button><button type="button" class="ghost" data-act="select">番付へ</button><span class="hint" id="tmsg" aria-live="polite"></span></div>
+  </div>`);
 }
 function detailScreen(n) {
   state = 'detail'; selN = n;
@@ -2101,11 +2885,14 @@ function detailScreen(n) {
   show(`<div class="panel">
     <p class="eyebrow">第${n}番</p>
     <h2 class="head">${s.name}</h2>
+    <div class="chips">${s.uniqs.map(u => `<span class="chip g">${u.name}</span>`).join('')}
+      <span class="chip">${s.name}の${SIG[s.bsig].n}</span>${s.lsig ? `<span class="chip">${s.name}の${SIG[s.lsig].n}</span>` : ''}</div>
+    <p class="dnote">${s.forms.length}つの型${s.final ? ` ・ 終ノ型 約${fmtLen(s.finalLen)}` : ''}${s.revive ? ' ・ 再起' : ''} ・ 汎用弾幕 ${s.gset.length}種</p>
     <div class="seg" role="group" aria-label="命">
-      ${LIFE.map((l, i) => `<button type="button" data-act="life" data-v="${i}" aria-pressed="${i === life}">${l.name}</button>`).join('')}
+      ${LIFE_ORDER.map(i => `<button type="button" data-act="life" data-v="${i}" aria-pressed="${i === life}">${LIFE[i].name}</button>`).join('')}
     </div>
     <dl class="stats">
-      ${LIFE.map((l, i) => `<dt>${l.name}</dt><dd>${c && c[['t', 'kt', 'ut'][i]] ? fmt(c[['t', 'kt', 'ut'][i]]) : '―'} ・ ${c && c.hs && c.hs[i] ? c.hs[i] : '―'}</dd>`).join('')}
+      ${LIFE_ORDER.map(i => `<dt>${LIFE[i].name}</dt><dd>${c && c[LIFE_TK[i]] ? fmt(c[LIFE_TK[i]]) : '―'} ・ ${c && c.hs && c.hs[i] ? c.hs[i] : '―'}</dd>`).join('')}
     </dl>
     <div class="row"><button type="button" class="primary" data-act="go">挑む</button>
       ${n > 1 && unlocked(n - 1) ? `<button type="button" class="ghost" data-act="pick" data-v="${n - 1}">前の番</button>` : ''}
@@ -2118,8 +2905,9 @@ function freeScreen() {
   show(`<div class="panel">
     <h2 class="head">自由稽古</h2>
     <div class="seg" role="group" aria-label="難易度">
-      ${FREE.map((d, i) => `<button type="button" data-act="fdiff" data-v="${i}" aria-pressed="${i === freeDiff}">${d.name}</button>`).join('')}
+      ${FREE.map((d, i) => `<button type="button" data-act="fdiff" data-v="${i}" aria-pressed="${i === freeDiff}">${d.name}<small>第${d.lv}番</small></button>`).join('')}
     </div>
+    <p class="dnote">毎回ちがう鬼が出る。命は阿修羅のみ3。</p>
     <div class="row"><button type="button" class="primary" data-act="gofree">始める</button><button type="button" class="ghost" data-act="title">戻る</button></div>
     <dl class="stats">
       ${FREE.map((d, i) => `<dt>${d.name}</dt><dd>${save.free[i] ? fmt(save.free[i]) : '―'} ・ ${(save.freeHS || {})[i] || '―'}</dd>`).join('')}
@@ -2162,14 +2950,14 @@ function showResult() {
   const s = stats, won = s.won;
   const sc = scoreOf(s);
   let newTime = false, newScore = false, bestT = 0, bestS = 0;
-  const lf = RUN.life || 0, TK = ['t', 'kt', 'ut'];
+  const lf = RUN.life || 0, TK = LIFE_TK;
   if (RUN.mode === 'stage') {
     const n = RUN.st.n, c = save.clr[n] || {};
     if (won) {
       if (lf === 2) c.u = 1;
-      if (lf >= 1) c.k = 1;
+      if (lf === 1 || lf === 2) c.k = 1;
       if (!c[TK[lf]] || s.time < c[TK[lf]]) { c[TK[lf]] = s.time; newTime = true; }
-      c.hs = c.hs || [0, 0, 0];
+      c.hs = c.hs || [0, 0, 0, 0];
       if (sc > c.hs[lf]) { c.hs[lf] = sc; newScore = true; }
       save.clr[n] = c;
     }
@@ -2217,12 +3005,28 @@ ov.addEventListener('click', e => {
   else if (act === 'retry') retry();
   else if (act === 'resume') resume();
   else if (act === 'next') { selN = RUN.st.n + 1; detailScreen(selN); }
+  else if (act === 'transfer') transferScreen();
+  else if (act === 'copycode') {
+    const ta = ov.querySelector('#tcode'), msg = ov.querySelector('#tcopied');
+    const fallback = () => { ta.focus(); ta.select(); msg.textContent = '選択しました'; };
+    try { navigator.clipboard.writeText(ta.value).then(() => { msg.textContent = '写しました'; }, fallback); } catch (e) { fallback(); }
+  }
+  else if (act === 'importcode') {
+    const r = readCode(ov.querySelector('#tin').value), msg = ov.querySelector('#tmsg');
+    if (!r) { msg.textContent = 'コードが正しくありません'; return; }
+    // the better of the two records is kept for every stage
+    mergeRecords(r); persist(); pushCloud();
+    ov.querySelector('#tcode').value = recordCode();
+    msg.textContent = `読み込みました（討伐 ${nClear()} / 150）`;
+  }
 });
 
 // keyboard
 const MOVE = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
 const PARRY = new Set(['KeyJ', 'KeyZ']), DASH = new Set(['KeyK', 'KeyX', 'Space', 'ShiftLeft', 'ShiftRight']);
 addEventListener('keydown', e => {
+  // typing into the 引き継ぎ boxes is not a game key
+  if (e.target && e.target.tagName === 'TEXTAREA') return;
   const c = e.code;
   if (state === 'play' && (MOVE.has(c) || PARRY.has(c) || DASH.has(c))) e.preventDefault();
   keys[c] = true;
@@ -2257,7 +3061,7 @@ cv.addEventListener('pointerdown', e => {
 });
 cv.addEventListener('contextmenu', e => e.preventDefault());
 // phones: a long press or a slide off the pad must not start a text selection or open the press menu
-document.addEventListener('selectstart', e => e.preventDefault());
+document.addEventListener('selectstart', e => { if (!e.target.closest || !e.target.closest('textarea')) e.preventDefault(); });
 document.addEventListener('contextmenu', e => { if (e.target.closest('#touch, #stage')) e.preventDefault(); });
 $('#touch').addEventListener('touchmove', e => e.preventDefault(), { passive: false });
 $('#touch').addEventListener('touchstart', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
@@ -2315,5 +3119,5 @@ fit();
 requestAnimationFrame(frame);
 })();
 </script>
-</body>
-</html>
+
+</body></html>
