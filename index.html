@@ -371,7 +371,10 @@ for (const e of SHAPE_TYPES) for (const m of ['plain', ...ATK_IDS.filter(isProp)
   if (E.stream && (m === 'orbit' || m === 'mines' || m === 'gravity' || m === 'swirl')) continue;
   if ((e === 'rain' || e === 'lanes' || e === 'curtain') && (m === 'gravity' || m === 'homing' || m === 'swirl' || m === 'boomerang')) continue;
   if (e === 'vortex' && (m === 'homing' || m === 'stopgo' || m === 'boomerang' || m === 'accel')) continue;
-  if (e === 'firework' && (m === 'needle' || m === 'orbit')) continue;
+  // a firework's shell has to fly straight to its burst
+  if (e === 'firework' && ['needle', 'orbit', 'stopgo', 'swirl', 'split', 'redsplit', 'mines', 'curve', 'decel', 'gravity', 'boomerang'].includes(m)) continue;
+  // turning round the point it was fired from only keeps the shape of a layout that spreads from one point all round
+  if (m === 'swirl' && !['ring', 'spiral', 'flower', 'gapring', 'star', 'cross', 'pinwheel', 'helix'].includes(e)) continue;
   if ((e === 'rows' || e === 'box' || e === 'curtain' || e === 'lanes' || e === 'arc') && (m === 'split' || m === 'redsplit' || m === 'cluster' || m === 'snake' || m === 'wallsplit')) continue;
   // a solid line of blue shots is a wall nobody can pass
   if ((e === 'rows' || e === 'box') && m === 'blue') continue;
@@ -748,9 +751,9 @@ const NSK = {
   // 回り撃ち: circles the middle of the floor, firing a fixed fan at the player as it goes
   orbit: { min: 18, w: 1.1, moves: 1, names: ['回り撃ち', '輪舞', '巡り撃ち'],
     roll: r => ({ dir: sgn(r), dur: 2.4 + r() * .8, every: .3 + r() * .15, n: [3, 5][r() * 2 | 0], w: .8 + r() * .2, sp: 210 + r() * 40 }) },
-  // 天降り: a row of marks above the player, each dropping a column of needles in turn
+  // 天降り: a row of marks along one edge, level with the player, each sending a lane of needles across in turn
   bladefall: { min: 20, w: 1.1, names: ['天降り', '剣の雨', '串刺し天井'],
-    roll: r => ({ n: 5 + (r() * 3 | 0), sp: 70 + r() * 20, dir: sgn(r), del: .55 + r() * .15, len: 3 + (r() * 2 | 0) }) },
+    roll: r => ({ n: 5 + (r() * 3 | 0), sp: 70 + r() * 20, dir: sgn(r), del: .55 + r() * .15, len: 3 + (r() * 2 | 0), side: ['t', 'l', 'r'][r() * 3 | 0] }) },
   // 背後取り: reappears on the player's far side, then fires from there
   swapside: { min: 22, w: 1.3, moves: 1, names: ['背後取り', '回り込み', '影踏み'],
     roll: r => ({ n: 5 + (r() * 4 | 0), spread: .14 + r() * .06, vol: 2 + (r() < .5) }) },
@@ -804,6 +807,9 @@ function buildStage(n, opt = {}) {
     add({ t: 'rec', rec: 'procession', name: '百鬼の行列', I: I0 }, 1);
   } else add({ t: 'rec', rec: en.rec, name: en.name, I: I0 * 1.15, fast: FAST_REC.has(en.rec) }, 0);
   const SEALS = ['sealDash', 'sealAll'];
+  // a rush is the enemy's own: it is woven with one of its own barrages (one that goes for the player, if it has one)
+  const ownPat = () => { const pats = skills.map((s, j) => j).filter(j => skills[j].t === 'pat'), pin = pats.filter(j => !DENSE_L.has(skills[j].sh.type)), src = pin.length ? pin : pats; return src.length ? src[Math.floor(rng() * src.length)] : -1; };
+  const ownNm = j => j >= 0 ? EMIT[skills[j].sh.type].n + '・' : '';
   function roll(kind) {
     switch (kind) {
       case 'pat': {
@@ -834,7 +840,8 @@ function buildStage(n, opt = {}) {
         const src = vAvail.filter(v => v.fam === 'C' && !usedV.has(v.a));
         if (!src.length) return null;
         const v = pick(src); usedV.add(v.a);
-        return { t: 'rush', pa: v.a, ef: v.b, name: pick(CHARGE_PATH[v.a].un) + (CHARGE_EFF[v.b].n ? '・' + CHARGE_EFF[v.b].n : ''), moves: true, rush: true };
+        const own = ownPat();
+        return { t: 'rush', pa: v.a, ef: v.b, name: ownNm(own) + pick(CHARGE_PATH[v.a].un) + (CHARGE_EFF[v.b].n ? '・' + CHARGE_EFF[v.b].n : ''), moves: true, rush: true, own };
       }
       case 'tech': {
         const src = techAvail.filter(id => !usedT.has(id));
@@ -844,7 +851,8 @@ function buildStage(n, opt = {}) {
       }
       default: {
         const K = NSK[kind]; usedN.add(kind);
-        return { t: kind, p: K.roll(rng, n), name: pick(K.names), moves: !!K.moves, fast: !!K.fast, rush: !!K.rush };
+        const own = K.rush ? ownPat() : -1;
+        return { t: kind, p: K.roll(rng, n), name: (K.rush ? ownNm(own) : '') + pick(K.names), moves: !!K.moves, fast: !!K.fast, rush: !!K.rush, own };
       }
     }
   }
@@ -1354,14 +1362,21 @@ function spawner(prop, kindFn) {
       case 'redbig': b.kind = 'r'; b.r = 18; b.big = true; b.split = 2.4; b.vx *= .6; b.vy *= .6; break;
       case 'redsplit': b.kind = 'r'; b.sp3 = .85; b.child = 'w'; break;
       case 'mines': b.brake = true; { const k = [.55, 1, 1.45][bigCount % 3]; b.mine = 2.3 + (bigCount % 3) * .4; b.life = 8; b.vx *= k; b.vy *= k; } break;
-      case 'orbit': b.orb = { c: ORG(), r: 10, ang: a, w: 3 * vdir, t: 1.0, out: s }; break;
+      case 'orbit': b.orb = { c: ORG(), r: 10, ang: a, a0: a, w: 3 * vdir, t: 1.0, out: s }; break;
       case 'ghost': b.ghost = true; break;
       case 'fake': if (bigCount++ % 2) b.fake = true; break;
       case 'needle': b.needle = true; b.r = 4; b.vx *= 2.1; b.vy *= 2.1; break;
       case 'sealshot': b.sealHit = bigCount++ % 2 ? 'P' : 'D'; break;
       case 'gravity': b.grav = 240; b.vy -= s * .55; b.grace = 2; break;
       case 'boomerang': b.boom = { t: .8, done: false, aim: vdir > 0 }; break;
-      case 'curve': b.curve = vdir * .9; b.curveT = 1.6; break;
+      case 'curve': {
+        // a shot sent at the player curls in from one side or the other, set off so that it still meets the player;
+        // shots going elsewhere (a ring) all curl the same way
+        const aim = aimFrom(x, y);
+        if (Math.abs(angDiff(a, aim)) < .8) { const dir = bigCount++ % 2 ? 1 : -1, t = Math.min(1.6, Math.hypot(P.x - x, P.y - y) / Math.max(1, s)), rot = -dir * .9 * t / 2, c = Math.cos(rot), sn = Math.sin(rot), vx = b.vx; b.vx = vx * c - b.vy * sn; b.vy = vx * sn + b.vy * c; b.curve = dir * .9; }
+        else b.curve = vdir * .9;
+        b.curveT = 1.6; break;
+      }
       case 'swirl': b.swirl = { cx: x, cy: y, w: vdir * .9 }; break;
       case 'grow': b.growR = { to: b.r * 2.1, rate: 7 }; b.vx *= .85; b.vy *= .85; break;
       case 'pulse': b.pulse = { s, t: 0 }; break;
@@ -1782,6 +1797,13 @@ const moveB = (x, y) => { B.holdT = 1.2; burst(B.x, B.y, C.mute, 12, 200, .4); B
 // a fan of shots aimed at the player, always the same shape
 const volley = (x, y, n, spread, spd) => { const a0 = aimFrom(x, y); for (let i = 0; i < n; i++) shootFrom(x, y, a0 + (i - (n - 1) / 2) * spread, spd, K()); };
 // glides the body to (x, y) over T seconds
+// the enemy's own barrage that a rush is woven with; a final's pieces have none, and fire a plain fan
+function ownFire(s, lv) {
+  const q = s && s.own >= 0 && F.skills[s.own];
+  if (q && q.t === 'pat') return firePat(q.sh, q.m, Math.max(0, lv - 1));
+  volley(B.x, B.y, NN(5) | 1, .18, 240 * SPD()); sfx('shot');
+  return 1;
+}
 const glide = (x, y, T) => { B.holdT = T + 3; const x0 = B.x, y0 = B.y, N = Math.max(1, Math.round(T / .04)); for (let k = 1; k <= N; k++) at(k * T / N, () => { const u = k / N, e = u * (2 - u); B.x = x0 + (x - x0) * e; B.y = y0 + (y - y0) * e; B.tx = B.x; B.ty = B.y; }); };
 
 const NSK_RUN = {
@@ -1911,11 +1933,13 @@ const NSK_RUN = {
     return p.dur + .4;
   },
   bladefall(p, lv) {
-    const n = p.n + Math.min(3, lv), x0 = P.x, y = bounds().y0 + 16;
+    const n = p.n + Math.min(3, lv), bd = bounds(), side = p.side || 't', vert = side === 't';
+    const c0 = vert ? P.x : P.y, ang = { t: Math.PI / 2, l: 0, r: Math.PI }[side];
     for (let i = 0; i < n; i++) {
-      const x = clamp(x0 + (i - (n - 1) / 2) * p.sp, 30, W - 30), k = p.dir > 0 ? i : n - 1 - i;
+      const c = vert ? clamp(c0 + (i - (n - 1) / 2) * p.sp, 30, W - 30) : clamp(c0 + (i - (n - 1) / 2) * p.sp, bd.y0 + 20, bd.y1 - 20), k = p.dir > 0 ? i : n - 1 - i;
+      const x = vert ? c : side === 'l' ? bd.x0 + 16 : bd.x1 - 16, y = vert ? bd.y0 + 16 : c;
       at(k * .12, () => mark(x, y, p.del));
-      at(k * .12 + p.del, () => { for (let j = 0; j < p.len; j++) at(j * .07, () => { const b = shootFrom(x, y, Math.PI / 2, 380 * SPD(), K()); b.needle = true; b.r = 4; b.grace = 1; }); sfx('shot'); });
+      at(k * .12 + p.del, () => { for (let j = 0; j < p.len; j++) at(j * .07, () => { const b = shootFrom(x, y, ang, 380 * SPD(), K()); b.needle = true; b.r = 4; b.grace = 1; }); sfx('shot'); });
     }
     return n * .12 + p.del + 1.2;
   },
@@ -1934,77 +1958,78 @@ const NSK_RUN = {
     return vol * p.gap + .6;
   },
   clockbar(p, lv) {
-    const o = ORG(), cx = o.x, cy = o.y, tt = .7, arms = Math.min(3, p.arms + (lv >= 2)), w = p.w * (1 + .08 * Math.min(3, lv));
+    const o = ORG(), cx = o.x, cy = o.y, tt = .7, arms = Math.min(3, p.arms + (lv >= 2));
+    // the arm reaches past the player wherever it stands, and never sweeps faster than the player can run at its tip
+    const len = Math.max(p.len, Math.min(15, Math.ceil((Math.hypot(P.x - cx, P.y - cy) + 50 - 40) / 30))), Rmax = 40 + len * 30;
+    const w = Math.sign(p.w) * Math.min(Math.abs(p.w) * (1 + .08 * Math.min(3, lv)), 215 / Rmax), dur = Math.max(p.dur, (Math.PI / 2 + .9) / Math.abs(w));
     tellOn(tt);
     // it starts a quarter turn short of the player, so the player sees it coming round
     const a0 = aimFrom(cx, cy) - Math.sign(w) * Math.PI / 2;
     at(tt, () => {
-      for (let m = 0; m < arms; m++) for (let i = 1; i <= p.len; i++) {
+      for (let m = 0; m < arms; m++) for (let i = 1; i <= len; i++) {
         if (i === p.gap || i === p.gap + 1) continue;
         const b = shootFrom(cx, cy, 0, 0, K());
         b.orbc = { cx, cy, vx: 0, vy: 0, ang: a0 + m * TAU / arms, w, r: 0, R: 40 + i * 30, gr: 500 };
-        b.life = p.dur; b.grace = p.dur;
+        b.life = dur; b.grace = dur;
       }
       sfx('warn');
     });
     if (lv >= 1) at(tt + 1.0, () => fireShape('plain'));
-    return tt + p.dur + .3;
+    return tt + dur + .3;
   },
-  rushshot(p, lv) {
-    const o = ORG(), m = NN(p.n) | 1;
-    volley(o.x, o.y, m, p.spread, p.sp * SPD()); sfx('shot');
-    if (lv >= 2) at(.18, () => volley(B.x, B.y, m, p.spread * .6, p.sp * SPD() * 1.15));
+  rushshot(p, lv, s) {
+    ownFire(s, lv);
     at(.3, () => startCharge(.5 * F.warn, 950 * F.spd, lv >= 1 ? 2 : 1, { pa: 'rush', ef: 'none' }));
-    return 2.4 + (lv >= 1 ? 1.2 : 0);
+    return 2.6 + (lv >= 1 ? 1.2 : 0);
   },
-  rushbeam(p, lv) {
+  rushbeam(p, lv, s) {
     const ctx = actx;
     startCharge(.78 * F.warn, 950 * F.spd, 1, { pa: 'rush', ef: 'none' });
     B.afterRush = () => withCtxOf(ctx, () => {
       const nb = p.beams + (lv >= 2);
       for (let i = 0; i < nb; i++) laser(aimAng() + (i - (nb - 1) / 2) * p.spread, { warn: Math.max(.45, .6 * F.warn), act: .35, w: 22 });
       sfx('warn');
-      if (lv >= 1) at(.5, () => { volley(B.x, B.y, NN(5) | 1, .18, 240 * SPD()); sfx('shot'); });
+      if (lv >= 1) at(.5, () => ownFire(s, lv));
     });
-    return 3.0;
+    return 3.0 + (lv >= 1 ? 1 : 0);
   },
-  rushfeint(p, lv) {
+  rushfeint(p, lv, s) {
     const ctx = actx;
     startCharge(.6 * F.warn, 950 * F.spd, 1, { pa: 'feint', ef: 'none' });
     B.afterRush = () => withCtxOf(ctx, () => {
       const q = spotAround(P.x, P.y, aimFrom(B.x, B.y) + Math.PI, 190);
       mark(q.x, q.y, .35);
       at(.35, () => moveB(q.x, q.y));
-      const vol = 1 + (lv >= 1);
-      for (let v = 0; v < vol; v++) at(.45 + v * .25, () => { volley(B.x, B.y, NN(p.n), p.spread, 250 * SPD()); sfx('shot'); });
+      at(.45, () => ownFire(s, lv));
     });
-    return 3.2;
+    return 3.4;
   },
-  flankrush(p, lv) {
-    const q = spotAround(P.x, P.y, Math.atan2(B.y - P.y, B.x - P.x) + p.side * Math.PI / 2, 230);
+  flankrush(p, lv, s) {
+    const ctx = actx, q = spotAround(P.x, P.y, Math.atan2(B.y - P.y, B.x - P.x) + p.side * Math.PI / 2, 230);
     glide(q.x, q.y, .6);
     for (let v = 0; v < p.vol; v++) at(.1 + v * .22, () => { volley(B.x, B.y, NN(p.n) | 1, .15, 240 * SPD()); sfx('shot'); });
-    at(.65, () => startCharge(.5 * F.warn, 950 * F.spd, lv >= 1 ? 2 : 1, { pa: 'rush', ef: lv >= 2 ? 'shock' : 'none' }));
-    return 2.9 + (lv >= 1 ? 1.2 : 0);
+    at(.65, () => { startCharge(.5 * F.warn, 950 * F.spd, lv >= 1 ? 2 : 1, { pa: 'rush', ef: lv >= 2 ? 'shock' : 'none' }); B.afterRush = () => withCtxOf(ctx, () => ownFire(s, lv)); });
+    return 3.8 + (lv >= 1 ? 1.2 : 0);
   },
-  rushchain(p, lv) {
+  rushchain(p, lv, s) {
     const ctx = actx, n = p.n + (lv >= 2);
     let left = n;
     const go = first => {
       startCharge((first ? .6 : .38) * F.warn, 950 * F.spd, 1, { pa: 'rush', ef: 'none' });
       B.afterRush = () => withCtxOf(ctx, () => {
-        const a0 = aimFrom(B.x, B.y), s = p.sp * SPD();
-        if (p.end === 'ring') { const m = NN(10); for (let i = 0; i < m; i++) shootFrom(B.x, B.y, a0 + (i + .5) / m * TAU, s, K()); }
-        else if (p.end === 'fan') volley(B.x, B.y, NN(5) | 1, .2, s * 1.3);
-        else for (let i = 0; i < 4; i++) for (let k = 0; k < 3; k++) shootFrom(B.x, B.y, a0 + Math.PI / 4 + i * Math.PI / 2, s * (1 + k * .2), K());
+        // each stop a burst of its own shape; the last stop, its own barrage
+        if (--left <= 0) { ownFire(s, lv); return; }
+        const a0 = aimFrom(B.x, B.y), sp = p.sp * SPD();
+        if (p.end === 'ring') { const m = NN(10); for (let i = 0; i < m; i++) shootFrom(B.x, B.y, a0 + (i + .5) / m * TAU, sp, K()); }
+        else if (p.end === 'fan') volley(B.x, B.y, NN(5) | 1, .2, sp * 1.3);
+        else for (let i = 0; i < 4; i++) for (let k = 0; k < 3; k++) shootFrom(B.x, B.y, a0 + Math.PI / 4 + i * Math.PI / 2, sp * (1 + k * .2), K());
         sfx('zap');
-        if (--left > 0) at(.25, () => go(false));
+        at(.25, () => go(false));
       });
     };
     go(true);
-    return 1.4 * n + 1;
+    return 1.4 * n + 2;
   },
-
   twin(p, lv) {
     const sx = W - B.x, sy = B.y, sh = F.shapes[Math.floor(p.k * F.shapes.length)], og = { x: sx, y: sy };
     mark(sx, sy, .5);
@@ -2019,18 +2044,31 @@ const NSK_RUN = {
 // the speed of the attack and the route, not the number of shots, that make them hard ----
 const fixBeam = (x, y, ang, o = {}) => lasers.push(Object.assign({ x, y, ang, warn: Math.max(.45, .7 * F.warn), act: .35, w: 20, t: 0, rot: 0, follow: false, snipe: false }, o));
 const FIX = {
-  // 光柵: waves of parallel beams across the floor, each wave shifted half a step, so the safe lanes move
-  F_beams: { roll: (r, n) => ({ dir: ['v', 'h', 'd1', 'd2'][r() * 4 | 0], n: 4 + (r() * 3 | 0), waves: 3 + (r() < .4), gap: .55 + r() * .15, blue: n >= 23 && r() < .3, off: r() }),
+  // 光柵: parallel beams across the floor, in one of three ways: waves shifted half a step (the safe lanes move),
+  // one beam after another marching across (stay behind it), or pairs closing in from both edges and opening again
+  F_beams: { roll: (r, n) => ({ dir: ['v', 'h', 'd1', 'd2'][r() * 4 | 0], mode: 'shift', n: 4 + (r() * 3 | 0), waves: 3 + (r() < .4), gap: .55 + r() * .15, blue: n >= 23 && r() < .3, off: r(), back: r() < .5 }),
     run(p, lv) {
-      const waves = p.waves + Math.min(2, lv), bd = bounds();
+      const bd = bounds();
+      const at1 = (u, o) => {
+        if (p.dir === 'v') fixBeam(bd.x0 + u * (bd.x1 - bd.x0), 30, Math.PI / 2, o);
+        else if (p.dir === 'h') fixBeam(-10, bd.y0 + u * (bd.y1 - bd.y0), 0, o);
+        else fixBeam(-300 + u * (W + 600), 30, p.dir === 'd1' ? Math.PI / 4 : Math.PI * 3 / 4, o);
+      };
+      if (p.mode === 'march') {
+        const N = 7 + 2 * Math.min(2, lv), step = .2;
+        for (let k = 0; k < N; k++) at(k * step, () => { const u = (k + .5) / N; at1(p.back ? 1 - u : u, { blue: p.blue && k % 3 === 2 }); if (k % 2 === 0) sfx('warn'); });
+        return N * step + 1;
+      }
+      if (p.mode === 'pinch') {
+        const N = 4 + Math.min(2, lv), step = .3;
+        for (let k = 0; k < N; k++) at(k * step, () => { const u = .04 + k * .42 / N; at1(u, {}); at1(1 - u, {}); sfx('warn'); });
+        for (let k = 0; k < N - 1; k++) at((N + k) * step + .3, () => { const u = .46 - (k + 1) * .42 / N; at1(u, {}); at1(1 - u, {}); });
+        return (2 * N - 1) * step + 1.3;
+      }
+      const waves = p.waves + Math.min(2, lv);
       for (let w = 0; w < waves; w++) at(w * p.gap, () => {
         const sh = ((p.off + w * .5) % 1);
-        for (let i = 0; i < p.n; i++) {
-          const u = (i + sh) / p.n, o = { blue: p.blue && w % 2 === 1 };
-          if (p.dir === 'v') fixBeam(bd.x0 + u * (bd.x1 - bd.x0), 30, Math.PI / 2, o);
-          else if (p.dir === 'h') fixBeam(-10, bd.y0 + u * (bd.y1 - bd.y0), 0, o);
-          else { const x = -300 + u * (W + 600); fixBeam(x, 30, p.dir === 'd1' ? Math.PI / 4 : Math.PI * 3 / 4, o); }
-        }
+        for (let i = 0; i < p.n; i++) at1((i + sh) / p.n, { blue: p.blue && w % 2 === 1 });
         sfx('warn');
       });
       return waves * p.gap + .9;
@@ -2100,32 +2138,54 @@ const FIX = {
       B.holdT = t + .6;
       return t + .5;
     } },
-  // 落雷格子: strikes on a fixed grid, the two colours of a checkerboard in turn
-  F_grid: { roll: r => ({ sp: 120 + r() * 20, waves: 3 + (r() < .5), gap: .7 + r() * .15, ox: r(), oy: r() }),
+  // 落雷格子: strikes on a fixed grid, in one of three ways: the two colours of a checkerboard in turn, whole rows
+  // marching across the floor one after another, or lines of strikes crossing it diagonally from a corner
+  F_grid: { roll: r => ({ mode: 'checker', sp: 120 + r() * 20, waves: 3 + (r() < .5), gap: .7 + r() * .15, ox: r(), oy: r(), axis: r() < .5 ? 'x' : 'y', back: r() < .5, corner: r() * 4 | 0 }),
     run(p, lv) {
-      const bd = bounds(), waves = p.waves + Math.min(2, lv);
+      const bd = bounds(), warn = Math.max(.5, .75 * F.warn), zr = 46;
+      const cols = [], rows = [];
+      for (let x = bd.x0 + p.ox * p.sp; x < bd.x1; x += p.sp) cols.push(x);
+      for (let y = bd.y0 + p.oy * p.sp; y < bd.y1; y += p.sp) rows.push(y);
+      if (p.mode === 'march') {
+        // a whole row of strikes, then the next, across the floor: keep behind the line
+        const lines = p.axis === 'x' ? cols : rows, order = p.back ? lines.slice().reverse() : lines, step = .32 - .03 * Math.min(2, lv);
+        order.forEach((v, k) => at(k * step, () => { for (const w of (p.axis === 'x' ? rows : cols)) zone(p.axis === 'x' ? v : w, p.axis === 'x' ? w : v, { r: zr, warn }); if (k % 2 === 0) sfx('warn'); }));
+        return order.length * step + warn + .6;
+      }
+      if (p.mode === 'diag') {
+        // diagonal lines of strikes sweeping out from one corner
+        const flipX = p.corner & 1, flipY = p.corner & 2, nI = cols.length, nJ = rows.length, step = .26;
+        for (let d = 0; d < nI + nJ - 1; d++) at(d * step, () => {
+          for (let i = 0; i < nI; i++) { const j = d - i; if (j < 0 || j >= nJ || (d + lv) % 2 && i % 2) continue; zone(cols[flipX ? nI - 1 - i : i], rows[flipY ? nJ - 1 - j : j], { r: zr, warn }); }
+          if (d % 2 === 0) sfx('warn');
+        });
+        return (nI + nJ - 1) * step + warn + .6;
+      }
+      const waves = p.waves + Math.min(2, lv);
       for (let w = 0; w < waves; w++) at(w * p.gap, () => {
-        let i = 0;
-        for (let x = bd.x0 + p.ox * p.sp; x < bd.x1; x += p.sp, i++) { let j = 0; for (let y = bd.y0 + p.oy * p.sp; y < bd.y1; y += p.sp, j++) if ((i + j + w) % 2 === 0) zone(x, y, { r: 46, warn: Math.max(.5, .75 * F.warn) }); }
+        cols.forEach((x, i) => rows.forEach((y, j) => { if ((i + j + w) % 2 === 0) zone(x, y, { r: zr, warn }); }));
         sfx('warn');
       });
       return waves * p.gap + 1;
     } },
-  // 定め雨: needles drop down fixed columns in a fixed order, sweeping across and back
-  F_rain: { roll: r => ({ cols: 8 + (r() * 4 | 0), order: ['lr', 'rl', 'out', 'in'][r() * 4 | 0], step: .1 + r() * .05, len: 3 + (r() * 2 | 0), passes: 2 + (r() < .4) }),
+  // 定め雨: needles shot in from one edge down fixed lanes, in a fixed order, sweeping across and back
+  F_rain: { roll: r => ({ side: 't', cols: 8 + (r() * 4 | 0), order: ['lr', 'rl', 'out', 'in'][r() * 4 | 0], step: .1 + r() * .05, len: 3 + (r() * 2 | 0), passes: 2 + (r() < .4) }),
     run(p, lv) {
-      const bd = bounds(), n = p.cols, passes = p.passes + (lv >= 2), y = bd.y0 + 16;
+      const bd = bounds(), n = p.cols, passes = p.passes + (lv >= 2), vert = p.side === 't' || p.side === 'b';
       const ord = [...Array(n).keys()];
       if (p.order === 'rl') ord.reverse();
       else if (p.order === 'out') ord.sort((a, b) => Math.abs(a - (n - 1) / 2) - Math.abs(b - (n - 1) / 2));
       else if (p.order === 'in') ord.sort((a, b) => Math.abs(b - (n - 1) / 2) - Math.abs(a - (n - 1) / 2));
+      const ang = { t: Math.PI / 2, b: -Math.PI / 2, l: 0, r: Math.PI }[p.side];
       let t = 0;
       for (let q = 0; q < passes; q++) {
         const list = q % 2 ? ord.slice().reverse() : ord;
         list.forEach(c => {
-          const x = bd.x0 + (c + .5 + (q % 2) * .5) / n * (bd.x1 - bd.x0);
+          const u = (c + .5 + (q % 2) * .5) / n;
+          const x = vert ? bd.x0 + u * (bd.x1 - bd.x0) : p.side === 'l' ? bd.x0 + 16 : bd.x1 - 16;
+          const y = vert ? (p.side === 't' ? bd.y0 + 16 : bd.y1 - 16) : bd.y0 + u * (bd.y1 - bd.y0);
           at(t, () => mark(x, y, .45));
-          at(t + .45, () => { for (let j = 0; j < p.len; j++) at(j * .06, () => { const b = shootFrom(x, y, Math.PI / 2, 420 * SPD(), K()); b.needle = true; b.r = 4; b.grace = 1; }); });
+          at(t + .45, () => { for (let j = 0; j < p.len; j++) at(j * .06, () => { const b = shootFrom(x, y, ang, 420 * SPD(), K()); b.needle = true; b.r = 4; b.grace = 1; }); });
           t += p.step;
         });
       }
@@ -2150,12 +2210,13 @@ const FIX = {
 
 // the forms each set piece comes in; a final uses every form of every piece before any comes round again
 const FIX_VAR = {
-  F_beams: ['dir', ['v', 'h', 'd1', 'd2']],
+  F_beams: ['mode', ['shift', 'march', 'pinch']],
+  F_grid: ['mode', ['checker', 'march', 'diag']],
   F_sweep: ['at', ['mid', 'tl', 'br', 'tr']],
   F_lanes: ['sides', [['l', 'r'], ['t', 'b'], ['l', 't', 'r', 'b'], ['t', 'l', 'b', 'r']]],
   F_cross: ['toward', [true, false]],
   F_rush: ['path', ['Z', 'X', 'box', 'plus', 'N']],
-  F_rain: ['order', ['lr', 'rl', 'out', 'in']],
+  F_rain: ['side', ['t', 'l', 'r', 'b']],
   F_walls: ['axis', ['x', 'y']],
 };
 
@@ -2208,10 +2269,12 @@ function skillBody(s, lv) {
       seenNow.add('charge');
       const chain = Math.min(3, (s.ef === 'chain' ? 3 : chargeChain()) + (lv >= 1));
       startCharge(.78 * F.warn, 950 * F.spd * (1 + .04 * Math.min(3, lv)), chain, { pa: s.pa, ef: s.ef });
-      return 1.6 + (chain - 1) * 1.25 + (s.pa === 'leap' ? .5 : 0);
+      // and where it comes to rest, its own barrage
+      if (s.own >= 0) { const ctx = actx; B.afterRush = () => withCtxOf(ctx, () => ownFire(s, lv)); }
+      return 1.6 + (chain - 1) * 1.25 + (s.pa === 'leap' ? .5 : 0) + (s.own >= 0 ? 1.2 : 0);
     }
     case 'tech': seenNow.add(s.id); return ATK[s.id]();
-    default: return FIX[s.t] ? FIX[s.t].run(s.p, lv) : NSK_RUN[s.t](s.p, lv);
+    default: return FIX[s.t] ? FIX[s.t].run(s.p, lv) : NSK_RUN[s.t](s.p, lv, s);
   }
 }
 // a pool entry: one skill (k:j) or a combination (c:j), whose parts run one after another
@@ -3012,7 +3075,8 @@ function update(dt) {
       if (b.orb) {
         const o = b.orb, c = o.c || B; o.t -= dt; o.ang += o.w * dt; o.r = Math.min(70, o.r + 120 * dt);
         b.x = c.x + Math.cos(o.ang) * o.r; b.y = c.y + Math.sin(o.ang) * o.r;
-        if (o.t <= 0) { b.vx = Math.cos(o.ang) * o.out; b.vy = Math.sin(o.ang) * o.out; b.orb = null; }
+        // let go along the line it was first sent on, so an aimed volley still goes for the player
+        if (o.t <= 0) { const ra = o.a0 !== undefined ? o.a0 : o.ang; b.vx = Math.cos(ra) * o.out; b.vy = Math.sin(ra) * o.out; b.orb = null; }
         else { checkHitPlayer(b, i); continue; }
       }
       if (b.home > 0) {
@@ -3459,7 +3523,7 @@ function render() {
 // =====================================================================
 // screens
 // =====================================================================
-const VERSION = '3.4.0';
+const VERSION = '3.5.0';
 let selN = 1, life = 0, freeDiff = 1, tempUnlock = false;
 const bestTime = c => Math.min(...LIFE_TK.map(k => c[k] || Infinity));
 const bestScore = c => Math.max(0, ...(c.hs || []));
