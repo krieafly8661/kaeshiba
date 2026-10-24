@@ -181,6 +181,8 @@ const baseRand = Math.random;
 Math.random = () => { if (!actx) return baseRand(); let a = actx.s = (actx.s + 0x6D2B79F5) | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 const hashStr = str => { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h | 0; };
 function withCtx(key, fn) { const prev = actx; actx = { s: hashStr(key) }; try { return fn(); } finally { actx = prev; } }
+// runs fn inside a context kept from earlier, as a scheduled step would
+function withCtxOf(ctx, fn) { const prev = actx; actx = ctx; try { return fn(); } finally { actx = prev; } }
 
 // ---- the player never changes: same moves, same timings, every stage and every difficulty ----
 const SPEED = 235, DASH_T = .17, DASH_V = 720, DASH_CD = .55;
@@ -760,6 +762,16 @@ const NSK = {
     roll: r => ({ arms: 1 + (r() < .35), len: 7 + (r() * 3 | 0), gap: 2 + (r() * 3 | 0), w: sgn(r) * (.5 + r() * .15), dur: 3.2 + r() * .6 }) },
   // 写し身: a shadow on the far side of the floor fires the same barrage as the body
   twin: { min: 30, w: .5, names: ['写し身', '双身', '鏡像'], roll: r => ({ k: r() }) },
+  // 突き撃ち: fires a fan, then rushes in right behind its own shots
+  rushshot: { min: 5, w: 1.3, moves: 1, rush: 1, names: ['突き撃ち', '追い駆け', '鉄砲駆け'], roll: r => ({ n: [3, 5][r() * 2 | 0], spread: .16 + r() * .08, sp: 230 + r() * 40 }) },
+  // 返し光: rushes through, and from where it stops turns a beam on the player
+  rushbeam: { min: 8, w: 1.2, moves: 1, rush: 1, names: ['返し光', '駆け抜け眼光', '振り向き'], roll: r => ({ beams: 1 + (r() < .4), spread: .3 + r() * .15 }) },
+  // 見せ突き: a rush that pulls up short, then a vanishing step to the player's back and a volley from there
+  rushfeint: { min: 12, w: 1.2, moves: 1, rush: 1, names: ['見せ突き', '寸止め', '騙し駆け'], roll: r => ({ n: 5 + (r() * 3 | 0), spread: .14 + r() * .05 }) },
+  // 回り込み突進: swings round to the player's flank, firing as it goes, then rushes in from the side
+  flankrush: { min: 16, w: 1.2, moves: 1, rush: 1, names: ['回り込み突進', '横撃ち駆け', '脇差し'], roll: r => ({ side: sgn(r), n: 3 + (r() < .5) * 2, vol: 2 + (r() < .5) }) },
+  // 連突: rushes again and again, each stop ending in a burst shaped its own way
+  rushchain: { min: 20, w: 1.1, moves: 1, rush: 1, names: ['連突', '暴れ駆け', '猪突猛進'], roll: r => ({ n: 3 + (r() < .4), end: ['ring', 'fan', 'cross'][r() * 3 | 0], sp: 140 + r() * 30 }) },
 };
 
 // opt.free: a free-play bout at level n, drawn fresh each time
@@ -822,7 +834,7 @@ function buildStage(n, opt = {}) {
         const src = vAvail.filter(v => v.fam === 'C' && !usedV.has(v.a));
         if (!src.length) return null;
         const v = pick(src); usedV.add(v.a);
-        return { t: 'rush', pa: v.a, ef: v.b, name: pick(CHARGE_PATH[v.a].un) + (CHARGE_EFF[v.b].n ? '・' + CHARGE_EFF[v.b].n : ''), moves: true };
+        return { t: 'rush', pa: v.a, ef: v.b, name: pick(CHARGE_PATH[v.a].un) + (CHARGE_EFF[v.b].n ? '・' + CHARGE_EFF[v.b].n : ''), moves: true, rush: true };
       }
       case 'tech': {
         const src = techAvail.filter(id => !usedT.has(id));
@@ -832,7 +844,7 @@ function buildStage(n, opt = {}) {
       }
       default: {
         const K = NSK[kind]; usedN.add(kind);
-        return { t: kind, p: K.roll(rng, n), name: pick(K.names), moves: !!K.moves, fast: !!K.fast };
+        return { t: kind, p: K.roll(rng, n), name: pick(K.names), moves: !!K.moves, fast: !!K.fast, rush: !!K.rush };
       }
     }
   }
@@ -841,21 +853,25 @@ function buildStage(n, opt = {}) {
     if (o.old) { if (introAt.charge <= n) w.push(['rush', .8]); return w; }
     if (n >= 3) w.push(['rec', .6]);
     if (vAvail.some(v => v.fam === 'L')) w.push(['beam', 1]);
-    if (introAt.charge <= n && !o.noCharge) w.push(['rush', .9]);
+    if (introAt.charge <= n && !o.noCharge) w.push(['rush', 1.8]);
     if (techAvail.length) w.push(['tech', 1.3]);
     // the simplest set pieces are open a little early, so the first enemies have skills enough
-    for (const id in NSK) if (NSK[id].min <= Math.max(n, 6) && !usedN.has(id) && !(o.noCharge && NSK[id].moves)) w.push([id, NSK[id].w || .9]);
+    for (const id in NSK) if (NSK[id].min <= Math.max(n, 6) && !usedN.has(id) && !(o.noCharge && NSK[id].moves) && !(NSK[id].rush && introAt.charge > n)) w.push([id, NSK[id].w || .9]);
     return w;
   };
   const pickKind = ws => { let x = rng() * ws.reduce((a, w) => a + w[1], 0); for (const w of ws) if ((x -= w[1]) <= 0) return w[0]; return ws[0][0]; };
   const draw = intro => { for (let t = 0; t < 12; t++) { const s = roll(pickKind(kinds())); if (s) { add(s, intro); return; } } };
   // the first form: two barrages of its own beside the signature one, then more up to four to six in all
   for (let q = 0; q < 2; q++) { const s = roll('pat'); if (s) add(s, 0); }
+  // the body itself goes for the player: once rushes are known, every enemy opens with one, and most forms bring another
+  const canRush = introAt.charge <= n && !o.noCharge;
+  const drawRush = intro => { const ws = kinds().filter(([id]) => id === 'rush' || (NSK[id] && NSK[id].rush)); for (let t = 0; t < 6 && ws.length; t++) { const s = roll(pickKind(ws)); if (s) { add(s, intro); return true; } } return false; };
+  if (canRush) drawRush(0);
   if (o.gens) for (const id of o.gens) if (introAt[id] <= n && !usedT.has(id)) { usedT.add(id); add({ t: 'tech', id, name: GIM[id].n, field: TECH[id] === 'f' }, 0); }
   const c0 = 4 + Math.floor(rng() * 3);
   while (skills.length < c0) { const before = skills.length; draw(0); if (skills.length === before) break; }
   // every later form brings two to five more, mostly three
-  for (let i = 1; i < k; i++) { const m = pick([2, 3, 3, 3, 3, 4, 5]); for (let q = 0; q < m; q++) draw(i); }
+  for (let i = 1; i < k; i++) { const m = pick([2, 3, 3, 3, 3, 4, 5]); let q = 0; if (canRush && rng() < .65 && drawRush(i)) q++; for (; q < m; q++) draw(i); }
   // ---- combinations: from the second form on, its skills come strung together ----
   const combos = [];
   const sameAs = c => combos.some(x => x.parts.join() === c.parts.join());
@@ -1298,6 +1314,8 @@ function chargeEnd() {
   if (ef === 'shock') { burstRing(B.x, B.y, NN(14), 150 * SPD()); sfx('zap'); }
   else if (ef === 'debris') fan(clamp(Math.round(4 + F.den * 2), 5, 8), .2, 240 * SPD(), whiteOnly);
   if (B.chain > 1 && !P.dead && !ending) startCharge(.5 * F.warn, B.cspd * 1.05, B.chain - 1, B.cv);
+  // a rush that leads into something more: it follows straight on from the last stop
+  else if (B.afterRush && !P.dead && !ending) { const f = B.afterRush; B.afterRush = null; f(); }
 }
 function blink() {
   const b = bounds(); let x, y, tries = 0;
@@ -1932,6 +1950,61 @@ const NSK_RUN = {
     if (lv >= 1) at(tt + 1.0, () => fireShape('plain'));
     return tt + p.dur + .3;
   },
+  rushshot(p, lv) {
+    const o = ORG(), m = NN(p.n) | 1;
+    volley(o.x, o.y, m, p.spread, p.sp * SPD()); sfx('shot');
+    if (lv >= 2) at(.18, () => volley(B.x, B.y, m, p.spread * .6, p.sp * SPD() * 1.15));
+    at(.3, () => startCharge(.5 * F.warn, 950 * F.spd, lv >= 1 ? 2 : 1, { pa: 'rush', ef: 'none' }));
+    return 2.4 + (lv >= 1 ? 1.2 : 0);
+  },
+  rushbeam(p, lv) {
+    const ctx = actx;
+    startCharge(.78 * F.warn, 950 * F.spd, 1, { pa: 'rush', ef: 'none' });
+    B.afterRush = () => withCtxOf(ctx, () => {
+      const nb = p.beams + (lv >= 2);
+      for (let i = 0; i < nb; i++) laser(aimAng() + (i - (nb - 1) / 2) * p.spread, { warn: Math.max(.45, .6 * F.warn), act: .35, w: 22 });
+      sfx('warn');
+      if (lv >= 1) at(.5, () => { volley(B.x, B.y, NN(5) | 1, .18, 240 * SPD()); sfx('shot'); });
+    });
+    return 3.0;
+  },
+  rushfeint(p, lv) {
+    const ctx = actx;
+    startCharge(.6 * F.warn, 950 * F.spd, 1, { pa: 'feint', ef: 'none' });
+    B.afterRush = () => withCtxOf(ctx, () => {
+      const q = spotAround(P.x, P.y, aimFrom(B.x, B.y) + Math.PI, 190);
+      mark(q.x, q.y, .35);
+      at(.35, () => moveB(q.x, q.y));
+      const vol = 1 + (lv >= 1);
+      for (let v = 0; v < vol; v++) at(.45 + v * .25, () => { volley(B.x, B.y, NN(p.n), p.spread, 250 * SPD()); sfx('shot'); });
+    });
+    return 3.2;
+  },
+  flankrush(p, lv) {
+    const q = spotAround(P.x, P.y, Math.atan2(B.y - P.y, B.x - P.x) + p.side * Math.PI / 2, 230);
+    glide(q.x, q.y, .6);
+    for (let v = 0; v < p.vol; v++) at(.1 + v * .22, () => { volley(B.x, B.y, NN(p.n) | 1, .15, 240 * SPD()); sfx('shot'); });
+    at(.65, () => startCharge(.5 * F.warn, 950 * F.spd, lv >= 1 ? 2 : 1, { pa: 'rush', ef: lv >= 2 ? 'shock' : 'none' }));
+    return 2.9 + (lv >= 1 ? 1.2 : 0);
+  },
+  rushchain(p, lv) {
+    const ctx = actx, n = p.n + (lv >= 2);
+    let left = n;
+    const go = first => {
+      startCharge((first ? .6 : .38) * F.warn, 950 * F.spd, 1, { pa: 'rush', ef: 'none' });
+      B.afterRush = () => withCtxOf(ctx, () => {
+        const a0 = aimFrom(B.x, B.y), s = p.sp * SPD();
+        if (p.end === 'ring') { const m = NN(10); for (let i = 0; i < m; i++) shootFrom(B.x, B.y, a0 + (i + .5) / m * TAU, s, K()); }
+        else if (p.end === 'fan') volley(B.x, B.y, NN(5) | 1, .2, s * 1.3);
+        else for (let i = 0; i < 4; i++) for (let k = 0; k < 3; k++) shootFrom(B.x, B.y, a0 + Math.PI / 4 + i * Math.PI / 2, s * (1 + k * .2), K());
+        sfx('zap');
+        if (--left > 0) at(.25, () => go(false));
+      });
+    };
+    go(true);
+    return 1.4 * n + 1;
+  },
+
   twin(p, lv) {
     const sx = W - B.x, sy = B.y, sh = F.shapes[Math.floor(p.k * F.shapes.length)], og = { x: sx, y: sy };
     mark(sx, sy, .5);
@@ -2392,7 +2465,7 @@ function endFinal() {
 function clearHostile() {
   for (const b of bullets) if (b.own === 'b') burst(b.x, b.y, b.kind === 'w' ? C.washi : C.shu, 2, 80, .4, 2);
   bullets = bullets.filter(b => b.own === 'p'); lasers = []; zones = []; sched = []; wind = null;
-  turrets = []; wells = []; slows = []; tether = null; inks = []; marks = []; B.trail = 0; B.cmb = null; B.tell = null; B.act = {};
+  turrets = []; wells = []; slows = []; tether = null; inks = []; marks = []; B.trail = 0; B.cmb = null; B.tell = null; B.act = {}; B.afterRush = null;
   fx.sealP = fx.sealD = fx.rev = fx.dark = fx.swap = fx.freeze = fx.shrink = 0;
 }
 
@@ -2772,7 +2845,7 @@ function update(dt) {
     // nothing
   } else if (B.stagger > 0) {
     // a reeling enemy drops whatever it was stringing together
-    B.cmb = null; B.tell = null;
+    B.cmb = null; B.tell = null; B.afterRush = null;
     B.stagger -= dt;
   } else if (B.mode === 'aim') {
     B.aimT -= dt; B.vis = 1;
@@ -3386,7 +3459,7 @@ function render() {
 // =====================================================================
 // screens
 // =====================================================================
-const VERSION = '3.3.1';
+const VERSION = '3.4.0';
 let selN = 1, life = 0, freeDiff = 1, tempUnlock = false;
 const bestTime = c => Math.min(...LIFE_TK.map(k => c[k] || Infinity));
 const bestScore = c => Math.max(0, ...(c.hs || []));
