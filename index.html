@@ -476,9 +476,9 @@ function diffAt(lv) {
     // Same end points at stage 150 as before; the middle now rises earlier.
     // the enemies come to finish the player fast: quicker shots and less rest, but thinner volleys,
     // so it is reflexes and reading that are tested rather than squeezing through a wall of shots
-    spd: (.84 + .3 * s + .57 * Math.pow(s, 1.3)) * 1.2,     // shot speed
-    gap: (1.22 - .75 * s - .15 * s * s) * .8,               // rest between attacks
-    den: (.9 + .7 * s + 1.4 * Math.pow(s, 1.3)) * .7,        // shots per volley
+    spd: (.84 + .3 * s + .57 * Math.pow(s, 1.3)) * 1.26,    // shot speed
+    gap: (1.22 - .75 * s - .15 * s * s) * .74,              // rest between attacks
+    den: (.9 + .7 * s + 1.4 * Math.pow(s, 1.3)) * .8,        // shots per volley
     warn: (1.12 - .5 * s - .1 * s * s) * .95,                // warning time of beams, strikes and charges
     red: lv < 3 ? 0 : Math.min(.8, .22 + .58 * s),
     layer: lv < 12 ? 0 : Math.min(.85, .05 + .8 * Math.pow((lv - 12) / 138, .7)),   // chance that a second volley overlaps the first
@@ -2823,18 +2823,33 @@ function update(dt) {
       chargeEnd();
     }
   } else if (B.final === 'on') {
-    // it drifts back to the middle, except while a technique of its own is moving it
+    // it keeps weaving over the upper middle of the floor, except while a technique of its own is moving it
     if (B.holdT > 0) B.holdT -= dt; else {
-      const dx = W / 2 - B.x, dy = H * .4 - B.y, d = Math.hypot(dx, dy);
-      if (d > 1) { const s = Math.min(d, 520 * dt); B.x += dx / d * s; B.y += dy / d * s; } }
+      const tx = W / 2 + Math.cos(B.finalT * .6) * 170, ty = H * .36 + Math.sin(B.finalT * 1.2) * 55;
+      const dx = tx - B.x, dy = ty - B.y, d = Math.hypot(dx, dy);
+      if (d > 1) { const s = Math.min(d, 420 * dt); B.x += dx / d * s; B.y += dy / d * s; } }
   } else {
     if (sp.includes('mirror')) {
       const tx = W - P.x, ty = 2 * CY - P.y, dx = tx - B.x, dy = ty - B.y, d = Math.hypot(dx, dy);
       if (d > 1) { const s = Math.min(d, 260 * dt); B.x += dx / d * s; B.y += dy / d * s; }
-    } else if (B.busy <= 0) {
+    } else if (B.holdT > 0) B.holdT -= dt;
+    else {
+      // it never stands still: it darts from spot to spot round the player, keeping its distance, pausing only
+      // a moment at each; while it attacks it keeps moving, only slower
+      B.pauseT = (B.pauseT || 0) - dt;
       const dx = B.tx - B.x, dy = B.ty - B.y, d = Math.hypot(dx, dy);
-      if (d < 6) { B.tx = 120 + Math.random() * (W - 240); B.ty = 100 + Math.random() * (H * .42 - 100); }
-      else { const s = Math.min(d, 75 * dt); B.x += dx / d * s; B.y += dy / d * s; }
+      if ((d < 6 && B.pauseT <= 0) || Math.hypot(B.tx - P.x, B.ty - P.y) < 170) {
+        const bd = bounds();
+        let tx, ty, k = 0;
+        do { const a = Math.random() * TAU, r = 200 + Math.random() * 140; tx = clamp(P.x + Math.cos(a) * r, bd.x0 + 60, bd.x1 - 60); ty = clamp(P.y + Math.sin(a) * r, bd.y0 + 50, bd.y1 - 50); }
+        while (Math.hypot(tx - P.x, ty - P.y) < 170 && ++k < 12);
+        B.tx = tx; B.ty = ty; B.pauseT = .2 + Math.random() * .35;
+      } else if (d >= 6) {
+        const s = Math.min(d, 170 * Math.min(1.4, F.spd) * (B.busy > 0 ? .6 : 1) * dt), nx = B.x + dx / d * s, ny = B.y + dy / d * s;
+        // never runs into the player: it stops short and picks somewhere else
+        if (Math.hypot(nx - P.x, ny - P.y) < B.r + P.r + 40) { B.tx = B.x; B.ty = B.y; B.pauseT = 0; }
+        else { B.x = nx; B.y = ny; }
+      }
     }
     // while launchers stand, they do the attacking
     // a combination carries straight on into its next part
@@ -3371,7 +3386,7 @@ function render() {
 // =====================================================================
 // screens
 // =====================================================================
-const VERSION = '3.2.0';
+const VERSION = '3.3.0';
 let selN = 1, life = 0, freeDiff = 1, tempUnlock = false;
 const bestTime = c => Math.min(...LIFE_TK.map(k => c[k] || Infinity));
 const bestScore = c => Math.max(0, ...(c.hs || []));
