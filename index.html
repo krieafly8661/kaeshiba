@@ -2043,7 +2043,87 @@ const NSK_RUN = {
 // itself come from fixed places on the floor in a fixed order, so the way through is a route to learn, and it is
 // the speed of the attack and the route, not the number of shots, that make them hard ----
 const fixBeam = (x, y, ang, o = {}) => lasers.push(Object.assign({ x, y, ang, warn: Math.max(.45, .7 * F.warn), act: .35, w: 20, t: 0, rot: 0, follow: false, snipe: false }, o));
+// 道筋: a final technique of its own. The floor is a grid; one safe way through it, cell by cell, is drawn
+// fresh for each technique, and every other cell is struck in turn, by lightning, by a beam down a whole row or
+// column, or by a line of shots along it. Each step's warning shows while the last is still to come, so the way
+// has to be read ahead, step by step. One step to a neighbouring cell (or across a corner) always has time enough.
+const MAZE = { cols: 6, rows: 4 };
+const mazeCell = (i, j) => { const bd = bounds(), cw = (bd.x1 - bd.x0) / MAZE.cols, ch = (bd.y1 - bd.y0) / MAZE.rows; return { x: bd.x0 + (i + .5) * cw, y: bd.y0 + (j + .5) * ch, cw, ch }; };
+function rollMaze(r, n) {
+  const C = MAZE.cols, R = MAZE.rows, steps = 6 + (r() * 3 | 0);
+  let i = r() * C | 0, j = r() * R | 0, pi = -1, pj = -1;
+  const path = [[i, j]];
+  for (let s = 1; s < steps + 3; s++) {
+    // the next cell: any neighbour, never straight back, and turning now and then rather than running straight on
+    const opts = [];
+    for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) {
+      if (!di && !dj) continue;
+      const ni = i + di, nj = j + dj;
+      if (ni < 0 || nj < 0 || ni >= C || nj >= R || (ni === pi && nj === pj)) continue;
+      opts.push([ni, nj]);
+    }
+    const [ni, nj] = opts[Math.floor(r() * opts.length)];
+    pi = i; pj = j; i = ni; j = nj; path.push([i, j]);
+  }
+  // how each step is struck: lightning on the cells, beams down whole rows and columns, or lines of shots along them
+  const styles = path.map(() => ['z', 'b', 's', 'b', 'z'][r() * 5 | 0]);
+  return { path, styles, T: 1.0 };
+}
+// each step of a way through: when it strikes, and what it covers (c: a strike on a cell; v / h: a beam or a line
+// of shots down a whole column or along a whole row, w wide)
+function mazePlan(p, lv) {
+  const C = MAZE.cols, R = MAZE.rows, T = p.T, n = Math.min(p.path.length, 7 + Math.min(2, lv));
+  const warn = Math.max(.6, .75 * F.warn), steps = [];
+  for (let s = 0; s < n; s++) {
+    // the first two steps leave a wider way, so the player can find the start from anywhere
+    const wide = s === 0 ? 2 : s === 1 ? 1 : 0, [pi, pj] = p.path[s];
+    const safe = (i, j) => Math.max(Math.abs(i - pi), Math.abs(j - pj)) <= wide;
+    const style = p.styles[s], haz = [], done = new Set();
+    if (style !== 'z') {
+      // whole rows and columns with no safe cell are taken by one beam (or one line of shots) each
+      for (let i = 0; i < C; i++) if ([...Array(R).keys()].every(j => !safe(i, j))) {
+        const c = mazeCell(i, 0);
+        haz.push({ v: 1, x: c.x, w: style === 'b' ? c.cw * .92 : c.cw * .8 + 12, k: style });
+        for (let j = 0; j < R; j++) done.add(i + ',' + j);
+      }
+      for (let j = 0; j < R; j++) if ([...Array(C).keys()].every(i => !safe(i, j))) {
+        const c = mazeCell(0, j);
+        haz.push({ h: 1, y: c.y, w: style === 'b' ? c.ch * .92 : c.ch * .8 + 12, k: style });
+        for (let i = 0; i < C; i++) done.add(i + ',' + j);
+      }
+    }
+    for (let i = 0; i < C; i++) for (let j = 0; j < R; j++) {
+      if (safe(i, j) || done.has(i + ',' + j)) continue;
+      const c = mazeCell(i, j);
+      haz.push({ c: 1, x: c.x, y: c.y, r: Math.min(c.cw, c.ch) * .55 });
+    }
+    // the first warning comes a second early, so the start can be reached from anywhere on the floor
+    const lead = 1.0;
+    steps.push({ at: s * T + warn + lead, start: s ? s * T + lead : 0, warn: s ? warn : warn + lead, haz });
+  }
+  return steps;
+}
+const mazeRun = (p, lv) => {
+  const steps = mazePlan(p, lv);
+  steps.forEach((st, s) => at(st.start, () => {
+    const warn = st.warn;
+    for (const h of st.haz) {
+      if (h.c) zone(h.x, h.y, { r: h.r / (F.vz || 1), warn });
+      else if (h.k === 'b') { if (h.v) fixBeam(h.x, 30, Math.PI / 2, { warn, act: .35, w: h.w }); else fixBeam(-10, h.y, 0, { warn, act: .35, w: h.w }); }
+      else {
+        // a line of fast shots: marked along its way first
+        if (h.v) for (let y = 60; y < H; y += 70) mark(h.x, y, warn); else for (let x = 40; x < W; x += 70) mark(x, h.y, warn);
+        // shots of one fixed size, so the band they sweep is exactly the band warned of
+        const span = h.w - 12;
+        for (let k = 0; k < 5; k++) { const o = (k / 4 - .5) * span; at(warn, () => { const b = h.v ? shootFrom(h.x + o, 36, Math.PI / 2, 2200, K()) : shootFrom(-8, h.y + o, 0, 3000, K()); b.r = 6; b.grace = 2; }); }
+      }
+    }
+    if (s % 2 === 0) sfx('warn');
+  }));
+  return steps[steps.length - 1].at + .8;
+};
 const FIX = {
+  F_maze: { roll: rollMaze, run: mazeRun },
   // 光柵: parallel beams across the floor, in one of three ways: waves shifted half a step (the safe lanes move),
   // one beam after another marching across (stay behind it), or pairs closing in from both edges and opening again
   F_beams: { roll: (r, n) => ({ dir: ['v', 'h', 'd1', 'd2'][r() * 4 | 0], mode: 'shift', n: 4 + (r() * 3 | 0), waves: 3 + (r() < .4), gap: .55 + r() * .15, blue: n >= 23 && r() < .3, off: r(), back: r() < .5 }),
@@ -2391,11 +2471,13 @@ function finalKit(st, r, noDash) {
     rush: () => introAt.charge <= n ? Object.keys(CHARGE_PATH).filter(k => CHARGE_PATH[k].intro <= n + 10) : [],
     tech: () => Object.keys(TECH).filter(id => introAt[id] <= n && !SEALS.includes(id) && !(noDash && ND.has(id))),
     // the set pieces of finals, each in each of its forms (a beam grating upright, flat or slanting, a course of each shape...)
-    fix: () => Object.keys(FIX).flatMap(k => FIX_VAR[k] ? FIX_VAR[k][1].map((_, i) => k + '|' + i) : [k]),
+    fix: () => Object.keys(FIX).filter(k => k !== 'F_maze').flatMap(k => FIX_VAR[k] ? FIX_VAR[k][1].map((_, i) => k + '|' + i) : [k]),
+    // a way through to read: drawn fresh every time, so it never runs out
+    maze: () => ['F_maze'],
   };
   const bags = {};
   // a family that has given all it has sits out until every family has
-  const left = f => f === 'fix' || !bags[f] || bags[f].length > 0;
+  const left = f => f === 'fix' || f === 'maze' || !bags[f] || bags[f].length > 0;
   const take = fam => { if (W8.every(([f]) => !left(f))) for (const k in bags) delete bags[k]; if (!bags[fam] || !bags[fam].length) bags[fam] = shuffle(fams[fam]()); return bags[fam].pop(); };
   let pi = 0;
   const piece = fam => {
@@ -2411,12 +2493,14 @@ function finalKit(st, r, noDash) {
         return { t: 'beam', sh: a, hb: hbs.length ? pk(hbs) : 'plain', I: 1.1 };
       }
       case 'rush': { const efs = Object.keys(CHARGE_EFF).filter(e => CHARGE_EFF[e].intro <= n); return { t: 'rush', pa: a, ef: pk(efs), moves: true }; }
+      case 'maze':
       case 'fix': { const [k, vi] = a.split('|'), p = FIX[k].roll(r, n); if (FIX_VAR[k]) p[FIX_VAR[k][0]] = FIX_VAR[k][1][+vi]; return { t: k, p, moves: k === 'F_rush' }; }
       default: return { t: 'tech', id: a, field: TECH[a] === 'f', nd: ND.has(a) };
     }
   };
   // mostly set pieces from fixed places; only now and then something aimed at the player
-  const W8 = [['fix', 9], ['pat', .3], ['nsk', .5], ['beam', .4], ['rush', .2], ['tech', .4]].filter(([f]) => fams[f]().length);
+  // mostly ways through to read; the set pieces and anything aimed at the player only now and then
+  const W8 = [['maze', 8], ['fix', 2.5], ['pat', .3], ['nsk', .4], ['beam', .3], ['rush', .2], ['tech', .3]].filter(([f]) => fams[f]().length);
   const fam = (not) => { let ws = W8.filter(([f]) => f !== not && left(f)); if (!ws.length) ws = W8.filter(([f]) => f !== not); let x = r() * ws.reduce((a, w) => a + w[1], 0); for (const w of ws) if ((x -= w[1]) <= 0) return w[0]; return 'pat'; };
   const names = shuffle(FIN_NM.slice());
   let ni = 0;
@@ -2442,10 +2526,11 @@ function pushFinal(plan, c, lv) {
     const sg = { k: 'fe', el, lv, u: 'f' + plan.length, newU: i === 0 };
     if (i > 0) { sg.u = plan[plan.length - i].u; if (c.mode === 'dual') { sg.u += 'b'; sg.newU = true; } }
     if (i === 0) sg.name = c.name;
-    if (i < c.parts.length - 1) { if (c.mode === 'dual') sg.lead = .5; else if (!el.moves) sg.ov = .7; }
+    // a way through is read alone: nothing laps over its start or its end
+    if (i < c.parts.length - 1) { if (c.mode === 'dual') sg.lead = .5; else if (!el.moves && !c.parts.some(x => x.t === 'F_maze')) sg.ov = .7; }
     plan.push(sg);
   });
-  return c.mode === 'solo' ? 3.2 : 1.2 + 2.2 * c.parts.length;
+  return c.parts.reduce((a, x) => a + (x.t === 'F_maze' ? 6.6 : 2.4), c.mode === 'solo' ? .8 : 1.2);
 }
 function finalPlan() {
   const st = RUN.st, r = mulberry32(st.finalSeed), L = st.forms.length;
@@ -3523,7 +3608,7 @@ function render() {
 // =====================================================================
 // screens
 // =====================================================================
-const VERSION = '3.5.0';
+const VERSION = '3.6.0';
 let selN = 1, life = 0, freeDiff = 1, tempUnlock = false;
 const bestTime = c => Math.min(...LIFE_TK.map(k => c[k] || Infinity));
 const bestScore = c => Math.max(0, ...(c.hs || []));
