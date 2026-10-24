@@ -277,11 +277,11 @@ const INTRO = {
   5: 'charge', 6: 'red', 7: 'homing', 8: 'laser', 9: 'stopgo', 10: 'final',
   11: 'bounce', 12: 'bigorb', 13: 'thunder', 14: 'accel', 15: 'wave', 17: 'wind', 18: 'cross', 19: 'split', 20: 'mines',
   21: 'blue', 22: 'orbit', 23: 'bluebeam', 24: 'snipe', 25: 'sealshot', 26: 'teleport', 27: 'gravity', 28: 'redonly', 29: 'boomerang',
-  30: 'wall', 31: 'reflow', 32: 'encircle', 33: 'redsplit', 34: 'sealDash', 35: 'converge', 36: 'sealParry', 37: 'redbig', 38: 'slow', 39: 'sweep',
-  40: 'stones', 41: 'ink', 42: 'dark', 43: 'sealDform', 44: 'well', 45: 'trail', 46: 'shield', 47: 'sealPform', 48: 'ghost',
+  30: 'wall', 31: 'reflow', 32: 'encircle', 33: 'redsplit', 35: 'converge', 36: 'sealParry', 37: 'redbig', 38: 'slow', 39: 'sweep',
+  40: 'stones', 41: 'ink', 42: 'dark', 44: 'well', 45: 'trail', 46: 'shield', 47: 'sealPform', 48: 'ghost',
   50: 'swap', 52: 'turret', 53: 'sealSform', 54: 'reverse', 56: 'fake', 58: 'counter', 59: 'launchers',
   60: 'clones', 62: 'freeze', 64: 'shrink', 66: 'chase', 68: 'lattice', 70: 'regen', 72: 'curse', 74: 'invisible', 76: 'echo', 80: 'revive',
-  84: 'sealAll', 90: 'needle', 100: 'mirror', 110: 'tether', 120: 'chainzone',
+  90: 'needle', 100: 'mirror', 110: 'tether', 120: 'chainzone',
   16: 'curve', 49: 'swirl', 51: 'grow', 55: 'pulse', 57: 'zig', 61: 'decel', 63: 'wallsplit', 65: 'dropper', 67: 'stutter', 69: 'colorshift',
   71: 'cluster', 73: 'snake', 77: 'blink',
 };
@@ -537,7 +537,7 @@ const OVR = {
   150: { forms: 6, final: true, revive: true },
 };
 // finals that keep a seal on for their whole length
-const FINAL_SEAL = { 30: 'D', 70: 'P', 100: 'D', 120: 'P', 140: 'D', 150: 'A' };
+const FINAL_SEAL = { 70: 'P', 120: 'P', 150: 'P' };
 // enemies that fight through launchers in their last form (count of launchers)
 const LAUNCH = { 59: 7, 75: 5, 109: 6, 142: 8, 147: 5 };
 const FORM_SP = ['shield', 'counter', 'clones', 'regen', 'invisible', 'mirror'];
@@ -711,7 +711,7 @@ const finalTarget = n => Math.round((20 + n * .75) * (n % 10 === 0 ? 1.35 : 1) *
 const FAST_REC = new Set(['crescents', 'feathers', 'spiderline', 'bonespear', 'predict', 'echoshot']);
 // techniques an enemy can make its own; f: they hold the floor rather than strike
 const TECH = { wind: 'f', slow: 'f', well: 'f', dark: 'f', ink: 'f', shrink: 'f', tether: 'f', turret: 'f', freeze: 'f', reverse: 'f', swap: 'f',
-  sealDash: 'f', sealParry: 'f', sealAll: 'f', curse: 'f', lattice: 'f', cross: 'f', reflow: 'a', thunder: 'a', chase: 'a', chainzone: 'a',
+  sealParry: 'f', curse: 'f', lattice: 'f', cross: 'f', reflow: 'a', thunder: 'a', chase: 'a', chainzone: 'a',
   converge: 'a', wall: 'a', encircle: 'a', sweep: 'a', bluebeam: 'a', laser: 'a', snipe: 'a' };
 // skills built from marks, moves and set pieces. min: the first stage that may carry one; roll gives one enemy's own numbers
 const sgn = r => (r() < .5 ? 1 : -1);
@@ -944,10 +944,10 @@ function buildStage(n, opt = {}) {
   const seal = Object.assign({}, o.seal || {});
   if (!free) {
     if (INTRO[n] === 'sealPform') seal.P = 'last';
-    if (INTRO[n] === 'sealDform') seal.D = 'last';
     if (INTRO[n] === 'sealSform') seal.S = 'last';
   }
-  for (const [key, id] of [['P', 'sealPform'], ['D', 'sealDform'], ['S', 'sealSform']]) {
+  // the dash is never sealed outright: only being hit by a sealing shot takes it away
+  for (const [key, id] of [['P', 'sealPform'], ['S', 'sealSform']]) {
     if (!seal[key]) continue;
     for (const f of seal[key] === 'all' ? forms : [forms[k - 1]]) { f.special.push(id); if (id === 'sealPform') f.surviveT = Math.round(R(22, 32)); }
   }
@@ -3386,7 +3386,7 @@ function render() {
 // =====================================================================
 // screens
 // =====================================================================
-const VERSION = '3.3.0';
+const VERSION = '3.3.1';
 let selN = 1, life = 0, freeDiff = 1, tempUnlock = false;
 const bestTime = c => Math.min(...LIFE_TK.map(k => c[k] || Infinity));
 const bestScore = c => Math.max(0, ...(c.hs || []));
