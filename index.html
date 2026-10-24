@@ -500,7 +500,9 @@ const NAMES = `小鬼 豆狸 鬼火 狐火 一ツ目 赤舌 河童 唐傘 提灯
 // seal: forms with a permanent seal — P parry / D dash / S slash, on 'all' forms or the 'last' one.
 const OVR = {
   // early stages that measured far above their neighbours are evened out (from stage 20 on, spikes are kept on purpose)
-  15: { temper: '均衡', noCharge: true },
+  5: { temper: '均衡', noCharge: true },
+  13: { temper: '均衡', noCharge: true, uI: .8, gapK: 1.2 },
+  15: { temper: '均衡', noCharge: true, uI: .8, gapK: 1.2 },
   45: { rules: { survive: 40 } },
   55: { seal: { D: 'last' } },
   65: { rules: { limit: true } },
@@ -552,7 +554,7 @@ const REC = {
   calm: { gens: ['echo', 'stopgo'], fn: I => { const o = ORG(), n = NN(12 * I), off = Math.random() * TAU; for (let k = 0; k < 3; k++) at(k * .35, () => { for (let i = 0; i < n; i++) shootFrom(o.x, o.y, off + i / n * TAU + k * .07, (175 - k * 32) * SPD(), K()); sfx('shot'); }); return 1.7; } },
   swarmhome: { gens: ['homing', 'orbit'], fn: I => { const n = NN(8 * I); for (let w = 0; w < 2; w++) at(w * .8, () => { const o = ORG(); for (let i = 0; i < n; i++) { const b = shootFrom(o.x, o.y, i / n * TAU + w * .3, 110 * SPD(), K()); b.home = 2.6; b.turn = 1.4; } sfx('shot'); }); return 2.4; } },
   surround: { gens: ['stopgo', 'encircle'], fn: I => { const n = NN(20 * I), cx = P.x, cy = P.y, g0 = Math.random() * n | 0; at(0, () => { for (let i = 0; i < n; i++) { if ((i - g0 + n) % n < 2) continue; const a = i / n * TAU, b = shootFrom(cx + Math.cos(a) * 210, cy + Math.sin(a) * 210, a + Math.PI, 0, K()); b.grace = 3; b.stop = { t: .8, wait: 0, spd: 150 * SPD(), phase: 1 }; } sfx('warn'); }); return 2.2; } },
-  gazebeam: { gens: ['laser', 'snipe', 'bluebeam'], fn: I => { laser(aimAng(), { warn: 1.0 * F.warn, act: 1.6, w: 28, track: .8 * SPD(), follow: true, blue: I > 1.25 }); sfx('warn'); at(1.2, () => fireShape('plain')); return 3.0; } },
+  gazebeam: { gens: ['laser', 'snipe', 'bluebeam'], fn: I => { const early = RUN && RUN.st && !RUN.st.free && RUN.st.n < 20 ? .65 : 1; laser(aimAng(), { warn: 1.0 * F.warn, act: 1.6, w: 28, track: .8 * SPD() * early, follow: true, blue: I > 1.25 }); sfx('warn'); at(1.2, () => fireShape('plain')); return 3.0; } },
   whip: { gens: ['wave', 'laser'], fn: I => { const a0 = aimAng(), dir = Math.random() < .5 ? 1 : -1, dur = 1.1, n = Math.round(22 * I); for (let i = 0; i < n; i++) at(i / n * dur, () => { const o = ORG(); shootFrom(o.x, o.y, a0 + dir * (-1 + 2 * i / n) * 1.1, 260 * SPD(), K()); }); at(0, () => sfx('shot')); return dur + .6; } },
   gravityarc: { gens: ['gravity', 'bigorb', 'mines'], fn: I => { const n = NN(6 * I); for (let w = 0; w < 3; w++) at(w * .5, () => { const o = ORG(); for (let i = 0; i < n; i++) { const T = 1.1, g = 260, tx = P.x + (Math.random() - .5) * 160, ty = P.y + (Math.random() - .5) * 80, vx = (tx - o.x) / T, vy = (ty - o.y) / T - g * T / 2; const b = shootFrom(o.x, o.y, Math.atan2(vy, vx), Math.hypot(vx, vy), K()); b.grav = g; b.grace = 2; } sfx('shot'); }); return 2.2; } },
   spokes: { gens: ['cross', 'wind'], fn: I => { const arms = Math.round(6 * Math.min(1.4, I)), dir = Math.random() < .5 ? 1 : -1, base = Math.random() * TAU; for (let s = 0, k = 0; s < 2.2; s += .09, k++) { const kk = k; at(s, () => { const o = ORG(); for (let a = 0; a < arms; a++) shootFrom(o.x, o.y, base + dir * kk * .09 + a * TAU / arms, 150 * SPD(), K()); }); } at(0, () => sfx('shot')); return 2.5; } },
@@ -705,7 +707,7 @@ function buildStage(n, opt = {}) {
   const techs = avail.filter(id => !isProp(id));
   const en = free ? ENEMY[Math.floor(rng() * n)] : ENEMY[n - 1], name = free ? '自由稽古' : NAMES[n - 1] || ('鬼' + n);
   // ---- unique barrages: the enemy's own, then one or two more of its kind ----
-  const I0 = 1 + Math.max(0, n - 90) / 60 * .6;
+  const I0 = (1 + Math.max(0, n - 90) / 60 * .6) * (o.uI || 1);
   let ucount = free ? 3 : n <= 8 ? 1 : n <= 30 ? (rng() < .45 ? 2 : 1) : n <= 80 ? (rng() < .2 ? 3 : 2) : (rng() < .55 ? 3 : 2);
   if (!free && n % 10 === 0) ucount = Math.min(3, ucount + 1);
   const uniqs = [{ rec: en.rec, name: free ? en.name : en.name, I: I0 * 1.15 }];
@@ -761,7 +763,7 @@ function buildStage(n, opt = {}) {
   // temperament: how the enemy paces itself around the stage's level
   let arch = pick(TEMPER);
   if (o.temper) arch = TEMPER.find(t => t.name === o.temper) || arch;
-  const base = { spd: R(...arch.spd), gap: R(...arch.gap), den: R(...arch.den), warn: R(...arch.warn) };
+  const base = { spd: R(...arch.spd), gap: R(...arch.gap) * (o.gapK || 1), den: R(...arch.den), warn: R(...arch.warn) };
   const k = o.forms || (free ? 3 : n <= 2 ? 1 : n <= 6 ? 2 : n <= 20 ? pick([2, 2, 3]) : n <= 50 ? pick([2, 3, 3, 4]) : n <= 100 ? pick([3, 3, 4, 4, 5]) : pick([3, 4, 5, 5, 6]));
   const survive = o.rules && o.rules.survive;
   const tacAvail = n >= 25 ? Object.keys(TACTICS).filter(id => TACTICS[id].need.every(x => introAt[x] <= n)) : [];
@@ -1583,7 +1585,8 @@ const ATK = {
   },
   chase() {
     const n = clamp(Math.round(F.den * 2), 1, 4);
-    for (let i = 0; i < n; i++) at(i * .7, () => { zone(P.x, P.y, { follow: 1.1, warn: 1.5 * F.warn, r: 44 }); sfx('warn'); });
+    // it stops following well before it strikes, so there is always time to step out of the circle
+    for (let i = 0; i < n; i++) at(i * .7, () => { zone(P.x, P.y, { follow: 1.1, warn: Math.max(1.5 * F.warn, 1.1 + .55), r: 44 }); sfx('warn'); });
     return n * .7 + 1.4;
   },
   lattice() {
@@ -1594,7 +1597,8 @@ const ATK = {
     return 2.8;
   },
   curse() {
-    at(0, () => { zone(P.x, P.y, { follow: 2.2, warn: 2.8, r: 82 }); sfx('seal'); pop(P.x, P.y - 26, '呪', C.shu, 22); });
+    // time enough after it stops following to walk out of even a large circle
+    at(0, () => { zone(P.x, P.y, { follow: 2.2, warn: 2.2 + Math.max(.6, (82 * (F.vz || 1) + 20) / SPEED + .15), r: 82 }); sfx('seal'); pop(P.x, P.y - 26, '呪', C.shu, 22); });
     at(.6, () => cover());
     return 3.2;
   },
@@ -1660,6 +1664,8 @@ const SEALING = new Set(['sealDash', 'sealAll', 'tac:sealring']);
 const ndAlive = () => bullets.some(b => b.nd && b.own === 'b');
 function safeId(id) {
   if (ND.has(id) && dashSealed()) return 'plain';
+  // an all-red volley can leave only a dash as the way through
+  if (dashSealed() && (id === 'redonly' || /\.redonly$/.test(id))) return 'plain';
   if (SEALING.has(id) && ndAlive()) return 'plain';
   return id;
 }
@@ -2763,7 +2769,7 @@ function render() {
 // =====================================================================
 // screens
 // =====================================================================
-const VERSION = '3.0.0 仮';
+const VERSION = '3.0.0';
 let selN = 1, life = 0, freeDiff = 1, tempUnlock = false;
 const bestTime = c => Math.min(...LIFE_TK.map(k => c[k] || Infinity));
 const bestScore = c => Math.max(0, ...(c.hs || []));
