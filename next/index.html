@@ -189,8 +189,8 @@ function withCtxOf(ctx, fn) { const prev = actx; actx = ctx; try { return fn(); 
 
 // ---- the player never changes: same moves, same timings, every stage and every difficulty ----
 // walking is slow enough that speed can outrun it; the plain dash is short; the big dash (V) goes far on stamina
-const SPEED = 190, DASH_T = .12, DASH_V = 620, DASH_CD = .42;
-const BIG_T = .26, BIG_V = 980, BIG_COST = 34, STAM_MAX = 100, STAM_RATE = 24, STAM_WAIT = .9;
+const SPEED = 190, DASH_T = .12, DASH_V = 310, DASH_CD = .42;
+const BIG_T = .26, BIG_V = 588, BIG_COST = 34, STAM_MAX = 100, STAM_RATE = 24, STAM_WAIT = .9;
 // the plain cut: reaches as far as a parry, light, and quick to come again
 const NSLASH_CD = .3, NSLASH_DMG = .7;
 // a returned shot is worth half as much again as a direct cut
@@ -1349,7 +1349,7 @@ let RUN = null;        // { mode: 'stage'|'free', st, life (0 通常 / 1 決死 
 const LIFE = [{ name: '通常', lives: 5 }, { name: '決死', lives: 3 }, { name: '泡沫', lives: 1, oneHit: true }];
 const LIFE_ORDER = [0, 1, 2], LIFE_TK = ['t', 'kt', 'ut'];
 // hurt nothing for a while, and the life comes back a little at a time
-const HPMAX = 50, REGEN_WAIT = 2, REGEN_RATE = 5, RESPAWN_INV = 1.8, DOWN_T = 1.2;
+const HPMAX = 50, REGEN_WAIT = 3, REGEN_RATE = 1.2, RESPAWN_INV = 1.8, DOWN_T = 1.2;
 let forms, fi, F, RL;  // form list, current form index, current form, stage rules
 // the camera: the top-left of the view on the floor, and its zoom (1 = the plain screen; less while looking round)
 let cam = { x: 0, y: 0, z: 1 }, look = false, call = null;
@@ -1374,7 +1374,7 @@ function newGame(run) {
   P = { x: W / 2, y: H * .8, r: 9, fx: 0, fy: -1, hp: php, max: php, inv: 0, dashT: 0, dashCD: 0, dvx: 0, dvy: 0, dashHit: false,
         parryT: 0, parryCD: 0, parryHit: false, slashCD: 0, combo: 0, dead: false, px: W / 2, py: H * .8, lvx: 0, lvy: 0,
         lives: lf.lives, maxLives: lf.lives, oneHit: !!lf.oneHit, lastHurt: -9, stam: STAM_MAX, stamWait: 0 };
-  B = { x: W / 2, y: H * .8 - 260, r: 34, hp: topOf(0), phase: 1, mode: 'idle', tx: W / 2, ty: H * .8 - 260, stagger: 0, staggerMax: STAGGER,
+  B = { x: W / 2, y: H * .8 - 260, r: 24, hp: topOf(0), phase: 1, mode: 'idle', tx: W / 2, ty: H * .8 - 260, stagger: 0, staggerMax: STAGGER,
         nextAtk: 1.6, busy: 0, aimT: 0, aimMax: 0, cspd: 0, cx: 0, cy: 0, cvx: 0, cvy: 0, cdist: 0, ctrav: 0, hurtF: 0, spin: 0,
         final: '', barrier: false, seal: false, finalT: 0, finalLen: 1, revived: false, lastHit: 0, vis: 1, fade: 0,
         shieldA: 0, stance: 0, stCycle: 4, sealOff: 0, guard: false, trail: 0, trailT: 0, iframe: 0, pierceN: 0, pierceTot: 0, act: {} };
@@ -2806,7 +2806,8 @@ function cueFrom(x, y, dur, f0 = 900, f1 = 2400) {
   n.connect(ac.destination); s.start(t); s.stop(t + dur + .2);
 }
 // the body runs in a straight line: it hurts what it touches, and a parry as it arrives breaks it
-function runB(vx, vy, T, dmg, end, step) { B.run = { vx, vy, t: T, dmg, end, step, id: scriptId, hit: false, inside: false }; B.out = false; }
+// aura: wind worn round it ({ r: how far past the body, dmg }), which strikes on its own
+function runB(vx, vy, T, dmg, end, step, aura) { B.run = { vx, vy, t: T, dmg, end, step, aura, id: scriptId, hit: false, ahit: false, inside: false }; B.out = false; }
 // a point just outside the floor's edge, on the wall named (0 left, 1 right, 2 top, 3 bottom), at fraction u along it
 const wallPoint = (w, u, off = 50) => w === 0 ? { x: -off, y: u * H } : w === 1 ? { x: W + off, y: u * H } : w === 2 ? { x: u * W, y: -off } : { x: u * W, y: H + off };
 const nearestWall = (x, y) => { const d = [x, W - x, y, H - y]; return d.indexOf(Math.min(...d)); };
@@ -2841,6 +2842,7 @@ function stepHand(dt) {
       chargeParried(); scriptId++; return;
     }
     if (!r.hit && d < B.r + P.r - 2 && hurt(r.dmg)) r.hit = true;
+    if (r.aura && !r.hit && !r.ahit && d < B.r + r.aura.r + P.r && hurt(r.aura.dmg)) r.ahit = true;
     if (!outside(B.x, B.y, 0)) r.inside = true;
     // done when its time is up, or once it has crossed the floor and left it again
     if (r.t <= 0 || (r.inside && outside(B.x, B.y, 30))) { B.run = null; if (r.end && id === r.id) r.end(); }
@@ -2931,6 +2933,14 @@ function drawHand() {
     }
   }
   for (const c of clones) { drawEnemy(c.x, c.y, .82, false); if (c.raise > 0) { ctx.strokeStyle = C.washi; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(c.x, c.y, B.r + 8, -2.4, -.7); ctx.stroke(); } }
+  // wind worn round a running body
+  if (B.run && B.run.aura && !B.out) {
+    const R = B.r + B.run.aura.r, a0 = Math.atan2(B.run.vy, B.run.vx);
+    ctx.strokeStyle = C.ao; ctx.lineWidth = 2.5;
+    for (let k = 0; k < 4; k++) { const sp = gt * 14 + k * TAU / 4; ctx.globalAlpha = .55; ctx.beginPath(); ctx.arc(B.x, B.y, R - k * 3, sp, sp + 1.3); ctx.stroke(); }
+    ctx.globalAlpha = .3; ctx.fillStyle = C.ao; ctx.beginPath(); ctx.arc(B.x, B.y, R, a0 + Math.PI - .9, a0 + Math.PI + .9); ctx.lineTo(B.x - Math.cos(a0) * R * 2.2, B.y - Math.sin(a0) * R * 2.2); ctx.closePath(); ctx.fill();
+    ctx.globalAlpha = 1;
+  }
   // a body high in the air: only its shadow on the floor, growing and darkening as it comes down
   if (B.fall) {
     const k = 1 - B.fall.t / B.fall.max;
@@ -2997,7 +3007,7 @@ const HAND = {
     B.sink = .3; sfx('dash');
     later(.3, () => {
       const w = nearestWall(B.x, B.y), q = wallPoint(w, w < 2 ? B.y / H : B.x / W, 80), a = Math.atan2(q.y - B.y, q.x - B.x);
-      runB(Math.cos(a) * 700, Math.sin(a) * 700, 2, 30, () => { B.out = true; enterThrough(w, 900, 30, () => dropNear(.8, true)); });
+      runB(Math.cos(a) * 820, Math.sin(a) * 820, 2, 40, () => { B.out = true; enterThrough(w, 1050, 40, () => dropNear(.8, true), .5, { r: 26, dmg: 30 }); }, null, { r: 26, dmg: 30 });
     });
     return 6.2;
   },
@@ -3010,23 +3020,21 @@ const HAND = {
     sfx('dash');
     return T + 1.2;
   },
-  // 回り斬り: gone with a sound, behind the player a breath later, a moment drawing the blade back (seen and heard),
-  // then one cut across the fan in front of it. Step away while it draws, or dash through the cut
+  // 回り斬り: gone with a sound, behind the player a breath later, a moment crouched (seen and heard), then a straight
+  // rush at where the player stood, about 1.6 big dashes long. Step aside while it crouches, or dash through it
   s_mawari(s, lv) {
     B.out = true; burst(B.x, B.y, C.mute, 12, 200, .3); sfx('dash');
     later(.35, () => {
-      const q = inField(P.x - P.fx * 80, P.y - P.fy * 80, 30);
-      B.out = false; B.x = q.x; B.y = q.y; B.tx = q.x; B.ty = q.y; B.holdT = .8;
-      B.sink = .3; sfx('warn');
-      later(.3, () => {
-        const a0 = aimFrom(B.x, B.y), reach = 105;
-        slashes.push({ x: B.x + Math.cos(a0) * 40, y: B.y + Math.sin(a0) * 40, a: a0 + Math.PI / 2, life: .22, r: 46 });
+      const q = inField(P.x - P.fx * 190, P.y - P.fy * 190, 30);
+      B.out = false; B.x = q.x; B.y = q.y; B.tx = q.x; B.ty = q.y; B.holdT = 1.2;
+      B.sink = .45; sfx('warn');
+      later(.45, () => {
+        const a = aimFrom(B.x, B.y), len = BIG_V * BIG_T * 1.6, spd = 950;
+        runB(Math.cos(a) * spd, Math.sin(a) * spd, len / spd, 30);
         sfx('slash');
-        const d = Math.hypot(P.x - B.x, P.y - B.y);
-        if (d < reach + P.r && Math.abs(angDiff(Math.atan2(P.y - B.y, P.x - B.x), a0)) < .75) hurt(24);
       });
     });
-    return 1.3;
+    return 1.6;
   },
   // 影分身: the body and two afterimages crouch, then run through the player from three sides at once.
   // Only the body casts a shadow
@@ -3059,17 +3067,17 @@ const HAND = {
     B.sink = .3; sfx('dash');
     later(.3, () => {
       const w = nearestWall(B.x, B.y), q = wallPoint(w, w < 2 ? B.y / H : B.x / W, 80), a = Math.atan2(q.y - B.y, q.x - B.x);
-      runB(Math.cos(a) * 700, Math.sin(a) * 700, 2, 30, () => {
+      runB(Math.cos(a) * 820, Math.sin(a) * 820, 2, 40, () => {
         B.out = true;
         let t = .8, last = w;
         for (let k = 0; k < 2; k++) {
           const e = entryPoint(last); last = e.w;
           later(t - .5, () => cueFrom(e.x, e.y, .5));
-          later(t, () => { const v = through(e.x, e.y, 900); clones.push({ x: e.x, y: e.y, vx: v.vx, vy: v.vy, life: 3, dmg: 30 }); });
+          later(t, () => { const v = through(e.x, e.y, 1050); clones.push({ x: e.x, y: e.y, vx: v.vx, vy: v.vy, life: 3, dmg: 30 }); });
           t += .9;
         }
-        later(t - .4, () => enterThrough(last, 1300, 30, () => dropNear(.8, true), .9));
-      });
+        later(t - .4, () => enterThrough(last, 1450, 40, () => dropNear(.8, true), .9, { r: 26, dmg: 30 }));
+      }, null, { r: 26, dmg: 30 });
     });
     return 7.4;
   },
@@ -3078,14 +3086,14 @@ const HAND = {
     B.sink = .5; sfx('seal');
     for (let k = 0; k < 6; k++) at(k * .08, () => burst(B.x, B.y, C.ao, 6, 180, .3));
     later(.5, () => {
-      const a = aimFrom(B.x, B.y), dist = Math.hypot(P.x - B.x, P.y - B.y) + 260, spd = 700;
+      const a = aimFrom(B.x, B.y), dist = Math.hypot(P.x - B.x, P.y - B.y) + 560, spd = 1050;
       let trav = 0, ph = 0;
-      runB(Math.cos(a) * spd, Math.sin(a) * spd, dist / spd, 40, null, dt => {
+      runB(Math.cos(a) * spd, Math.sin(a) * spd, dist / spd, 80, null, dt => {
         trav += spd * dt;
         while (trav >= 38) {
           trav -= 38; ph += .7;
           const nx = -Math.sin(a), ny = Math.cos(a), amp = 46;
-          for (const sg of [1, -1]) zone(B.x + nx * Math.sin(ph) * amp * sg, B.y + ny * Math.sin(ph) * amp * sg, { r: 26 / (F.vz || 1), warn: .35, act: .15, dmg: 30 });
+          for (const sg of [1, -1]) zone(B.x + nx * Math.sin(ph) * amp * sg, B.y + ny * Math.sin(ph) * amp * sg, { r: 26 / (F.vz || 1), warn: .35, act: .15, dmg: 40 });
         }
       });
     });
@@ -3137,10 +3145,10 @@ const HAND = {
   },
 };
 // in over the wall named next to it (not that one), heard first, straight through the player and out again
-function enterThrough(notWall, spd, dmg, then, cue = .5) {
+function enterThrough(notWall, spd, dmg, then, cue = .5, aura) {
   const e = entryPoint(notWall);
   later(.7, () => cueFrom(e.x, e.y, cue));
-  later(.7 + cue, () => { B.x = e.x; B.y = e.y; const v = through(e.x, e.y, spd); runB(v.vx, v.vy, 3, dmg, () => { B.out = true; if (then) then(); }); });
+  later(.7 + cue, () => { B.x = e.x; B.y = e.y; const v = through(e.x, e.y, spd); runB(v.vx, v.vy, 3, dmg, () => { B.out = true; if (then) then(); }, null, aura); });
 }
 // down out of the sky near the player; with a shockwave of red shots where it lands
 function dropNear(T, wave) {
@@ -3222,10 +3230,14 @@ function runEntry(id) {
   return runSkill(j, Math.max(0, fi - F.skills[j].intro), u);
 }
 // one part of a combination; the next comes in while this one is still going, or right after a move
+const SIGN_LEAD = 1.0, COMBO_LEAD = .5;
 function comboStep() {
-  const cb = B.cmb, c = cb.c, j = c.parts[cb.i++], s = F.skills[j];
-  // the string so far, across the top
-  cb.names = (cb.names || []).concat(s.name); say(cb.names.join(' → '), { t: 2.6, col: C.kin, size: cb.names.length > 3 ? 22 : 26 });
+  const cb = B.cmb, c = cb.c, nx = F.skills[c.parts[cb.i]];
+  // the string so far, across the top: each next part is named a moment before it comes (the first was signed over the head)
+  if (!cb.named) { cb.names = (cb.names || []).concat(nx.name); say(cb.names.join(' → '), { t: 2.6, col: C.kin, size: cb.names.length > 3 ? 22 : 26 }); }
+  if (cb.i > 0 && c.kind !== 'dual' && !cb.named) { cb.named = true; return COMBO_LEAD; }
+  cb.named = false;
+  const j = c.parts[cb.i++], s = nx;
   // a chain is one unit; the second half of a pair fired together is a unit of its own
   const d = runSkill(j, Math.max(0, fi - s.intro), c.kind === 'dual' && cb.i > 1 ? cb.u + 'b' : cb.u);
   if (cb.i >= c.parts.length) { B.cmb = null; return d; }
@@ -3470,7 +3482,7 @@ function stepFinal() {
 function endFinal() {
   B.final = 'done'; B.barrier = false; B.busy = 0; B.mode = 'idle';
   clearHostile();
-  B.stagger = B.staggerMax = FINAL_STAGGER; B.nextAtk = .8;
+  B.nextAtk = 1.2;
   burst(B.x, B.y, C.washi, 50, 380, .9, 3);
   banner = { txt: '結界崩壊', t: 1.4 };
   flash = reduced ? 0 : .5; addShake(10); sfx('break');
@@ -3504,7 +3516,6 @@ function hitLauncher(l, d) {
     // every launcher down: the enemy loses its cover and reels
     B.guard = false; pop(B.x, B.y - B.r - 16, '破', C.kin, 28);
     damageBoss(F.hp * .3, true, true);
-    if (!ending && B.hp > 0 && !invulnerable()) { B.stagger = B.staggerMax = STAGGER; B.busy = 0; }
   }
 }
 const nearestLauncher = (x, y) => { let best = null, bd = 1e9; for (const l of launchers) { const d = Math.hypot(l.x - x, l.y - y); if (d < bd) { bd = d; best = l; } } return best; };
@@ -3661,12 +3672,11 @@ function chargeParried() {
     return;
   }
   sched = []; B.busy = 0; stats.perfects++;
-  const f0 = fi;
-  damageBoss(BREAK_DMG * mult(), false, true);
-  if (!ending && fi === f0 && !invulnerable() && B.hp > 0) { B.stagger = B.staggerMax = STAGGER; B.nextAtk = .4; }
-  pop(mx, my - 20, '崩し', C.kin, 30);
-  burst(mx, my, C.kin, 30, 380, .6, 3);
-  hitstop = .15; flash = reduced ? 0 : .5; addShake(10); sfx('big');
+  B.nextAtk = Math.max(B.nextAtk, .6);
+  damageBoss(RET_DMG * mult(), true, true);
+  pop(mx, my - 20, '止め', C.kin, 26);
+  burst(mx, my, C.kin, 20, 320, .5, 2);
+  hitstop = .1; addShake(8); sfx('parry');
 }
 // a cut on a broken enemy is worth about 0.4 of the blow that broke it
 function slash(label) {
@@ -3781,7 +3791,7 @@ function cutEnemy() {
   const a = Math.atan2(B.y - P.y, B.x - P.x);
   slashes.push({ x: B.x, y: B.y, a: a + Math.PI / 2, life: .16, r: B.r * .8 });
   sfx('slash'); hitstop = Math.max(hitstop, .02);
-  damageBoss(NSLASH_DMG * mult(), false);
+  damageBoss(NSLASH_DMG * mult(), false, true);
   return true;
 }
 // =====================================================================
@@ -4027,7 +4037,7 @@ function update(dt) {
     if (B.busy <= 0 && !launchers.length && B.cmb && !P.dead) { if (B.cmb.c.kind !== 'dual' || liveUnits() < 2) B.busy = comboStep(); }
     else if (B.busy <= 0 && !launchers.length) {
       // the next skill is chosen as soon as the last is over, and its sign shows over the body while it waits
-      if (!B.nextPick && !P.dead) { B.nextPick = pickAttack(F.pool, lastAtk); B.sign = signOf(B.nextPick); }
+      if (!B.nextPick && !P.dead) { B.nextPick = pickAttack(F.pool, lastAtk); B.sign = signOf(B.nextPick); B.nextAtk = Math.max(B.nextAtk, SIGN_LEAD); }
       B.nextAtk -= dt; if (B.nextAtk <= 0 && !P.dead && liveUnits() < 2) startAttack();
     }
   }
@@ -4618,7 +4628,7 @@ function render() {
 // =====================================================================
 // screens
 // =====================================================================
-const VERSION = '0.2.2';
+const VERSION = '0.3.0';
 let selN = 1, life = 0, freeDiff = 1, tempUnlock = false;
 const bestTime = c => Math.min(...LIFE_TK.map(k => c[k] || Infinity));
 const bestScore = c => Math.max(0, ...(c.hs || []));
@@ -4667,7 +4677,7 @@ function titleScreen() {
     <ul class="rules">
       <li><b class="k-w">● 白い弾</b>は当たる直前に<b class="k-g">弾き</b>で跳ね返せる。引きつけるほど<b class="k-g">「極」</b>。</li>
       <li><b class="k-r">◆ 朱い弾</b>・朱い光線・落雷は弾けない。<b>踏み込み</b>の無敵で抜けるか、かわす。<b class="k-b">○ 青</b>は踏み込みでも抜けられない。</li>
-      <li>弾きの届く距離に鬼がいれば、弾くと同時に<b>斬る</b>。突進を弾けば鬼が<b class="k-g">崩れ</b>、斬れば大きく削れる。</li>
+      <li>弾きの届く距離に鬼がいれば、弾くと同時に<b>斬る</b>。突進は弾けば止まる。</li>
       <li><b>小踏み込み</b>はその場をかわす一歩。<b>大踏み込み</b>は大技や速い一撃を遠くまで抜けるが、息（青い棒）を使う。<b>見渡し</b>の間は遠くまで見えるが足が遅い。</li>
       <li>体力は一つの命に50。しばらく当たらなければ戻る。尽きれば命を一つ失い、その場で立ち直る。通常は命5、決死は3、泡沫は1で一撃でも終わり。</li>
       <li>場は画面より広い。見えない所の鬼と攻めは、画面の端の印が教える。見て、覚えて、破れ。</li>
