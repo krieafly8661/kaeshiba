@@ -193,6 +193,8 @@ const SPEED = 190, DASH_T = .12, DASH_V = 620, DASH_CD = .42;
 const BIG_T = .26, BIG_V = 980, BIG_COST = 34, STAM_MAX = 100, STAM_RATE = 24, STAM_WAIT = .9;
 // the plain cut: reaches as far as a parry, light, and quick to come again
 const NSLASH_CD = .3, NSLASH_DMG = .7;
+// a returned shot is worth half as much again as a direct cut
+const RET_DMG = NSLASH_DMG * 1.5;
 const PARRY_WIN = .14, PARRY_CD = .5, WHIFF = .25, PARRY_R = 26, PERFECT_PAD = 12;
 const SLASH_REACH = 50, SLASH_CD = .2, STAGGER = 1.8, FINAL_STAGGER = 4.5, BREAK_DMG = 4.5;
 
@@ -1066,7 +1068,8 @@ function buildStage(n, opt = {}) {
 // the thirty. Until each is made by hand, they are stand-ins drawn from the old curve: n is that old level
 // (it keys records and the last one's own rules), idx the place in line
 const LV30 = i => Math.round(1 + (i - 1) * 149 / 29);
-const STAGES = []; for (let i = 1; i <= 30; i++) { const st = buildStage(LV30(i)); st.idx = i; STAGES.push(st); }
+// the roster: only the enemies made by hand so far (the rest do not show at all)
+let STAGES = [];
 const stageByN = n => STAGES.find(s => s.n === n) || STAGES[0];
 const nextOf = n => STAGES[STAGES.findIndex(s => s.n === n) + 1] || null;
 const prevOf = n => STAGES[STAGES.findIndex(s => s.n === n) - 1] || null;
@@ -1251,6 +1254,26 @@ const SONGS = {
     { inst: 'pluck', layer: 0, notes: [[[0, 5, 4], [6, 7, 4], [10, 6, 6]], [[0, 5, 8], [8, 3, 8]], [[0, 4, 4], [6, 6, 4], [10, 5, 6]], [[0, 4, 12]]] },
     { inst: 'bell', layer: 0, notes: [[[0, 10, 16]], [], [], [[8, 9, 8]]] },
   ] },
+  // 灯守: light plucked strings over a soft drum, a flute joining when it turns serious
+  himori: { bpm: 112, root: 50, scale: 'yo', bars: 4, tracks: [
+    { inst: 'taiko', layer: 0, drum: ['x.......x...o...', 'x.......x.o.....', 'x.......x...o...', 'x...o...x.o.o...'] },
+    { inst: 'pluck', layer: 0, notes: [[[0, 5, 2], [2, 6, 2], [4, 7, 4], [8, 6, 2], [10, 5, 2], [12, 4, 4]], [[0, 3, 2], [2, 4, 2], [4, 5, 6], [12, 4, 4]], [[0, 5, 2], [2, 7, 2], [4, 8, 4], [8, 7, 2], [10, 6, 2], [12, 5, 4]], [[0, 4, 4], [4, 3, 4], [8, 2, 8]]] },
+    { inst: 'bass', layer: 0, notes: [[[0, 0, 6], [8, -1, 6]], [[0, -2, 6], [8, -1, 6]], [[0, 0, 6], [8, 1, 6]], [[0, -1, 6], [8, -2, 6]]] },
+    { inst: 'flute', layer: 1, notes: [[[0, 10, 8], [8, 9, 8]], [[0, 8, 6], [6, 9, 2], [8, 10, 8]], [[0, 12, 8], [8, 11, 8]], [[0, 10, 4], [4, 9, 4], [8, 7, 8]]] },
+    { inst: 'hat', layer: 1, drum: ['..x...x...x...x.', '..x...x...x...x.', '..x...x...x...x.', '..x.x.x...x.x.x.'] },
+    { inst: 'bell', layer: 1, notes: [[[0, 12, 16]], [], [[0, 14, 16]], []] },
+  ] },
+  // 疾風丸: fast and driving; a flute line over running bass, an echo of it chasing behind from the second form
+  hayate: { bpm: 160, root: 45, scale: 'minor', bars: 4, tracks: [
+    { inst: 'kick', layer: 0, drum: ['x...x...x...x...', 'x...x...x...x...', 'x...x...x...x...', 'x...x...x.x.x.x.'] },
+    { inst: 'hat', layer: 0, drum: ['.x.x.x.x.x.x.x.x', '.x.x.x.x.x.x.x.x', '.x.x.x.x.x.x.x.x', '.x.x.x.xxxxxxxxx'] },
+    { inst: 'bass', layer: 0, notes: [[[0, 0, 2], [2, 0, 2], [4, 7, 2], [6, 0, 2], [8, 0, 2], [10, 7, 2], [12, 5, 2], [14, 6, 2]], [[0, -2, 2], [2, -2, 2], [4, 5, 2], [6, -2, 2], [8, -2, 2], [10, 5, 2], [12, 3, 2], [14, 4, 2]], [[0, -3, 2], [2, -3, 2], [4, 4, 2], [6, -3, 2], [8, -1, 2], [10, 6, 2], [12, 4, 2], [14, 6, 2]], [[0, 0, 2], [2, 0, 2], [4, 7, 2], [6, 0, 2], [8, 4, 4], [12, 6, 4]]] },
+    { inst: 'flute', layer: 0, notes: [[[0, 7, 3], [3, 9, 1], [4, 10, 4], [8, 9, 2], [10, 7, 2], [12, 11, 4]], [[0, 10, 6], [6, 9, 2], [8, 7, 8]], [[0, 7, 3], [3, 9, 1], [4, 10, 4], [8, 12, 2], [10, 11, 2], [12, 10, 4]], [[0, 9, 4], [4, 11, 4], [8, 7, 8]]] },
+    { inst: 'lead', layer: 1, notes: [[[2, 7, 3], [5, 9, 1], [6, 10, 4], [10, 9, 2], [12, 7, 2], [14, 11, 2]], [[2, 10, 6], [8, 9, 2], [10, 7, 6]], [[2, 7, 3], [5, 9, 1], [6, 10, 4], [10, 12, 2], [12, 11, 2], [14, 10, 2]], [[2, 9, 4], [6, 11, 4], [10, 7, 6]]] },
+    { inst: 'snare', layer: 1, drum: ['....x.......x...', '....x.......x...', '....x.......x...', '....x.......x.xx'] },
+    { inst: 'pad', layer: 2, notes: [[[0, 0, 16]], [[0, -2, 16]], [[0, -3, 16]], [[0, 0, 16]]] },
+    { inst: 'rim', layer: 2, drum: ['x.xx.x.xx.x.x.xx', 'x.xx.x.xx.x.x.xx', 'x.xx.x.xx.x.x.xx', 'x.xx.x.xx.xxxxxx'] },
+  ] },
   battle: { bpm: 132, root: 45, scale: 'miyako', bars: 4, tracks: [
     { inst: 'taiko', layer: 0, drum: ['x..x..x.x...x...', 'x..x..x.x...x.o.', 'x..x..x.x...x...', 'x..x..x.x.x.x.xx'] },
     { inst: 'bass', layer: 0, notes: [[[0, 0, 3], [3, 0, 3], [6, 0, 2], [8, 1, 4], [12, 0, 4]], [[0, 0, 3], [3, 0, 3], [6, 0, 2], [8, 2, 4], [12, 1, 4]], [[0, -2, 3], [3, -2, 3], [6, -2, 2], [8, -1, 4], [12, -2, 4]], [[0, 0, 3], [3, 0, 3], [6, 3, 2], [8, 2, 4], [12, 1, 4]]] },
@@ -1357,7 +1380,7 @@ function newGame(run) {
         shieldA: 0, stance: 0, stCycle: 4, sealOff: 0, guard: false, trail: 0, trailT: 0, iframe: 0, pierceN: 0, pierceTot: 0, act: {} };
   EM = null;
   bullets = []; lasers = []; zones = []; parts = []; texts = []; after = []; slashes = []; streaks = []; sched = [];
-  turrets = []; decoys = []; wells = []; slows = []; stones = null; tether = null; wind = null; launchers = []; inks = []; marks = [];
+  turrets = []; decoys = []; wells = []; slows = []; stones = null; tether = null; wind = null; launchers = []; inks = []; marks = []; props = []; clones = []; scriptId++;
   fx = { pslow: 0, sealP: 0, sealD: 0, rev: 0, dark: 0, swap: 0, freeze: 0, shrink: 0, shrinkK: 0 };
   gt = 0; shake = 0; hitstop = 0; flash = 0; banner = null; ending = 0; lastAtk = ''; lastRun = null; lastShape = null; lastShot = -1; kc = 0; cells = []; sigN = 0;
   stats = { time: 0, parries: 0, perfects: 0, slashes: 0, hits: 0, maxCombo: 0, won: false, why: '' };
@@ -2765,6 +2788,406 @@ function runSkill(j, lv, u = 'u' + ++unitN) {
     return skillBody(s, lv);
   }), s);
 }
+// =====================================================================
+// 手作りの鬼: the pieces their own skills are made of
+// =====================================================================
+// props on the floor (灯籠 lanterns, 旗 flags) and the enemy's afterimages; each can be cut or broken by a returned shot
+let props = [], clones = [], scriptId = 0;
+// a sound from a place: louder as it nears, and from the side of the screen it comes from (風切り音)
+function cueFrom(x, y, dur, f0 = 900, f1 = 2400) {
+  if (!ac || muted || !noiseBuf) { musReady(); if (!ac || muted || !noiseBuf) return; }
+  const vx = cam.x + SW / cam.z / 2, half = SW / cam.z / 2, t = ac.currentTime;
+  const s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(), pn = ac.createStereoPanner ? ac.createStereoPanner() : null;
+  s.buffer = noiseBuf; s.loop = true; f.type = 'bandpass'; f.Q.value = 2.5;
+  f.frequency.setValueAtTime(f0, t); f.frequency.exponentialRampToValueAtTime(f1, t + dur);
+  g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.28, t + dur); g.gain.exponentialRampToValueAtTime(.0001, t + dur + .12);
+  let n = s.connect(f).connect(g);
+  if (pn) { pn.pan.value = clamp((x - vx) / half, -1, 1); n = n.connect(pn); }
+  n.connect(ac.destination); s.start(t); s.stop(t + dur + .2);
+}
+// the body runs in a straight line: it hurts what it touches, and a parry as it arrives breaks it
+function runB(vx, vy, T, dmg, end, step) { B.run = { vx, vy, t: T, dmg, end, step, id: scriptId, hit: false, inside: false }; B.out = false; }
+// a point just outside the floor's edge, on the wall named (0 left, 1 right, 2 top, 3 bottom), at fraction u along it
+const wallPoint = (w, u, off = 50) => w === 0 ? { x: -off, y: u * H } : w === 1 ? { x: W + off, y: u * H } : w === 2 ? { x: u * W, y: -off } : { x: u * W, y: H + off };
+const nearestWall = (x, y) => { const d = [x, W - x, y, H - y]; return d.indexOf(Math.min(...d)); };
+const outside = (x, y, m = 40) => x < -m || x > W + m || y < -m || y > H + m;
+// from (x, y) through the player: the velocity, and where on the far side it leaves
+const through = (x, y, spd) => { const a = Math.atan2(P.y - y, P.x - x); return { vx: Math.cos(a) * spd, vy: Math.sin(a) * spd }; };
+// a wall point from which a straight line through the player is long enough to matter
+function entryPoint(not) {
+  for (let k = 0; k < 12; k++) {
+    const w = Math.floor(Math.random() * 4); if (w === not) continue;
+    const u = .1 + Math.random() * .8, q = wallPoint(w, u, 60);
+    if (Math.hypot(q.x - P.x, q.y - P.y) > 380) return { w, ...q };
+  }
+  const w = (not + 1) % 4; return { w, ...wallPoint(w, .5, 60) };
+}
+// down from the sky onto (x, y): the shadow grows and darkens until it lands
+function fallB(x, y, T, end) { B.fall = { x, y, t: T, max: T, end, id: scriptId }; B.out = true; }
+function stepHand(dt) {
+  const id = scriptId;
+  // never left out past the walls: if nothing is bringing it back, it comes down near the player
+  B.outT = B.out && !B.run && !B.fall ? (B.outT || 0) + dt : 0;
+  if (B.outT > 4.5 && !ending) { B.outT = 0; dropNear(.8, false); }
+  if (B.run) {
+    const r = B.run; r.t -= dt; B.x += r.vx * dt; B.y += r.vy * dt; B.vis = 1;
+    if (Math.random() < .8) parts.push({ x: B.x, y: B.y, vx: 0, vy: 0, life: .22, max: .22, col: C.washi, size: 6 });
+    if (r.step) r.step(dt);
+    const d = Math.hypot(B.x - P.x, B.y - P.y);
+    if (!r.hit && P.parryT > 0 && d < B.r + P.r + 26 && !outside(B.x, B.y, -10)) {
+      // parried as it arrives: it breaks, and everything it had lined up is dropped
+      B.run = null; B.out = false; B.cvx = r.vx; B.cvy = r.vy;
+      B.x = clamp(B.x, 40, W - 40); B.y = clamp(B.y, 40, H - 40);
+      chargeParried(); scriptId++; return;
+    }
+    if (!r.hit && d < B.r + P.r - 2 && hurt(r.dmg)) r.hit = true;
+    if (!outside(B.x, B.y, 0)) r.inside = true;
+    // done when its time is up, or once it has crossed the floor and left it again
+    if (r.t <= 0 || (r.inside && outside(B.x, B.y, 30))) { B.run = null; if (r.end && id === r.id) r.end(); }
+  }
+  if (B.fall) {
+    const f = B.fall; f.t -= dt;
+    if (f.t <= 0) {
+      B.fall = null; B.out = false; B.x = f.x; B.y = f.y; B.tx = B.x; B.ty = B.y; B.landT = .3;
+      addShake(9); burst(B.x, B.y, C.washi, 26, 260, .5); sfx('big');
+      if (f.end && id === f.id) f.end();
+    }
+  }
+}
+// clones: afterimages that run, or stand and throw; drawn like the body but with no shadow under them
+function stepClones(dt) {
+  for (let i = clones.length - 1; i >= 0; i--) {
+    const c = clones[i]; c.life -= dt;
+    if (c.vx || c.vy) { c.x += c.vx * dt; c.y += c.vy * dt; if (Math.random() < .5) parts.push({ x: c.x, y: c.y, vx: 0, vy: 0, life: .18, max: .18, col: C.mute, size: 5 }); }
+    if (c.dmg && !c.hit && Math.hypot(c.x - P.x, c.y - P.y) < B.r + P.r - 2 && hurt(c.dmg)) c.hit = true;
+    if (c.raise > 0) c.raise -= dt;
+    if (c.life <= 0 || (c.vx || c.vy) && outside(c.x, c.y, 60)) clones.splice(i, 1);
+  }
+  for (let i = props.length - 1; i >= 0; i--) {
+    const p = props[i]; p.t = (p.t || 0) + dt;
+    if (p.life !== undefined && (p.life -= dt) <= 0) { props.splice(i, 1); continue; }
+    if (p.kind === 'lantern') {
+      if (p.queue && p.queue.length) { if (gt >= p.queue[0] - .45) p.glow = 1; if (gt >= p.queue[0]) { p.queue.shift(); lanternFire(p); } }
+      else if (p.period) { p.next -= dt; if (p.next < .45) p.glow = 1; if (p.next <= 0) { p.next = p.period; lanternFire(p); } }
+    }
+  }
+}
+function lanternFire(p) {
+  p.glow = 0; if (P.dead || ending) return;
+  shootFrom(p.x, p.y, aimFrom(p.x, p.y), 210, 'w'); burst(p.x, p.y, C.kin, 5, 120, .25); sfx('shot');
+}
+// whatever of these stands within the player's reach is cut by the same press that parries
+function cutHandNear() {
+  const reach = P.r + PARRY_R + 14;
+  let best = null, bd = 1e9;
+  for (const c of clones) { const d = Math.hypot(c.x - P.x, c.y - P.y); if (d < B.r + reach && d < bd) { bd = d; best = c; } }
+  for (const p of props) { const d = Math.hypot(p.x - P.x, p.y - P.y); if (d < 14 + reach && d < bd) { bd = d; best = p; } }
+  if (!best) return false;
+  breakHand(best); slashes.push({ x: best.x, y: best.y, a: Math.atan2(best.y - P.y, best.x - P.x) + Math.PI / 2, life: .18, r: 14 }); sfx('slash');
+  return true;
+}
+function breakHand(o) {
+  const ci = clones.indexOf(o), pi = props.indexOf(o);
+  if (ci >= 0) clones.splice(ci, 1); if (pi >= 0) props.splice(pi, 1);
+  burst(o.x, o.y, o.kind === 'flag' ? C.ao : o.kind === 'lantern' ? C.kin : C.mute, 14, 200, .4); sfx('break');
+  if (o.kind === 'flag' && B.windBar && !props.some(p => p.kind === 'flag')) endWindBar(true);
+}
+// a returned shot breaks a lantern, flag or afterimage it meets
+function hitHand(b) {
+  for (const o of clones.concat(props)) if (Math.hypot(b.x - o.x, b.y - o.y) < (o.kind ? 14 : B.r) + b.r) { breakHand(o); return true; }
+  return false;
+}
+// 風の結界: untouchable in a wind that drives the player one way; flags stand upwind, and cutting all of them ends it
+function startWindBar(T, dirX, dirY) {
+  B.barrier = true; B.windBar = { t: T };
+  wind = { ax: dirX, ay: dirY, warn: .4, t: T + .4, str: 120 };
+  // the flags stand along the upwind side
+  const bd = bounds();
+  for (let k = 0; k < 3; k++) {
+    const u = (k + .5) / 3, x = dirX > 0 ? bd.x0 + 90 : dirX < 0 ? bd.x1 - 90 : bd.x0 + u * (bd.x1 - bd.x0), y = dirY > 0 ? bd.y0 + 90 : dirY < 0 ? bd.y1 - 90 : bd.y0 + u * (bd.y1 - bd.y0);
+    props.push({ kind: 'flag', x, y, life: T + .4 });
+  }
+  sfx('seal');
+}
+function endWindBar(broken) {
+  B.barrier = false; B.windBar = null; wind = null;
+  props = props.filter(p => p.kind !== 'flag');
+  if (broken) { banner = { txt: '破', t: 1 }; addShake(8); sfx('break'); }
+}
+function stepWindBar(dt) { if (B.windBar && (B.windBar.t -= dt) <= 0) endWindBar(false); }
+function drawHand() {
+  for (const p of props) {
+    if (p.kind === 'lantern') {
+      const lit = p.glow > 0 || (p.next !== undefined && p.next < .45);
+      ctx.fillStyle = 'rgba(8,13,24,.6)'; ctx.fillRect(p.x - 2, p.y + 8, 4, 12);
+      ctx.fillStyle = lit ? C.kin : '#c9a46a'; ctx.globalAlpha = lit ? 1 : .75; ctx.fillRect(p.x - 9, p.y - 12, 18, 20);
+      ctx.strokeStyle = C.ai; ctx.lineWidth = 1.5; ctx.strokeRect(p.x - 9, p.y - 12, 18, 20);
+      if (lit) { ctx.globalAlpha = .35; ctx.fillStyle = C.kin; ctx.beginPath(); ctx.arc(p.x, p.y - 2, 22, 0, TAU); ctx.fill(); }
+      ctx.globalAlpha = 1;
+    } else if (p.kind === 'flag') {
+      ctx.strokeStyle = C.washi; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(p.x, p.y + 18); ctx.lineTo(p.x, p.y - 22); ctx.stroke();
+      const wv = Math.sin(gt * 9 + p.x) * 4, dx = wind ? wind.ax * 22 : 22, dy = wind ? wind.ay * 22 : 0;
+      ctx.fillStyle = C.ao; ctx.beginPath(); ctx.moveTo(p.x, p.y - 22); ctx.lineTo(p.x + dx + wv, p.y - 16 + dy); ctx.lineTo(p.x, p.y - 8); ctx.closePath(); ctx.fill();
+    }
+  }
+  for (const c of clones) { drawEnemy(c.x, c.y, .82, false); if (c.raise > 0) { ctx.strokeStyle = C.washi; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(c.x, c.y, B.r + 8, -2.4, -.7); ctx.stroke(); } }
+  // a body high in the air: only its shadow on the floor, growing and darkening as it comes down
+  if (B.fall) {
+    const k = 1 - B.fall.t / B.fall.max;
+    ctx.fillStyle = `rgba(4,7,14,${.15 + .55 * k})`; ctx.beginPath(); ctx.ellipse(B.fall.x, B.fall.y + 4, (B.r + 4) * (.35 + .75 * k), (B.r + 4) * (.18 + .38 * k), 0, 0, TAU); ctx.fill();
+  }
+  // the real one's shadow, when it must be told from its afterimages
+  if (B.shadowCue > 0 && !B.out) { ctx.fillStyle = 'rgba(4,7,14,.7)'; ctx.beginPath(); ctx.ellipse(B.x, B.y + B.r * .8, B.r * 1.05, B.r * .45, 0, 0, TAU); ctx.fill(); }
+}
+// ---- the skills of each hand-made enemy. Each returns how long the enemy stays committed ----
+const later = (d, fn) => { const id = scriptId; at(d, () => { if (id === scriptId) fn(); }); };
+const HAND = {
+  // ===== 灯守 =====
+  // 灯し撃ち: three white shots in a fan, twice
+  h_shoot(s, lv) {
+    for (let v = 0; v < 2 + (lv >= 1); v++) at(v * .55, () => { volley(B.x, B.y, 3, .22, 230); sfx('shot'); });
+    return 1.7;
+  },
+  // 灯籠置き: lanterns set round the player, each glowing a moment before it fires a white shot at it
+  h_lantern(s, lv) {
+    const max = fi >= 1 ? 3 : 2, have = props.filter(p => p.kind === 'lantern').length, a0 = Math.atan2(B.y - P.y, B.x - P.x);
+    for (let k = have; k < max; k++) { const a = a0 + (k + 1) * TAU / (max + 1), q = inField(P.x + Math.cos(a) * 240, P.y + Math.sin(a) * 240, 40); props.push({ kind: 'lantern', x: q.x, y: q.y, period: 2.4, next: 1.2 + k * .5, life: 16, glow: 0 }); }
+    burst(B.x, B.y, C.kin, 10, 160, .4); sfx('seal');
+    return 1.0;
+  },
+  // 火の輪: a ring of white with one red shot in it, set on the player; it stops a breath, then opens out
+  h_ring(s, lv) {
+    const n = 16, a0 = aimFrom(B.x, B.y);
+    for (let i = 0; i < n; i++) { const a = a0 + i / n * TAU, b = shootFrom(B.x + Math.cos(a) * 26, B.y + Math.sin(a) * 26, a, 0, i === 0 ? 'r' : 'w'); b.stop = { t: .35, wait: 0, spd: 170, phase: 1, ang: a }; }
+    sfx('shot');
+    return 1.8;
+  },
+  // 跳び込み: a short wind-up, then a hop at the player; parried as it lands, 灯守 reels
+  h_lunge(s, lv) { startCharge(.55, 650, 1, { pa: 'rush', ef: 'none' }); return 2.0; },
+  // 灯籠連ね: the lanterns fire one after another, in a fixed order, each glowing first
+  h_chain(s, lv) {
+    if (props.filter(p => p.kind === 'lantern').length < 3) HAND.h_lantern(s, lv);
+    const ls = props.filter(p => p.kind === 'lantern');
+    ls.forEach((p, k) => { p.queue = [gt + .9 + k * .5, gt + 2.4 + k * .5]; p.next = 4; });
+    return 3.6;
+  },
+  // 送り火: a large slow white flame; returned, it breaks into embers that all fly back at 灯守
+  h_okuribi(s, lv) {
+    const b = shootFrom(B.x, B.y, aimFrom(B.x, B.y), 100, 'w');
+    b.r = 18; b.dmg = 24; b.life = 9;
+    b.onReflect = r => { for (let k = 0; k < 4; k++) { const c = shootFrom(r.x, r.y, 0, 0, 'w'); c.own = 'p'; c.kind = 'w'; c.dmg = r.dmg * .5; c.life = 3; const a = Math.atan2(B.y - r.y, B.x - r.x) + (k - 1.5) * .35; c.vx = Math.cos(a) * 420; c.vy = Math.sin(a) * 420; } };
+    sfx('warn');
+    return 1.6;
+  },
+  // 火の輪・二重: two rings, turning opposite ways as they open
+  h_ring2(s, lv) {
+    const a0 = aimFrom(B.x, B.y), cx = B.x, cy = B.y;
+    for (const [n, rr, w, sp] of [[12, 22, .9, 150], [18, 34, -.9, 185]]) for (let i = 0; i < n; i++) {
+      const a = a0 + i / n * TAU, b = shootFrom(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr, a, 0, i === 0 ? 'r' : 'w');
+      b.stop = { t: .35, wait: 0, spd: sp, phase: 1, ang: a }; b.swirl = { cx, cy, w };
+    }
+    sfx('shot');
+    return 2.2;
+  },
+
+  // ===== 疾風丸 =====
+  // 疾駆: a moment's crouch, out over the nearest wall, then in over another (heard, not seen) straight through
+  // the player and out again; at last down from the sky somewhere near, with a shockwave
+  s_shikku(s, lv) {
+    B.sink = .3; sfx('dash');
+    later(.3, () => {
+      const w = nearestWall(B.x, B.y), q = wallPoint(w, w < 2 ? B.y / H : B.x / W, 80), a = Math.atan2(q.y - B.y, q.x - B.x);
+      runB(Math.cos(a) * 700, Math.sin(a) * 700, 2, 30, () => { B.out = true; enterThrough(w, 900, 30, () => dropNear(.8, true)); });
+    });
+    return 6.2;
+  },
+  // 風刃: half a circle round the player, scattering red blades that wait, then fly outward
+  s_kaze(s, lv) {
+    const cx = P.x, cy = P.y, R = 170, a0 = Math.atan2(B.y - cy, B.x - cx), dir = Math.random() < .5 ? 1 : -1, n = 7 + (lv >= 1 ? 2 : 0), T = .7;
+    B.holdT = T + .2;
+    for (let k = 0; k <= 20; k++) at(k * T / 20, () => { const a = a0 + dir * Math.PI * k / 20; B.x = cx + Math.cos(a) * R; B.y = cy + Math.sin(a) * R; B.tx = B.x; B.ty = B.y; });
+    for (let k = 0; k < n; k++) at(k * T / (n - 1), () => { const a = a0 + dir * Math.PI * k / (n - 1), x = cx + Math.cos(a) * R, y = cy + Math.sin(a) * R, b = shootFrom(x, y, 0, 0, 'r'); b.stop = { t: .6, wait: 0, spd: 260, phase: 1, ang: a }; b.grace = 2; });
+    sfx('dash');
+    return T + 1.2;
+  },
+  // 回り斬り: gone with a sound, and behind the player a breath later, cutting
+  s_mawari(s, lv) {
+    B.out = true; burst(B.x, B.y, C.mute, 12, 200, .3); sfx('dash');
+    later(.35, () => {
+      const q = inField(P.x - P.fx * 62, P.y - P.fy * 62, 30);
+      B.out = false; B.x = q.x; B.y = q.y; B.tx = q.x; B.ty = q.y;
+      const a0 = aimFrom(B.x, B.y);
+      for (let i = 0; i < 7; i++) { const b = shootFrom(B.x, B.y, a0 + (i / 6 - .5) * 1.2, 520, 'r'); b.life = .3; b.dmg = 24; }
+      sfx('slash');
+    });
+    return 1.0;
+  },
+  // 影分身: the body and two afterimages crouch, then run through the player from three sides at once.
+  // Only the body casts a shadow
+  s_bunshin(s, lv) {
+    const a0 = Math.random() * TAU, R = 330, spd = 850;
+    B.sink = .3; sfx('dash');
+    later(.3, () => {
+      B.shadowCue = 1.6;
+      for (let k = 0; k < 3; k++) {
+        const a = a0 + k * TAU / 3, x = P.x + Math.cos(a) * R, y = P.y + Math.sin(a) * R, v = through(x, y, spd);
+        if (k === 0) { B.x = x; B.y = y; runB(v.vx, v.vy, .9, 30); }
+        else clones.push({ x, y, vx: v.vx, vy: v.vy, life: .9, dmg: 30 });
+      }
+    });
+    return 1.6;
+  },
+  // 影縫い: three afterimages stand round the player and throw white blades in turn; a blade returned undoes its thrower
+  s_kagenui(s, lv) {
+    const set = [];
+    for (let k = 0; k < 3; k++) { const a = -Math.PI / 2 + k * TAU / 3, q = inField(P.x + Math.cos(a) * 190, P.y + Math.sin(a) * 190, 30), c = { x: q.x, y: q.y, vx: 0, vy: 0, life: 3.4 }; clones.push(c); set.push(c); }
+    set.forEach((c, k) => at(.6 + k * .55, () => {
+      if (!clones.includes(c)) return;
+      c.raise = .3;
+      later(.3, () => { if (!clones.includes(c)) return; const b = shootFrom(c.x, c.y, aimFrom(c.x, c.y), 300, 'w'); b.dmg = 16; b.onReflect = () => { const i = clones.indexOf(c); if (i >= 0) { clones.splice(i, 1); burst(c.x, c.y, C.mute, 12, 200, .3); } }; sfx('shot'); });
+    }));
+    return 2.6;
+  },
+  // 疾駆・三連: out over a wall; two afterimages come in, then the body itself, the last on a longer wind (heard)
+  s_shikku3(s, lv) {
+    B.sink = .3; sfx('dash');
+    later(.3, () => {
+      const w = nearestWall(B.x, B.y), q = wallPoint(w, w < 2 ? B.y / H : B.x / W, 80), a = Math.atan2(q.y - B.y, q.x - B.x);
+      runB(Math.cos(a) * 700, Math.sin(a) * 700, 2, 30, () => {
+        B.out = true;
+        let t = .8, last = w;
+        for (let k = 0; k < 2; k++) {
+          const e = entryPoint(last); last = e.w;
+          later(t - .5, () => cueFrom(e.x, e.y, .5));
+          later(t, () => { const v = through(e.x, e.y, 900); clones.push({ x: e.x, y: e.y, vx: v.vx, vy: v.vy, life: 3, dmg: 30 }); });
+          t += .9;
+        }
+        later(t - .4, () => enterThrough(last, 1300, 30, () => dropNear(.8, true), .9));
+      });
+    });
+    return 7.4;
+  },
+  // 疾風迅雷: wrapped in wind, a charge straight at the player, and lightning falling behind it in a double helix
+  s_shippu(s, lv) {
+    B.sink = .5; sfx('seal');
+    for (let k = 0; k < 6; k++) at(k * .08, () => burst(B.x, B.y, C.ao, 6, 180, .3));
+    later(.5, () => {
+      const a = aimFrom(B.x, B.y), dist = Math.hypot(P.x - B.x, P.y - B.y) + 260, spd = 700;
+      let trav = 0, ph = 0;
+      runB(Math.cos(a) * spd, Math.sin(a) * spd, dist / spd, 40, null, dt => {
+        trav += spd * dt;
+        while (trav >= 38) {
+          trav -= 38; ph += .7;
+          const nx = -Math.sin(a), ny = Math.cos(a), amp = 46;
+          for (const sg of [1, -1]) zone(B.x + nx * Math.sin(ph) * amp * sg, B.y + ny * Math.sin(ph) * amp * sg, { r: 26 / (F.vz || 1), warn: .35, act: .15, dmg: 30 });
+        }
+      });
+    });
+    return 2.6;
+  },
+  // 風の結界: untouchable for eight seconds in a wind that drives the player one way
+  s_barrier(s, lv) {
+    const a = Math.floor(Math.random() * 4), dir = [[1, 0], [-1, 0], [0, 1], [0, -1]][a];
+    startWindBar(8, dir[0], dir[1]); say('風よ!', { t: 1.2, col: C.ao });
+    return 1.2;
+  },
+  // 鎌鼬: five red whirlwinds set in a circle round the player; they close in a moment later
+  s_kamaitachi(s, lv) {
+    const cx = P.x, cy = P.y, a0 = Math.random() * TAU;
+    for (let k = 0; k < 5; k++) { const a = a0 + k * TAU / 5, x = cx + Math.cos(a) * 150, y = cy + Math.sin(a) * 150, b = shootFrom(x, y, 0, 0, 'r'); b.r = 16; b.dmg = 20; b.life = 3.2; b.grace = 2; b.stop = { t: .8, wait: 0, spd: 200, phase: 1, ang: Math.atan2(cy - y, cx - x) }; }
+    sfx('seal');
+    return 1.6;
+  },
+  // 追い風斬り: only in its wind: from downwind, chasing the player
+  s_oikaze(s, lv) {
+    if (!B.windBar || !wind) return HAND.s_kaze(s, lv);
+    const w = wind.ax > 0 ? 0 : wind.ax < 0 ? 1 : wind.ay > 0 ? 2 : 3;
+    // downwind is the wall the wind blows toward
+    const dw = [1, 0, 3, 2][w], q = wallPoint(dw, dw < 2 ? clamp(P.y / H, .1, .9) : clamp(P.x / W, .1, .9), 60);
+    B.out = true; cueFrom(q.x, q.y, .5);
+    later(.5, () => { B.x = q.x; B.y = q.y; const v = through(q.x, q.y, 620); runB(v.vx, v.vy, 3, 30, () => { B.out = true; dropNear(.6, false); }, () => { const a = Math.atan2(B.run.vy, B.run.vx), want = aimFrom(B.x, B.y), na = a + clamp(angDiff(want, a), -1.4 / 120, 1.4 / 120); B.run.vx = Math.cos(na) * 620; B.run.vy = Math.sin(na) * 620; }); });
+    return 3.8;
+  },
+  // 颶風斬: a word, the name, then wall to wall through the player four times, faster each time, heard before seen
+  s_gufu(s, lv) {
+    say('止まって見えるぜ!', { t: .9, col: C.washi });
+    later(.9, () => say('颶風斬', { t: 1.6, col: C.shu, size: 44 }));
+    later(1.0, () => {
+      const w = nearestWall(B.x, B.y), q = wallPoint(w, w < 2 ? B.y / H : B.x / W, 80), a = Math.atan2(q.y - B.y, q.x - B.x);
+      runB(Math.cos(a) * 900, Math.sin(a) * 900, 2, 40, () => {
+        B.out = true;
+        const speeds = [900, 1100, 1300, 1500];
+        let last = w, k = 0;
+        const pass = () => {
+          if (k >= speeds.length) { dropNear(.7, false); return; }
+          const e = entryPoint(last), sp = speeds[k++]; last = e.w;
+          cueFrom(e.x, e.y, .45);
+          later(.45, () => { B.x = e.x; B.y = e.y; const v = through(e.x, e.y, sp); runB(v.vx, v.vy, 3, 40, () => { B.out = true; later(.25, pass); }); });
+        };
+        later(.3, pass);
+      });
+    });
+    return 9.5;
+  },
+};
+// in over the wall named next to it (not that one), heard first, straight through the player and out again
+function enterThrough(notWall, spd, dmg, then, cue = .5) {
+  const e = entryPoint(notWall);
+  later(.7, () => cueFrom(e.x, e.y, cue));
+  later(.7 + cue, () => { B.x = e.x; B.y = e.y; const v = through(e.x, e.y, spd); runB(v.vx, v.vy, 3, dmg, () => { B.out = true; if (then) then(); }); });
+}
+// down out of the sky near the player; with a shockwave of red shots where it lands
+function dropNear(T, wave) {
+  const a = Math.random() * TAU, rr = 120 + Math.random() * 200, q = inField(P.x + Math.cos(a) * rr, P.y + Math.sin(a) * rr, 40);
+  fallB(q.x, q.y, T, () => {
+    if (Math.hypot(P.x - B.x, P.y - B.y) < B.r + P.r + 20) hurt(30);
+    if (wave) { for (let i = 0; i < 22; i++) { const b = shootFrom(B.x, B.y, i / 22 * TAU, 240, 'r'); b.dmg = 20; } }
+  });
+}
+
+// ---- the hand-made enemies themselves ----
+// forms: the skills each form brings (they stay in the forms after), its combinations, and what it says on entering
+const HANDMADE = [
+  { n: 1, name: '灯守', glyph: '灯', song: 'himori', total: 60,
+    forms: [
+      { share: .55, skills: [['h_shoot', '灯し撃ち'], ['h_lantern', '灯籠置き'], ['h_ring', '火の輪'], ['h_lunge', '跳び込み', { moves: 1 }]] },
+      { share: .45, line: '…ならば、もう少しだけ、灯を強くしましょうか。', skills: [['h_chain', '灯籠連ね'], ['h_okuribi', '送り火'], ['h_ring2', '火の輪・二重']], combos: [['h_lunge', 'h_shoot']] },
+    ],
+    defeat: '良い腕です。灯は、消えずに済みましたね。…どうか、先へ。' },
+  { n: 10, name: '疾風丸', glyph: '疾', song: 'hayate', total: 140, spd: 1.08, gap: .8,
+    forms: [
+      { share: .35, skills: [['s_shikku', '疾駆', { moves: 1 }], ['s_kaze', '風刃', { moves: 1 }], ['s_mawari', '回り斬り', { moves: 1 }]], combos: [['s_shikku', 's_mawari']] },
+      { share: .35, line: '見えてるか? 俺の影が!', skills: [['s_bunshin', '影分身', { moves: 1 }], ['s_kagenui', '影縫い'], ['s_shikku3', '疾駆・三連', { moves: 1 }], ['s_shippu', '疾風迅雷', { moves: 1 }]],
+        combos: [['s_bunshin', 's_kagenui'], ['s_mawari', 's_shikku3'], ['s_mawari', 's_kagenui']] },
+      { share: .30, line: '…ちっ。ついて来られるかよ、これに!', enter: 's_barrier', skills: [['s_barrier', '風の結界'], ['s_gufu', '颶風斬', { moves: 1, big: 1 }], ['s_kamaitachi', '鎌鼬'], ['s_oikaze', '追い風斬り', { moves: 1 }]],
+        combos: [['s_barrier', 's_kamaitachi', 's_kaze'], ['s_kamaitachi', 's_shikku3', 's_gufu'], ['s_mawari', 's_kamaitachi']] },
+    ],
+    defeat: '…速さで、負けた…? あいつ以外に…' },
+];
+function makeHand(def, idx) {
+  const skills = [], combos = [], idxOf = {};
+  def.forms.forEach((f, i) => {
+    for (const [t, name, o] of f.skills) { idxOf[t] = skills.length; skills.push(Object.assign({ t, name, intro: i, p: {}, own: -1 }, o || {}, o && o.moves ? { moves: true } : {})); }
+    for (const parts of f.combos || []) combos.push({ kind: 'seq', parts: parts.map(t => idxOf[t]), intro: i });
+  });
+  const shapes = [withSize(rollShape('aimed', mulberry32(def.n)), mulberry32(def.n + 1))];
+  const sum = def.forms.reduce((a, f) => a + f.share, 0);
+  const forms = def.forms.map((f, i) => {
+    const pool = [], wt = {};
+    skills.forEach((s, j) => { if (s.intro > i) return; pool.push('k:' + j); wt['k:' + j] = s.intro === i && i ? 1.4 : 1; });
+    combos.forEach((c, j) => { if (c.intro > i) return; pool.push('c:' + j); wt['c:' + j] = 1.2; });
+    return {
+      name: ['一ノ型', '二ノ型', '三ノ型', '四ノ型', '五ノ型', '六ノ型'][i], pool, wt, skills, combos, shapes, props: [], bsig: '', lsig: '', sigEvery: 3,
+      spd: def.spd || 1, gap: (def.gap || 1) * Math.max(.6, 1 - i * .07), warn: 1, den: 1, red: .3, white: false, jit: false,
+      vn: 1, vsz: 1, vsp: 1, vz: 1, vw: 1, hp: Math.round(def.total * f.share / sum), special: [],
+      line: f.line || '', enter: f.enter ? 'k:' + idxOf[f.enter] : '',
+    };
+  });
+  return { n: def.n, idx, name: def.name, glyph: def.glyph, forms, final: false, revive: false, rules: {}, free: false, finalSeed: def.n * 31 + 7, finalLen: 0, t: 0,
+    shapes, temper: '', skills, combos, bsig: '', lsig: '', sigEvery: 3, fseal: '', song: def.song, defeat: def.defeat };
+}
+
+STAGES = HANDMADE.map((d, i) => makeHand(d, i + 1));
 function skillBody(s, lv) {
   switch (s.t) {
     case 'rec': return REC[s.rec].fn(s.I * (1 + .1 * lv));
@@ -2779,7 +3202,7 @@ function skillBody(s, lv) {
       return 1.6 + (chain - 1) * 1.25 + (s.pa === 'leap' ? .5 : 0) + (s.own >= 0 ? 1.2 : 0);
     }
     case 'tech': seenNow.add(s.id); return ATK[s.id]();
-    default: return FIX[s.t] ? FIX[s.t].run(s.p, lv) : NSK_RUN[s.t](s.p, lv, s);
+    default: return HAND[s.t] ? HAND[s.t](s, lv) : FIX[s.t] ? FIX[s.t].run(s.p, lv) : NSK_RUN[s.t](s.p, lv, s);
   }
 }
 // a pool entry: one skill (k:j) or a combination (c:j), whose parts run one after another
@@ -3050,6 +3473,10 @@ function clearHostile() {
   for (const b of bullets) if (b.own === 'b') burst(b.x, b.y, b.kind === 'w' ? C.washi : C.shu, 2, 80, .4, 2);
   bullets = bullets.filter(b => b.own === 'p'); lasers = []; zones = []; sched = []; wind = null;
   turrets = []; wells = []; slows = []; tether = null; inks = []; marks = []; B.trail = 0; B.cmb = null; B.tell = null; B.act = {}; B.afterRush = null; B.nextPick = null; B.sign = null;
+  // the hand-made pieces go too, and anything they had lined up
+  props = []; clones = []; scriptId++; B.run = null; B.fall = null; B.shadowCue = 0;
+  if (B.out) { B.out = false; B.x = clamp(B.x, 60, W - 60); B.y = clamp(B.y, 60, H - 60); }
+  if (B.windBar) { B.windBar = null; B.barrier = false; }
   fx.sealP = fx.sealD = fx.rev = fx.dark = fx.swap = fx.freeze = fx.shrink = fx.pslow = 0; B.hex = 0;
 }
 
@@ -3092,7 +3519,8 @@ function addShake(v) { shake = Math.max(shake, reduced ? v * .3 : v); }
 // damage: small numbers are the old weights (1 a shot, 2 a heavy blow), larger ones are damage itself
 function hurt(n = 1, pierce = false) {
   if (P.inv > 0 || (P.dashT > 0 && !pierce) || P.dead || ending) return false;
-  let dmg = n <= 3 ? [0, 8, 18, 26][n] : n;
+  // (everything that strikes the player hits twice as hard as the first build had it)
+  let dmg = n <= 3 ? [0, 16, 36, 52][n] : n;
   if (P.oneHit) dmg = P.hp;
   P.hp -= dmg; stats.hits++; stats.taken = (stats.taken || 0) + dmg; P.inv = 1.0; P.combo = 0; P.lastHurt = gt;
   // 百鬼夜行 feeds on every hit it lands, and under its hex a hit also takes the breath for a dash
@@ -3135,13 +3563,15 @@ function reflect(b, d) {
   b.own = 'p'; b.kind = 'w'; b.vx = Math.cos(a) * s; b.vy = Math.sin(a) * s; b.life = 3; b.perfect = perfect;
   b.home = 0; b.stop = null; b.bounce = 0; b.grace = 0; b.acc = null; b.wv = null; b.sp3 = 0; b.orb = null; b.ghost = false; b.needle = false;
   b.orbc = null; b.blink = 0; b.curve = 0; b.swirl = null; b.pulse = null; b.zig = null; b.decel = null; b.stut = null; b.shift = null; b.swerve = 0; b.magnet = 0; b.shed = 0; b.drop = null; b.burst = null; b.wsplit = 0; b.grav = 0; b.boom = null; b.growR = null;
-  b.dmg = (b.big ? 12 : 2.3) * (perfect ? 1.7 : 1) * mult();
-  b.unit = (b.big ? 12 : 2.3) * mult();   // what the same shot is worth returned normally
+  b.dmg = (b.big ? RET_DMG * 5 : RET_DMG) * (perfect ? 1.7 : 1) * mult();
+  b.unit = (b.big ? RET_DMG * 5 : RET_DMG) * mult();   // what the same shot is worth returned normally
   if (b.big) { b.big = false; b.r = 12; } else b.r = 7;
   P.parryHit = true;
   burst(b.x, b.y, C.kin, perfect ? 14 : 7, perfect ? 320 : 200, .35);
   if (perfect) { stats.perfects++; pop(b.x, b.y - 14, '極', C.kin, 26); hitstop = Math.max(hitstop, .06); sfx('perfect'); }
   else { hitstop = Math.max(hitstop, .025); sfx('parry'); }
+  // some shots do something more when returned (送り火 breaks into embers; a thrown blade undoes its thrower)
+  if (b.onReflect) { const f = b.onReflect; b.onReflect = null; f(b); }
 }
 const sealForm = () => F.special.includes('sealPform') && !B.sealDone;
 const invulnerable = () => ending || B.barrier || B.seal || B.guard || RL.survive || sealForm();
@@ -3149,14 +3579,17 @@ const invulnerable = () => ending || B.barrier || B.seal || B.guard || RL.surviv
 // pierce: a 極 return, which gets through that invulnerability at a dwindling rate.
 // the damage dealt, in the large figures the enemy's life is shown in
 const dmgPop = d => pop(B.x + (Math.random() - .5) * 30, B.y - B.r - 10 - Math.random() * 16, Math.round(d * HPDISP).toLocaleString('en-US'), C.kin, 15);
+// every blow the player lands counts for 0.4 of what it did in the first build: fights run long
+const DMG_OUT = .4;
 function damageBoss(d, raw, force, pierce) {
-  if (invulnerable()) return;
+  if (invulnerable() || B.out) return;
+  d *= DMG_OUT;
   // 0.2 s of invulnerability after each hit, except while broken
   if (B.iframe > 0 && B.stagger <= 0 && !force) {
     if (!pierce) { sfx('block'); return; }
     // the first piercing shot counts as a normal return, each next one 75% of the last,
     // and all of them together within one invulnerable window never pass four normal returns
-    const unit = pierce.unit, cap = 4 * 2.3 * mult();
+    const unit = pierce.unit * DMG_OUT, cap = 4 * RET_DMG * mult() * DMG_OUT;
     const dd = Math.min(unit * Math.pow(.75, B.pierceN), cap - B.pierceTot);
     if (dd <= .01) { sfx('block'); return; }
     B.pierceN++; B.pierceTot += dd;
@@ -3167,7 +3600,8 @@ function damageBoss(d, raw, force, pierce) {
   if (B.stagger > 0 && !raw) d *= 1.6;
   B.hp -= d; B.hurtF = .07; B.lastHit = gt; B.vis = 1; sfx('hit');
   dmgPop(d);
-  if (B.stagger <= 0) { B.iframe = .2; B.pierceN = 0; B.pierceTot = 0; }
+  // after each hit the enemy is untouchable for as long as a parry takes to come again (except while broken)
+  if (B.stagger <= 0) { B.iframe = PARRY_CD; B.pierceN = 0; B.pierceTot = 0; }
   if (B.hp <= floorOf(fi)) formDown();
 }
 function formDown() {
@@ -3189,10 +3623,14 @@ function nextForm() {
   B.mode = 'idle'; B.busy = 0; B.stagger = 0; B.nextAtk = 1.7;
   banner = { txt: F.name, t: 1.6 };
   setupForm();
+  // what it says on entering the form, and a form that opens with one particular skill
+  if (F.line) say(F.line, { t: 3.2 });
+  if (F.enter) { B.nextPick = F.enter; B.sign = signOf(F.enter); B.nextAtk = .9; }
   addShake(8); sfx('phase');
 }
 function win() {
-  B.hp = 0; stats.won = true; ending = 1.8;
+  B.hp = 0; stats.won = true; ending = RUN.st.defeat ? 3.4 : 1.8;
+  if (RUN.st.defeat) say(RUN.st.defeat, { t: 3.4 });
   clearHostile(); bullets = []; B.mode = 'idle'; B.stagger = 0; decoys = [];
   burst(B.x, B.y, C.kin, 60, 420, 1.2, 3); burst(B.x, B.y, C.washi, 40, 260, 1.4, 2.5);
   addShake(16); hitstop = .25; flash = reduced ? 0 : .6;
@@ -3298,6 +3736,8 @@ function tryParry() {
     }
     return;
   }
+  // a lantern, flag or afterimage within reach is cut by the same press
+  cutHandNear();
   if (B.stagger > 0 && !invulnerable() && !slashSealed() && Math.hypot(B.x - P.x, B.y - P.y) < B.r + P.r + SLASH_REACH) {
     if (P.slashCD <= 0) { P.slashCD = SLASH_CD; slash('斬'); }
     return;
@@ -3462,6 +3902,8 @@ function update(dt) {
   B.landT -= dt;
   B.hurtF -= dt; B.iframe -= dt; B.vis = Math.max(0, B.vis - dt * 1.2); B.fade -= dt;
   if (B.tell && (B.tell.t -= dt) <= 0) B.tell = null;
+  if (B.sink > 0) B.sink -= dt; if (B.shadowCue > 0) B.shadowCue -= dt;
+  stepClones(dt); stepWindBar(dt);
   if (B.hex > 0) { B.hex -= dt; if (Math.random() < .5) parts.push({ x: B.x + (Math.random() - .5) * B.r * 2, y: B.y + (Math.random() - .5) * B.r * 2, vx: 0, vy: -40, life: .4, max: .4, col: C.ao, size: 3 }); }
   for (let i = marks.length - 1; i >= 0; i--) if ((marks[i].t += dt) >= marks[i].life) marks.splice(i, 1);
   B.spin += dt * (B.stagger > 0 ? .3 : B.barrier ? 3.2 : 1.1 + B.phase * .3);
@@ -3522,7 +3964,7 @@ function update(dt) {
     B.x = clamp(B.x, m, W - m); B.y = clamp(B.y, m + 30, H - m);
     const d = Math.hypot(B.x - P.x, B.y - P.y);
     if (P.parryT > 0 && d < B.r + P.r + 30) chargeParried();
-    else if (d < B.r + P.r - 4) hurt(15);
+    else if (d < B.r + P.r - 4) hurt(30);
     // 壁跳ね: bounces off the walls instead of stopping
     if (B.mode === 'dash' && out && B.bounces > 0) {
       B.bounces--; if (B.x <= m || B.x >= W - m) B.cvx = -B.cvx; if (B.y <= m + 30 || B.y >= H - m) B.cvy = -B.cvy;
@@ -3533,6 +3975,9 @@ function update(dt) {
       if (B.cv && B.cv.pa === 'feint') fan(5, .2, 240 * SPD());
       chargeEnd();
     }
+  } else if (B.out || B.run || B.fall) {
+    // a hand-made enemy's own movement: running straight, gone past the walls, or coming down out of the sky
+    stepHand(dt);
   } else if (B.final === 'on') {
     // it keeps weaving over the upper middle of the floor, except while a technique of its own is moving it
     if (B.holdT > 0) B.holdT -= dt; else {
@@ -3582,7 +4027,7 @@ function update(dt) {
   // touching the body costs 2 except while broken
   if (!stats.won && !P.dead) {
     const dx = P.x - B.x, dy = P.y - B.y, d = Math.hypot(dx, dy) || 1, min = B.r + P.r;
-    if (d < min - 4 && B.stagger <= 0 && B.mode !== 'dash' && !B.air && !(B.landT > 0)) hurt(15);
+    if (d < min - 4 && B.stagger <= 0 && B.mode !== 'dash' && !B.air && !B.out && !B.fall && !B.run && !(B.landT > 0)) hurt(30);
     if (d < min && !B.air) { P.x = B.x + dx / d * min; P.y = B.y + dy / d * min; }
   }
 
@@ -3610,7 +4055,7 @@ function update(dt) {
     }
     if (L.t > L.warn && L.t < L.warn + L.act && !beamDark(L)) {
       let d = 1e9; for (const g of beamSegs(L)) d = Math.min(d, segDist(P.x, P.y, ...g));
-      if (d < L.w / 2 + P.r - 3) hurt(L.heavy ? 22 : 10, !!L.blue);
+      if (d < L.w / 2 + P.r - 3) hurt(L.dmg || (L.heavy ? 44 : 20), !!L.blue);
     }
     if (L.t > L.warn + L.act) { if (L.sig === 'branch') beamShots(L, 'branch'); lasers.splice(i, 1); }
   }
@@ -3625,7 +4070,7 @@ function update(dt) {
       if (!z.hit) {
         z.hit = true; burst(z.x, z.y, C.shu, z.heavy ? 22 : 10, z.heavy ? 300 : 220, .35); addShake(z.heavy ? 7 : 3); sfx('zap');
       }
-      if (Math.hypot(P.x - z.x, P.y - z.y) < z.r + P.r - 4) hurt(z.heavy ? 22 : 10);
+      if (Math.hypot(P.x - z.x, P.y - z.y) < z.r + P.r - 4) hurt(z.dmg || (z.heavy ? 44 : 20));
     }
     if (z.t > z.warn + z.act) zones.splice(i, 1);
   }
@@ -3708,6 +4153,7 @@ function update(dt) {
     if (b.life <= 0 || (b.grace <= 0 && (b.x < -30 || b.x > W + 30 || b.y < -30 || b.y > H + 30))) { bullets.splice(i, 1); continue; }
     if (b.own === 'b') { checkHitPlayer(b, i); continue; }
     if (stats.won) continue;
+    if (hitHand(b)) { bullets.splice(i, 1); continue; }
     if (launchers.length) {
       const l = nearestLauncher(b.x, b.y);
       if (Math.hypot(b.x - l.x, b.y - l.y) < 16 + b.r) { bullets.splice(i, 1); hitLauncher(l, b.dmg); continue; }
@@ -3746,7 +4192,7 @@ function checkHitPlayer(b, i) {
   if (blinkOff(b)) return;
   const d = Math.hypot(b.x - P.x, b.y - P.y);
   if (P.parryT > 0 && parryable(b) && d < P.r + b.r + PARRY_R) { reflect(b, d); return; }
-  if (d < P.r + b.r - 2 && hurt(b.dmg || (b.kind === 'w' ? 8 : 10), b.kind === 'b')) {
+  if (d < P.r + b.r - 2 && hurt(b.dmg || (b.kind === 'w' ? 16 : 20), b.kind === 'b')) {
     if (b.sealHit) applySeal(b.sealHit);
     if (b.curse) { fx.pslow = Math.max(fx.pslow || 0, 3); pop(P.x, P.y - 26, '呪 鈍', C.murasaki, 20); }
     const j = bullets.indexOf(b); if (j >= 0) bullets.splice(j, 1);
@@ -3896,12 +4342,13 @@ function render() {
     ctx.globalAlpha = 1;
   }
 
+  drawHand();
   // enemy, decoys
   if (!stats.won || ending > 1.5) {
     for (const dc of decoys) drawEnemy(dc.x, dc.y, 1, false);
-    const crouch = B.mode === 'aim' ? Math.sin(gt * 70) * 2 : 0;
+    const crouch = B.mode === 'aim' || B.sink > 0 ? Math.sin(gt * 70) * 2 : 0;
     const bx = B.x + (B.stagger > 0 ? Math.sin(gt * 50) * 2.5 : crouch), by = B.y;
-    let alpha = B.air ? .12 : B.fade > 0 ? .25 : 1;
+    let alpha = B.out || B.fall ? 0 : B.air ? .12 : B.fade > 0 ? .25 : 1;
     if (F.special.includes('invisible') && B.stagger <= 0 && !B.barrier) alpha = Math.max(.05, Math.min(1, B.vis * 1.4));
     if (B.mode === 'aim') {
       const k = Math.max(0, B.aimT / B.aimMax), locked = B.aimT <= B.aimMax * .35;
@@ -4065,7 +4512,7 @@ function render() {
     for (const L of lasers) if (L.t < L.warn && out(L.x, L.y)) edgeMark(L.x, L.y, L.blue ? C.ao : C.shu, 8);
     for (const m of marks) if (out(m.x, m.y)) edgeMark(m.x, m.y, m.col || C.kin, 7);
     ctx.globalAlpha = 1;
-    if (!stats.won && out(B.x, B.y)) { edgeMark(B.x, B.y, B.mode === 'aim' || B.mode === 'dash' ? C.shu : C.washi, 13); }
+    if (!stats.won && !B.out && !B.fall && out(B.x, B.y)) { edgeMark(B.x, B.y, B.mode === 'aim' || B.mode === 'dash' ? C.shu : C.washi, 13); }
   }
 
   // HUD: enemy life, a thick bar across the top with the life left in figures
@@ -4078,8 +4525,6 @@ function render() {
   } else {
     const tot = totalHp();
     ctx.fillStyle = B.stagger > 0 ? C.kin : B.seal || B.barrier ? C.mute : C.shu; ctx.fillRect(x0, y0, bw * clamp(B.hp / tot, 0, 1), bh);
-    // where the attacks change
-    ctx.fillStyle = C.washi; for (let i = 0; i < forms.length - 1; i++) ctx.fillRect(x0 + bw * floorOf(i) / tot - 1, y0 - 3, 2, bh + 6);
     ctx.font = `600 13px ${FM}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = C.washi;
     ctx.fillText(Math.max(0, Math.round(B.hp * HPDISP)).toLocaleString('en-US') + ' / ' + Math.round(tot * HPDISP).toLocaleString('en-US'), x0 + bw / 2, y0 + bh / 2 + 1);
   }
@@ -4158,7 +4603,7 @@ function render() {
 // =====================================================================
 // screens
 // =====================================================================
-const VERSION = '0.1.1';
+const VERSION = '0.2.0';
 let selN = 1, life = 0, freeDiff = 1, tempUnlock = false;
 const bestTime = c => Math.min(...LIFE_TK.map(k => c[k] || Infinity));
 const bestScore = c => Math.max(0, ...(c.hs || []));
@@ -4214,7 +4659,7 @@ function titleScreen() {
     </ul>
     <div class="modes">
       ${resumeData ? `<button type="button" class="mode" data-act="continue"><b>続きから</b><span>${resumeLabel(resumeData)}</span></button>` : ''}
-      <button type="button" class="mode" data-act="select"><b>番付</b><span>三十の鬼。討伐 ${nClear()} / 30</span></button>
+      <button type="button" class="mode" data-act="select"><b>番付</b><span>討伐 ${nClear()}</span></button>
     </div>
   </div>
   <p class="ver">ver ${VERSION}</p>`);
@@ -4227,11 +4672,11 @@ function selectScreen(keepUnlock) {
     const c = save.clr[s.n], ok = unlocked(s.n);
     const cls = ['cell', c ? (c.u ? 'uta' : c.k ? 'kes' : c.t ? 'clr' : 'easy') : '', s.n === selN ? 'cur' : ''].join(' ');
     const rec = c ? `<small>${bestTime(c) < Infinity ? fmt(bestTime(c)) : '―'}</small><small>${bestScore(c) || '―'}</small>` : '';
-    return `<button type="button" class="${cls}" data-act="pick" data-v="${s.n}" ${ok ? '' : 'disabled'} aria-label="${s.idx} ${ok ? s.name : '未解放'}">${s.idx}${rec}</button>`;
+    return `<button type="button" class="${cls}" data-act="pick" data-v="${s.n}" ${ok ? '' : 'disabled'} aria-label="${ok ? s.name : '未解放'}">${ok ? s.name : '？'}${rec}</button>`;
   }).join('');
   show(`<div class="panel wide">
     <div class="row" style="justify-content:space-between"><h2 class="head">番付</h2><div class="row"><button type="button" class="ghost" data-act="transfer">引き継ぎ</button><button type="button" class="ghost" data-act="title">戻る</button></div></div>
-    <p class="best">${nClear()} / 30</p>
+    <p class="best">討伐 ${nClear()}</p>
     <div class="grid">${cells}</div>
   </div>`);
   const cur = ov.querySelector('.cell.cur'); if (cur) cur.scrollIntoView({ block: 'center' });
@@ -4277,11 +4722,7 @@ function detailScreen(n) {
   state = 'detail'; selN = n;
   const s = stageByN(n), c = save.clr[n];
   show(`<div class="panel">
-    <p class="eyebrow">${s.idx} / 30</p>
     <h2 class="head">${s.name}</h2>
-    <div class="chips">${s.skills.filter((x, j) => j === 0 || (s.n === 150 && !s.free && j < 3)).map(u => `<span class="chip g">${u.name}</span>`).join('')}
-      <span class="chip">${s.name}の${SIG[s.bsig].n}</span>${s.lsig ? `<span class="chip">${s.name}の${SIG[s.lsig].n}</span>` : ''}</div>
-    <p class="dnote">${s.forms.length}つの型${s.final ? ` ・ 終ノ型 約${fmtLen(s.finalLen)}` : ''}${s.revive ? ' ・ 再起' : ''} ・ 技 ${s.skills.length}</p>
     <div class="seg" role="group" aria-label="命">
       ${LIFE_ORDER.map(i => `<button type="button" data-act="life" data-v="${i}" aria-pressed="${i === life}">${LIFE[i].name}</button>`).join('')}
     </div>
@@ -4415,7 +4856,7 @@ ov.addEventListener('click', e => {
     // the better of the two records is kept for every stage
     mergeRecords(r); persist(); pushCloud();
     ov.querySelector('#tcode').value = recordCode();
-    msg.textContent = `読み込みました（討伐 ${nClear()} / 30）`;
+    msg.textContent = `読み込みました（討伐 ${nClear()}）`;
   }
 });
 
