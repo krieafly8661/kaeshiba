@@ -539,7 +539,8 @@ const OVR = {
   143: { rules: { survive: 55 }, seal: { P: 'all' } },
   145: { rules: { limit: true }, special: ['regen'] },
   149: { rules: { perfectOnly: true } },
-  150: { forms: 6, final: true, revive: true },
+  // the last: past anything before it, faster, quicker to strike again, and shorter in its warnings
+  150: { forms: 6, final: true, revive: true, spdK: 1.12, gapK: .55, warnK: .85 },
 };
 // finals that keep a seal on for their whole length
 const FINAL_SEAL = { 70: 'P', 120: 'P', 150: 'P' };
@@ -720,6 +721,8 @@ const TECH = { wind: 'f', slow: 'f', well: 'f', dark: 'f', ink: 'f', shrink: 'f'
   converge: 'a', wall: 'a', encircle: 'a', sweep: 'a', bluebeam: 'a', laser: 'a', snipe: 'a' };
 // skills built from marks, moves and set pieces. min: the first stage that may carry one; roll gives one enemy's own numbers
 const sgn = r => (r() < .5 ? 1 : -1);
+// which of 百鬼夜行's own skills it shows in which form
+const CFW_AT = [['blastdash', 0], ['rubylunge', 0], ['swipe', 0], ['rubyshot', 0], ['aggression', 1], ['timecurse', 1], ['timerend', 2], ['impale', 2], ['energyhex', 3], ['deathstrike', 3], ['voidshatter', 4]];
 const NSK = {
   // 溜め大技: a long wind-up, then one great release
   chargeup: { min: 4, w: .6, names: ['溜め放ち', '大開放', '渾身', '気合い一閃'],
@@ -765,6 +768,50 @@ const NSK = {
     roll: r => ({ arms: 1 + (r() < .35), len: 7 + (r() * 3 | 0), gap: 2 + (r() * 3 | 0), w: sgn(r) * (.5 + r() * .15), dur: 3.2 + r() * .6 }) },
   // 写し身: a shadow on the far side of the floor fires the same barrage as the body
   twin: { min: 30, w: .5, names: ['写し身', '双身', '鏡像'], roll: r => ({ k: r() }) },
+  // ---- 百鬼夜行's own: never carried by any other enemy (min 151) ----
+  // 迅突: a dark aura round its feet, a moment's halt, then a lunge too fast to follow; in its last forms no warning at all
+  blastdash: { min: 151, moves: 1, rush: 1, names: ['迅突'], roll: () => ({}) },
+  // 紅突: a slow-aimed lunge; if it misses, an instant second one (返し紅突)
+  rubylunge: { min: 151, moves: 1, rush: 1, names: ['紅突'], roll: () => ({}) },
+  // 乱れ紅: reels back, blinks in and slashes, loosing darts all round that turn and come back in
+  aggression: { min: 151, moves: 1, names: ['乱れ紅'], roll: () => ({}) },
+  // 時裂き: cuts through time to the player's far side, leaving a circle that shrinks into a shockwave
+  timerend: { min: 151, moves: 1, names: ['時裂き'], roll: () => ({}) },
+  // 死の一撃: vanishes and drops onto the player from above
+  deathstrike: { min: 151, moves: 1, names: ['死の一撃'], roll: () => ({}) },
+  // 虚空砕き: leaps out of sight and comes down with an explosion and a shockwave across the whole floor
+  voidshatter: { min: 151, moves: 1, names: ['虚空砕き'], roll: () => ({}) },
+  // 時戻し: winds time back, stepping away and mending a little
+  timecurse: { min: 151, moves: 1, names: ['時戻し'], roll: () => ({}) },
+  swipe: { min: 151, moves: 1, names: ['剣閃'], roll: () => ({}) },
+  rubyshot: { min: 151, names: ['紅玉散'], roll: () => ({}) },
+  impale: { min: 151, moves: 1, names: ['剛突'], roll: () => ({}) },
+  energyhex: { min: 151, names: ['魂枯らし'], roll: () => ({}) },
+
+  // 読み撃ち: shots in a string, each aimed its own way: straight at the player, where it is heading, or the other way
+  readshot: { min: 8, w: 1.2, names: ['読み撃ち', '先読み', '裏読み'],
+    roll: r => { const n = 4 + (r() * 3 | 0), seq = ['d']; for (let i = 1; i < n; i++) seq.push(['p', 'a', 'p', 'd'][r() * 4 | 0]); return { seq, n: [1, 3][r() * 2 | 0], sp: 300 + r() * 60, gap: .3 + r() * .1 }; } },
+  // 斬り込み: a wind-up, a lunge to just short of the player and a slash in front, again and again; it ends on a slam
+  slashcombo: { min: 10, w: 1.3, moves: 1, rush: 1, names: ['斬り込み', '連ね斬り', '踏み込み斬り'],
+    roll: r => ({ hits: 2 + (r() < .5), arc: .9 + r() * .4, n: 7 + (r() * 3 | 0), slam: r() < .6 }) },
+  // 噴柱: points the blade at the sky, marks circles round itself and the player, then pillars burst from them
+  eruption: { min: 14, w: 1, names: ['噴柱', '火柱立て', '地獄釜'],
+    roll: r => ({ n: 5 + (r() * 4 | 0), rot: r() * TAU, rad: 110 + r() * 80, warn: 1.2 + r() * .3 }) },
+  // 地紋: runes under the player that burst a moment later, taking two lives
+  runes: { min: 18, w: 1, names: ['地紋', '足元の印', '呪紋'],
+    roll: r => ({ n: 1 + (r() * 3 | 0), gap: .5 + r() * .15 }) },
+  // 宵斬り: throws a marker at the player: gold, and the flames come all round it (go to it); red, and they come on it (get away)
+  nightslash: { min: 22, w: 1.1, names: ['宵斬り', '明暗', '昼夜斬り'], roll: r => ({ first: r() < .5 ? 'y' : 'r' }) },
+  // 連鎖弾: numbered marks round where the player is going, then one shot through them all in order
+  prism: { min: 26, w: 1, names: ['連鎖弾', '数え撃ち', '道標'],
+    roll: r => ({ n: 3 + (r() * 3 | 0), rad: 100 + r() * 50, rot: r() * TAU, dir: sgn(r) }) },
+  // 寄せ波一閃: rings close in on the body one after another, each faster than the last, then one great lunge
+  gambit: { min: 30, w: 1, moves: 1, rush: 1, names: ['寄せ波一閃', '波返し', '大一閃'],
+    roll: r => ({ rings: 4 + (r() * 3 | 0), gap: .35 + r() * .1, sp: 80 + r() * 20 }) },
+  // 炎陣: a ring of fire round where it stands that holds for several seconds while it fights on
+  inferno: { min: 34, w: .6, linger: 5.5, names: ['炎陣', '火の檻', '焦熱陣'],
+    roll: r => ({ R: 170 + r() * 50, n: 30 + (r() * 10 | 0), w: sgn(r) * (.15 + r() * .15) }) },
+
   // 突き撃ち: fires a fan, then rushes in right behind its own shots
   rushshot: { min: 5, w: 1.3, moves: 1, rush: 1, names: ['突き撃ち', '追い駆け', '鉄砲駆け'], roll: r => ({ n: [3, 5][r() * 2 | 0], spread: .16 + r() * .08, sp: 230 + r() * 40 }) },
   // 返し光: rushes through, and from where it stops turns a beam on the player
@@ -805,6 +852,8 @@ function buildStage(n, opt = {}) {
     add({ t: 'rec', rec: 'parade', name: '百鬼夜行', I: I0 * 1.1 }, 0);
     add({ t: 'rec', rec: 'grandwheel', name: '逢魔の大輪', I: I0 }, 0);
     add({ t: 'rec', rec: 'procession', name: '百鬼の行列', I: I0 }, 1);
+    // and its own blade, form by form
+    for (const [t, intro] of CFW_AT) add({ t, p: {}, name: NSK[t].names[0], moves: true, rush: !!NSK[t].rush, own: -1 }, intro);
   } else add({ t: 'rec', rec: en.rec, name: en.name, I: I0 * 1.15, fast: FAST_REC.has(en.rec) }, 0);
   const SEALS = ['sealDash', 'sealAll'];
   // a rush is the enemy's own: it is woven with one of its own barrages (one that goes for the player, if it has one)
@@ -852,7 +901,7 @@ function buildStage(n, opt = {}) {
       default: {
         const K = NSK[kind]; usedN.add(kind);
         const own = K.rush ? ownPat() : -1;
-        return { t: kind, p: K.roll(rng, n), name: (K.rush ? ownNm(own) : '') + pick(K.names), moves: !!K.moves, fast: !!K.fast, rush: !!K.rush, own };
+        return { t: kind, p: K.roll(rng, n), name: (K.rush ? ownNm(own) : '') + pick(K.names), moves: !!K.moves, fast: !!K.fast, rush: !!K.rush, own, linger: K.linger || 0 };
       }
     }
   }
@@ -879,7 +928,7 @@ function buildStage(n, opt = {}) {
   const c0 = 4 + Math.floor(rng() * 3);
   while (skills.length < c0) { const before = skills.length; draw(0); if (skills.length === before) break; }
   // every later form brings two to five more, mostly three
-  for (let i = 1; i < k; i++) { const m = pick([2, 3, 3, 3, 3, 4, 5]); let q = 0; if (canRush && rng() < .65 && drawRush(i)) q++; for (; q < m; q++) draw(i); }
+  for (let i = 1; i < k; i++) { const m = Math.max(1, pick([2, 3, 3, 3, 3, 4, 5]) - skills.filter(s => s.intro === i).length); let q = 0; if (canRush && rng() < .65 && drawRush(i)) q++; for (; q < m; q++) draw(i); }
   // ---- combinations: from the second form on, its skills come strung together ----
   const combos = [];
   const sameAs = c => combos.some(x => x.parts.join() === c.parts.join());
@@ -904,13 +953,22 @@ function buildStage(n, opt = {}) {
       if (x < .3 && fields.length && atks.length) c = { kind: 'dual', parts: [pick(fields), pick(atks)] };
       // a move that leaves the player off balance, then the attack
       else if (x < .55 && movers.length && atks.length) c = { kind: 'lead', parts: [pick(movers), pick(atks)] };
-      // one after another, sometimes three
+      // one after another: strings that grow longer form by form (two or three in the second form, up to five later)
       else if (avail.length >= 2) {
         const a = pick(avail), rest = avail.filter(j => j !== a);
         c = { kind: 'seq', parts: [a, pick(rest)] };
-        if (i >= 3 && rng() < .35) { const r3 = rest.filter(j => !c.parts.includes(j)); if (r3.length) c.parts.push(pick(r3)); }
+        const want = Math.min(5, 2 + Math.floor(rng() * (i + 1)));
+        while (c.parts.length < want) { const r3 = avail.filter(j => j !== c.parts[c.parts.length - 1]); if (!r3.length) break; c.parts.push(pick(r3)); }
       }
       if (c && !sameAs(c)) { c.intro = i; combos.push(c); }
+    }
+  }
+  // 百鬼夜行's own strings: teleport, cut and fire with no gap between, as its forms go on
+  if (n === 150 && !free) {
+    const at = t => skills.findIndex(s => s.t === t);
+    for (const [parts, intro] of [[['blastdash', 'swipe', 'rubyshot'], 1], [['rubylunge', 'swipe', 'impale'], 2], [['timerend', 'swipe', 'aggression'], 2], [['energyhex', 'blastdash', 'swipe', 'deathstrike'], 3], [['voidshatter', 'swipe', 'rubyshot', 'impale'], 4], [['deathstrike', 'swipe', 'timerend', 'swipe', 'aggression'], 5]]) {
+      const idx = parts.map(at);
+      if (idx.every(j => j >= 0) && intro < k) combos.push({ kind: 'seq', parts: idx, intro, w: 1.7 });
     }
   }
   // the layouts its covering fire is drawn from: those of its own barrages
@@ -923,7 +981,7 @@ function buildStage(n, opt = {}) {
   // temperament: how the enemy paces itself around the stage's level
   let arch = pick(TEMPER);
   if (o.temper) arch = TEMPER.find(t => t.name === o.temper) || arch;
-  const base = { spd: R(...arch.spd), gap: R(...arch.gap) * (o.gapK || 1), den: R(...arch.den), warn: R(...arch.warn) };
+  const base = { spd: R(...arch.spd) * (o.spdK || 1), gap: R(...arch.gap) * (o.gapK || 1), den: R(...arch.den), warn: R(...arch.warn) * (o.warnK || 1) };
   const survive = o.rules && o.rules.survive;
   // this enemy's own take on every skill: how many, how big, how fast (shots, lightning, beams)
   const vr = mulberry32((free ? opt.seed : n) * 2654435 + 11), VR = (a, b) => a + vr() * (b - a);
@@ -937,11 +995,12 @@ function buildStage(n, opt = {}) {
     // what it can do in this form: every skill shown so far (the newest a little more often) and its combinations
     const pool = [], wt = {};
     skills.forEach((s, j) => { if (s.intro > i || s.follow) return; const id = 'k:' + j; pool.push(id); wt[id] = j === 0 ? 1.3 : s.intro === i && i ? 1.4 : 1; });
-    combos.forEach((c, j) => { if (c.intro > i) return; pool.push('c:' + j); wt['c:' + j] = 1.1; });
+    combos.forEach((c, j) => { if (c.intro > i) return; pool.push('c:' + j); wt['c:' + j] = c.w || 1.1; });
     forms.push({
       name: ['一ノ型', '二ノ型', '三ノ型', '四ノ型', '五ノ型', '六ノ型'][i],
       pool, wt, skills, combos, shapes, props, bsig, lsig, sigEvery,
-      spd: D.spd * base.spd * (1 + i * .03), gap: D.gap * base.gap * (1 - i * .03), warn: D.warn * base.warn,
+      // each form faster and more relentless than the last
+      spd: D.spd * base.spd * (1 + i * .06), gap: D.gap * base.gap * Math.max(.6, 1 - i * .07), warn: D.warn * base.warn,
       den: D.den * base.den * (1 + i * .05), red: o.white ? 0 : Math.min(.82, D.red + i * .02),
       white: !!o.white, jit: !!arch.jit, ...V,
       hp, special: [],
@@ -1154,7 +1213,7 @@ function newGame(run) {
   EM = null;
   bullets = []; lasers = []; zones = []; parts = []; texts = []; after = []; slashes = []; streaks = []; sched = [];
   turrets = []; decoys = []; wells = []; slows = []; stones = null; tether = null; wind = null; launchers = []; inks = []; marks = [];
-  fx = { sealP: 0, sealD: 0, rev: 0, dark: 0, swap: 0, freeze: 0, shrink: 0, shrinkK: 0 };
+  fx = { pslow: 0, sealP: 0, sealD: 0, rev: 0, dark: 0, swap: 0, freeze: 0, shrink: 0, shrinkK: 0 };
   gt = 0; shake = 0; hitstop = 0; flash = 0; banner = null; ending = 0; lastAtk = ''; lastRun = null; lastShape = null; lastShot = -1; kc = 0; cells = []; sigN = 0;
   stats = { time: 0, parries: 0, perfects: 0, slashes: 0, hits: 0, maxCombo: 0, won: false, why: '' };
   seenNow = new Set();
@@ -1788,7 +1847,7 @@ const ATK = {
 // 技 at work
 // =====================================================================
 // a mark shows where something is about to come from; the wind-up ring warns of a blow too quick to answer
-const mark = (x, y, life) => marks.push({ x, y, t: 0, life });
+const mark = (x, y, life, o = {}) => marks.push(Object.assign({ x, y, t: 0, life }, o));
 const tellOn = T => { B.tell = { t: T, max: T }; sfx('warn'); };
 const inField = (x, y, m = 50) => { const b = bounds(); return { x: clamp(x, b.x0 + m, b.x1 - m), y: clamp(y, b.y0 + m, b.y1 - m) }; };
 // a spot at this angle and distance from (cx, cy), turned on round until it is well clear of the player
@@ -2030,6 +2089,222 @@ const NSK_RUN = {
     go(true);
     return 1.4 * n + 2;
   },
+  blastdash(p, lv) {
+    // from the fifth form on it gives no warning: only the halt. where it stops, the ground bursts
+    const quiet = fi >= 4, ctx = actx;
+    if (!quiet) tellOn(.35);
+    startCharge((quiet ? .28 : .42) * F.warn, 1250 * F.spd, lv >= 2 ? 2 : 1, { pa: 'rush', ef: 'none' });
+    B.afterRush = () => withCtxOf(ctx, () => { zone(B.x, B.y, { r: 120 / (F.vz || 1), warn: .18, act: .2, heavy: true }); addShake(7); });
+    return 2.0 + (lv >= 2 ? 1.1 : 0);
+  },
+  rubylunge(p, lv) {
+    const ctx = actx, h0 = stats.hits;
+    startCharge(.75 * F.warn, 1000 * F.spd, 1, { pa: 'rush', ef: 'none' });
+    // missed: straight back in, with no wind-up to speak of
+    B.afterRush = () => withCtxOf(ctx, () => { if (stats.hits === h0) startCharge(.12, 1050 * F.spd, 1, { pa: 'rush', ef: 'none' }); });
+    return 2.8;
+  },
+  // 剣閃: a step to the player's side and a quick cut, the glue of its strings
+  swipe(p, lv) {
+    const a = aimFrom(P.x, P.y) + Math.PI + (Math.random() < .5 ? .9 : -.9), q = inField(P.x + Math.cos(a) * 95, P.y + Math.sin(a) * 95, B.r + 10);
+    mark(q.x, q.y, .22, { col: C.shu });
+    at(.22, () => {
+      moveB(q.x, q.y);
+      const s0 = aimFrom(B.x, B.y);
+      for (let i = 0; i < 9; i++) { const b = shootFrom(B.x, B.y, s0 + (i / 8 - .5) * 1.3, 600, 'r'); b.life = .3; }
+      sfx('slash'); addShake(3);
+    });
+    return .8;
+  },
+  // 紅玉散: a ruby orb thrown at the player stops, bursts, and splits four ways, each of which bursts in turn
+  rubyshot(p, lv) {
+    const o = ORG(), a = aimFrom(o.x, o.y), b = shootFrom(o.x, o.y, a, 360 * Math.min(1.4, SPD()), 'r');
+    b.r = 13; b.brake = true; b.life = 1.2; b.grace = 2;
+    at(1.0, () => {
+      const x = b.x, y = b.y;
+      zone(x, y, { r: 72 / (F.vz || 1), warn: .01, act: .2, heavy: true });
+      for (let k = 0; k < 4; k++) { const c = shootFrom(x, y, a + k * Math.PI / 2, 300, 'r'); c.r = 9; c.brake = true; c.life = .7; at(.6, () => zone(c.x, c.y, { r: 48 / (F.vz || 1), warn: .01, act: .2 })); }
+      sfx('zap');
+    });
+    return 1.9;
+  },
+  // 剛突: a thrust that crosses the whole floor in an instant; the line shows only a moment before. two lives
+  impale(p, lv) {
+    const ctx = actx;
+    at(.15, () => withCtxOf(ctx, () => {
+      const a = aimAng();
+      laser(a, { warn: Math.max(.38, .45 * F.warn), act: .14, w: 34, heavy: true, noTwin: true });
+      sfx('warn');
+      at(Math.max(.38, .45 * F.warn), () => { const L = 700, q = inField(B.x + Math.cos(a) * L, B.y + Math.sin(a) * L, B.r + 10); B.x = q.x; B.y = q.y; B.tx = q.x; B.ty = q.y; addShake(9); burst(B.x, B.y, C.shu, 20, 300, .4); });
+    }));
+    return 1.4;
+  },
+  // 魂枯らし: wraps itself in blue for a while: faster, and every hit it lands also takes the breath for a dash
+  energyhex(p, lv) {
+    B.hex = 5; sfx('seal'); pop(B.x, B.y - B.r - 30, '魂 枯', C.ao, 20);
+    return .6;
+  },
+  aggression(p, lv) {
+    tellOn(.45);
+    at(.45, () => {
+      const a = aimFrom(B.x, B.y), d = Math.hypot(P.x - B.x, P.y - B.y), q = inField(B.x + Math.cos(a) * d * .55, B.y + Math.sin(a) * d * .55, B.r + 10);
+      moveB(q.x, q.y);
+      // darts out all round, and every one comes back in at the player: a dodge that only clears the first pass is caught by the second
+      const m = 16 + 8 * Math.min(2, Math.max(0, fi - 1)), a0 = aimFrom(B.x, B.y);
+      for (let i = 0; i < m; i++) { const b = shootFrom(B.x, B.y, a0 + (i + .5) / m * TAU, 300 * Math.min(1.3, SPD()), 'r'); b.boom = { t: .6, done: false, aim: true }; b.grace = 2; }
+      const s0 = aimFrom(B.x, B.y);
+      for (let i = 0; i < 7; i++) { const b = shootFrom(B.x, B.y, s0 + (i / 6 - .5) * 1.1, 560, 'r'); b.life = .35; }
+      sfx('slash'); addShake(5);
+    });
+    return 2.2;
+  },
+  timerend(p, lv) {
+    const a = aimFrom(B.x, B.y), q = inField(P.x + Math.cos(a) * 150, P.y + Math.sin(a) * 150, B.r + 10);
+    mark(q.x, q.y, .3, { col: C.shu });
+    at(.3, () => {
+      // it cuts straight through where the player stands
+      const x0 = B.x, y0 = B.y;
+      for (let k = 1; k <= 6; k++) zone(x0 + (q.x - x0) * k / 6, y0 + (q.y - y0) * k / 6, { r: 34 / (F.vz || 1), warn: .01, act: .12 });
+      moveB(q.x, q.y);
+      // the circle under its feet shrinks, then a shockwave across the whole floor, very fast: dash through it
+      mark(q.x, q.y, .9, { col: C.shu, big: true });
+      at(.9, () => { const m = 80; for (let i = 0; i < m; i++) { const b = shootFrom(q.x, q.y, i / m * TAU, 620, 'r'); b.nd = true; b.grace = 3; b.r = 8; } addShake(7); sfx('zap'); });
+    });
+    return 2.0;
+  },
+  deathstrike(p, lv) {
+    // it vanishes; the mark follows the player for a moment, then locks
+    B.fade = .7; burst(B.x, B.y, C.mute, 14, 200, .4);
+    const T = .62;
+    zone(P.x, P.y, { r: 88 / (F.vz || 1), warn: T, act: .25, follow: .3, heavy: true });
+    const z = zones[zones.length - 1];
+    at(T, () => { moveB(z.x, z.y); addShake(10); burstRing(z.x, z.y, NN(16), 230 * SPD()); });
+    sfx('warn');
+    return T + 1.0;
+  },
+  voidshatter(p, lv) {
+    // up into the sky: the body is gone from the floor until it lands
+    const cx = B.x, cy = B.y, T = 1.15;
+    B.fade = T; B.holdT = T + 1;
+    tellOn(T); mark(cx, cy, T, { col: C.shu, big: true });
+    banner = { txt: '虚空砕き', t: 1.0 };
+    at(T, () => {
+      zone(cx, cy, { r: 210 / (F.vz || 1), warn: .01, act: .25, heavy: true });
+      // and a shockwave across the whole floor: only a well-timed dash gets through it
+      const m = 96;
+      for (let i = 0; i < m; i++) { const b = shootFrom(cx, cy, i / m * TAU, 380, 'r'); b.nd = true; b.grace = 4; b.r = 9; }
+      addShake(16); sfx('break'); flash = reduced ? 0 : .4;
+    });
+    return T + 1.8;
+  },
+  timecurse(p, lv) {
+    // winds time back, stepping away and mending a little, and sends curses after the player: one hit and it is slowed
+    const a = aimFrom(B.x, B.y) + Math.PI, q = inField(B.x + Math.cos(a) * 220, B.y + Math.sin(a) * 220, B.r + 10);
+    moveB(q.x, q.y);
+    if (!invulnerable()) B.hp = Math.min(topOf(fi), B.hp + totalHp() * .006);
+    pop(B.x, B.y - B.r - 30, '刻 戻', C.washi, 18);
+    at(.3, () => { const s = 260, T = Math.hypot(P.x - B.x, P.y - B.y) / s; for (const f of [0, 1, -1]) { const c = shootFrom(B.x, B.y, Math.atan2(P.y + f * P.lvy * T - B.y, P.x + f * P.lvx * T - B.x), s, 'r'); c.curse = true; c.r = 11; c.sealHit = ''; } sfx('seal'); });
+    return 1.2;
+  },
+  readshot(p, lv) {
+    const seq = p.seq.concat(lv >= 1 ? ['p', 'a'].slice(0, Math.min(2, lv)) : []);
+    seq.forEach((k, i) => at(i * p.gap, () => {
+      const o = ORG(), s = p.sp * SPD(), T = Math.hypot(P.x - o.x, P.y - o.y) / s, f = k === 'p' ? 1 : k === 'a' ? -1 : 0;
+      const a0 = Math.atan2(P.y + f * P.lvy * T - o.y, P.x + f * P.lvx * T - o.x), m = NN(p.n) | 1;
+      for (let j = 0; j < m; j++) shootFrom(o.x, o.y, a0 + (j - (m - 1) / 2) * .12, s, K());
+      sfx('shot');
+    }));
+    return seq.length * p.gap + .5;
+  },
+  slashcombo(p, lv, s) {
+    const hits = Math.min(4, p.hits + (lv >= 1)), H = .78;
+    for (let h = 0; h < hits; h++) at(h * H, () => {
+      tellOn(.3);
+      at(.3, () => {
+        // lunge to just short of the player
+        const a = aimFrom(B.x, B.y), d = Math.hypot(P.x - B.x, P.y - B.y), go = Math.max(0, d - 80), q = inField(B.x + Math.cos(a) * go, B.y + Math.sin(a) * go, B.r + 10);
+        glide(q.x, q.y, .16);
+      });
+      at(.48, () => {
+        // the slash: a short-lived arc of fast shots in front of the body
+        const a0 = aimFrom(B.x, B.y), m = NN(p.n);
+        for (let i = 0; i < m; i++) { const b = shootFrom(B.x, B.y, a0 + (m > 1 ? (i / (m - 1) - .5) : 0) * p.arc, 520 * Math.min(1.3, SPD()), K()); b.life = .38; }
+        sfx('slash'); addShake(3);
+      });
+    });
+    if (p.slam || lv >= 2) at(hits * H, () => {
+      tellOn(.5);
+      at(.5, () => { zone(B.x, B.y, { r: 95, warn: .01, act: .2, heavy: true }); burstRing(B.x, B.y, NN(14), 190 * SPD()); addShake(8); });
+    });
+    return hits * H + (p.slam || lv >= 2 ? 1.2 : .5);
+  },
+  eruption(p, lv) {
+    tellOn(.45);
+    const n = p.n + Math.min(3, lv), pts = [];
+    // round the body in a fixed spread, and two on the player
+    for (let i = 0; i < n - 2; i++) { const a = p.rot + i / (n - 2) * TAU, rr = p.rad * (i % 2 ? 1 : .6); pts.push([B.x + Math.cos(a) * rr, B.y + Math.sin(a) * rr]); }
+    pts.push([P.x, P.y], [P.x + (P.lvx || 0) * .6, P.y + (P.lvy || 0) * .6]);
+    const warn = Math.max(1.0, p.warn * F.warn / .8);
+    for (const [x, y] of pts) zone(x, y, { r: 58 / (F.vz || 1), warn, act: .6, linger: true, heavy: true });
+    sfx('warn');
+    return warn + .9;
+  },
+  runes(p, lv) {
+    const n = p.n + (lv >= 2);
+    for (let k = 0; k < n; k++) at(k * p.gap, () => { zone(P.x, P.y, { r: 66 / (F.vz || 1), warn: Math.max(.75, .9 * F.warn), follow: .2, heavy: true }); sfx('seal'); });
+    return n * p.gap + 1.2;
+  },
+  nightslash(p, lv) {
+    // gold and red take turns, starting from this enemy's own first
+    B.nsN = (B.nsN || 0) + 1;
+    const gold = (B.nsN % 2 === 1) === (p.first === 'y'), cx = P.x, cy = P.y, T = Math.max(.85, F.warn + .1);
+    mark(cx, cy, T, { col: gold ? C.kin : C.shu, big: true });
+    tellOn(.4); sfx('warn');
+    at(T, () => {
+      if (gold) {
+        // flames everywhere round the marker but on it
+        for (const [rr, m] of [[150, 9], [260, 14]]) for (let i = 0; i < m; i++) { const a = i / m * TAU; zone(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr, { r: 62 / (F.vz || 1), warn: .01, act: .25 }); }
+      } else {
+        // flames on the marker, and the body crashes onto it
+        zone(cx, cy, { r: 115 / (F.vz || 1), warn: .01, act: .3, heavy: true });
+        glide(cx, cy, .18);
+      }
+      addShake(6); sfx('zap');
+    });
+    return T + .9 + (lv >= 1 ? 0 : 0);
+  },
+  prism(p, lv) {
+    const n = p.n + Math.min(2, lv), T = .95;
+    const lead = .7, px = P.x + P.lvx * lead, py = P.y + P.lvy * lead, pts = [inField(px, py, 30)];
+    for (let i = 1; i < n; i++) { const a = p.rot + p.dir * i * 2.2; pts.push(inField(px + Math.cos(a) * p.rad, py + Math.sin(a) * p.rad, 30)); }
+    pts.forEach((q, i) => mark(q.x, q.y, T + i * .12 + .2, { label: String(i + 1) }));
+    sfx('warn');
+    at(T, () => { const o = ORG(), b = shootFrom(o.x, o.y, Math.atan2(pts[0].y - o.y, pts[0].x - o.x), 900, 'r'); b.r = 10; b.way = pts.map(q => ({ x: q.x, y: q.y })); b.life = 4; b.grace = 2; sfx('shot'); });
+    return T + n * .3 + .8;
+  },
+  gambit(p, lv) {
+    const rings = Math.max(3, p.rings - Math.min(2, lv)), ctx = actx;
+    for (let k = 0; k < rings; k++) at(k * p.gap, () => {
+      const m = NN(26), R = 300, sp = (p.sp + k * 22) * SPD(), off = k * .13;
+      for (let i = 0; i < m; i++) { const a = off + i / m * TAU, b = shootFrom(B.x + Math.cos(a) * R, B.y + Math.sin(a) * R, a + Math.PI, sp, K()); b.life = R / sp + .1; b.grace = 9; }
+      sfx('warn');
+    });
+    const tl = rings * p.gap + .4;
+    at(tl, () => withCtxOf(ctx, () => startCharge(.6 * F.warn, 1150 * F.spd, 1, { pa: 'rush', ef: 'none' })));
+    return tl + 1.8;
+  },
+  inferno(p, lv) {
+    const cx = B.x, cy = B.y, T = .75;
+    mark(cx, cy, T, { col: C.shu, big: true });
+    tellOn(T); sfx('warn');
+    at(T, () => {
+      const m = p.n + 4 * Math.min(2, lv);
+      for (let i = 0; i < m; i++) { const b = shootFrom(cx, cy, 0, 0, 'r'); b.orbc = { cx, cy, vx: 0, vy: 0, ang: i / m * TAU, w: p.w, r: p.R - 30, R: p.R, gr: 300 }; b.life = 5; b.grace = 6; }
+      addShake(5); sfx('zap');
+    });
+    return T + 1.2;
+  },
+
   twin(p, lv) {
     const sx = W - B.x, sy = B.y, sh = F.shapes[Math.floor(p.k * F.shapes.length)], og = { x: sx, y: sy };
     mark(sx, sy, .5);
@@ -2327,7 +2602,7 @@ function firePat(sh, m, lv) {
 const LINGER = { slow: 6.5, ink: 6, shrink: 6.5, tether: 6, turret: 6.5, swap: 6, dark: 5.5, well: 4.8, wind: 4, reverse: 3.8 };
 let unitN = 0;
 const liveUnits = () => { let c = 0; for (const k in B.act) { if (B.act[k] > gt) c++; else delete B.act[k]; } return c; };
-const holdUnit = (u, d, s) => { const end = gt + Math.max(d, (s && s.t === 'tech' && LINGER[s.id]) || 0); B.act[u] = Math.max(B.act[u] || 0, end); return d; };
+const holdUnit = (u, d, s) => { const end = gt + Math.max(d, (s && (s.linger || (s.t === 'tech' && LINGER[s.id]))) || 0); B.act[u] = Math.max(B.act[u] || 0, end); return d; };
 // runs one of the enemy's skills at a level; it plays out the same way every time this enemy uses it
 function runSkill(j, lv, u = 'u' + ++unitN) {
   const s = F.skills[j] || F.skills[0];
@@ -2358,6 +2633,8 @@ function skillBody(s, lv) {
   }
 }
 // a pool entry: one skill (k:j) or a combination (c:j), whose parts run one after another
+// the sign of a pool entry: the first character of its (first) skill's name, and how many more follow in a string
+const signOf = id => { const ss = entrySkills(id), nm = ss[0].name.replace(/^.*・/, ''); return nm[0] + (ss.length > 1 ? '+' + (ss.length - 1) : ''); };
 const entrySkills = id => id[0] === 'k' ? [F.skills[+id.slice(2)]] : F.combos[+id.slice(2)].parts.map(j => F.skills[j]);
 function runEntry(id) {
   const u = 'u' + ++unitN;
@@ -2437,7 +2714,8 @@ function pickAttack(pl, avoid) {
   return pl[0];
 }
 function startAttack() {
-  const k = pickAttack(F.pool, lastAtk);
+  const k = B.nextPick || pickAttack(F.pool, lastAtk);
+  B.nextPick = null; B.sign = null;
   lastAtk = k;
   // decoys share the firing, except for anything that moves the body itself
   if (decoys.length && !entrySkills(k).some(s => s.moves)) { const all = [B, ...decoys]; EM = all[Math.random() * all.length | 0]; } else EM = null;
@@ -2550,10 +2828,14 @@ function finalPlan() {
 // last boss's own final techniques and short breathers; it ends on everything at once
 function lastFinalPlan(st, r, kit) {
   const L = st.forms.length, plan = [{ k: 's', j: 0, lv: L }];
+  // its own blade comes round between the bosses, at full strength
+  const own = st.skills.map((s, j) => j).filter(j => NSK[st.skills[j].t] && NSK[st.skills[j].t].min === 151);
+  let oi = 0;
   let T = 6, step = 0, bi = 0;
   while (T < st.finalLen - 12) {
     plan.push({ k: 'boss', n: BOSSES[bi++ % BOSSES.length] }); T += 3.6; step++;
     if (step % 4 === 0) { plan.push({ k: 'rest' }); T += 1.6; }
+    else if (step % 2 === 1 && own.length) { plan.push({ k: 's', j: own[oi++ % own.length], lv: L + 1 }); T += 2.6; T += pushFinal(plan, kit.next(), L); }
     else T += pushFinal(plan, kit.next(), L);
   }
   plan.push({ k: 'rest' }, { k: 'climax' });
@@ -2613,8 +2895,8 @@ function endFinal() {
 function clearHostile() {
   for (const b of bullets) if (b.own === 'b') burst(b.x, b.y, b.kind === 'w' ? C.washi : C.shu, 2, 80, .4, 2);
   bullets = bullets.filter(b => b.own === 'p'); lasers = []; zones = []; sched = []; wind = null;
-  turrets = []; wells = []; slows = []; tether = null; inks = []; marks = []; B.trail = 0; B.cmb = null; B.tell = null; B.act = {}; B.afterRush = null;
-  fx.sealP = fx.sealD = fx.rev = fx.dark = fx.swap = fx.freeze = fx.shrink = 0;
+  turrets = []; wells = []; slows = []; tether = null; inks = []; marks = []; B.trail = 0; B.cmb = null; B.tell = null; B.act = {}; B.afterRush = null; B.nextPick = null; B.sign = null;
+  fx.sealP = fx.sealD = fx.rev = fx.dark = fx.swap = fx.freeze = fx.shrink = fx.pslow = 0; B.hex = 0;
 }
 
 // ---- 発射台: stationary launchers that fire the enemy's own layouts; cut them, or break them with returned shots ----
@@ -2656,6 +2938,9 @@ function addShake(v) { shake = Math.max(shake, reduced ? v * .3 : v); }
 function hurt(n = 1, pierce = false) {
   if (P.inv > 0 || (P.dashT > 0 && !pierce) || P.dead || ending) return false;
   P.hp -= n; stats.hits += n; P.inv = 1.1; P.combo = 0; P.regenT = 0;
+  // 百鬼夜行 feeds on every hit it lands, and under its hex a hit also takes the breath for a dash
+  if (RUN && RUN.st && RUN.st.n === 150 && !RUN.st.free && B.hp > 0 && !invulnerable() && B.final !== 'on') { B.hp = Math.min(topOf(fi), B.hp + totalHp() * .03); pop(B.x, B.y - B.r - 30, '吸', C.shu, 22); }
+  if (B.hex > 0) P.dashCD = Math.max(P.dashCD, 1.6);
   addShake(n > 1 ? 16 : 12); hitstop = .09; flash = reduced ? 0 : .35;
   burst(P.x, P.y, C.shu, 18 * n, 260);
   if (n > 1) pop(P.x, P.y - 24, '−' + n, C.shu, 22);
@@ -2874,6 +3159,8 @@ function stepShot(b, dt) {
   }
   if (b.curve && b.curveT > 0) { b.curveT -= dt; const c = Math.cos(b.curve * dt), s = Math.sin(b.curve * dt), vx = b.vx; b.vx = vx * c - b.vy * s; b.vy = vx * s + b.vy * c; }
   if (b.swirl) { const w = b.swirl, dx = b.x - w.cx, dy = b.y - w.cy, c = Math.cos(w.w * dt), s = Math.sin(w.w * dt); b.x = w.cx + dx * c - dy * s; b.y = w.cy + dx * s + dy * c; const vx = b.vx; b.vx = vx * c - b.vy * s; b.vy = vx * s + b.vy * c; }
+  // a shot that runs through a list of points in turn, then straight on
+  if (b.way && b.way.length) { const q = b.way[0], s = Math.hypot(b.vx, b.vy) || 1, d = Math.hypot(q.x - b.x, q.y - b.y); if (d < s * dt + 2) { b.x = q.x; b.y = q.y; b.way.shift(); const nq = b.way[0]; if (nq) { const a = Math.atan2(nq.y - b.y, nq.x - b.x); b.vx = Math.cos(a) * s; b.vy = Math.sin(a) * s; } } }
   if (b.growR && b.r < b.growR.to) b.r = Math.min(b.growR.to, b.r + b.growR.rate * dt);
   if (b.pulse) { const p = b.pulse; p.t += dt; const s = Math.hypot(b.vx, b.vy) || 1, ns = p.s * (.55 + .45 * (1 + Math.sin(p.t * 7))); b.vx *= ns / s; b.vy *= ns / s; }
   if (b.zig) { const z = b.zig; z.t += dt; const side = Math.floor(z.t / z.per) % 2 ? 1 : -1, a = z.a + side * z.amp; b.vx = Math.cos(a) * z.s; b.vy = Math.sin(a) * z.s; }
@@ -2930,6 +3217,8 @@ function update(dt) {
   // player
   let slowK = 1;
   for (const s of slows) if (Math.hypot(P.x - s.x, P.y - s.y) < s.r) slowK = .42;
+  // cursed: slowed wherever it goes
+  if (fx.pslow > 0) { fx.pslow -= dt; slowK = Math.min(slowK, .62); }
   if (P.dashT > 0) {
     P.dashT -= dt; P.x += P.dvx * dt; P.y += P.dvy * dt;
     after.push({ x: P.x, y: P.y, a: .45 });
@@ -2973,6 +3262,7 @@ function update(dt) {
   B.landT -= dt;
   B.hurtF -= dt; B.iframe -= dt; B.vis = Math.max(0, B.vis - dt * 1.2); B.fade -= dt;
   if (B.tell && (B.tell.t -= dt) <= 0) B.tell = null;
+  if (B.hex > 0) { B.hex -= dt; if (Math.random() < .5) parts.push({ x: B.x + (Math.random() - .5) * B.r * 2, y: B.y + (Math.random() - .5) * B.r * 2, vx: 0, vy: -40, life: .4, max: .4, col: C.ao, size: 3 }); }
   for (let i = marks.length - 1; i >= 0; i--) if ((marks[i].t += dt) >= marks[i].life) marks.splice(i, 1);
   B.spin += dt * (B.stagger > 0 ? .3 : B.barrier ? 3.2 : 1.1 + B.phase * .3);
   if (B.final === 'on') { B.finalT += dt; stepFinal(); }
@@ -3066,7 +3356,7 @@ function update(dt) {
         while (Math.hypot(tx - P.x, ty - P.y) < 170 && ++k < 12);
         B.tx = tx; B.ty = ty; B.pauseT = .2 + Math.random() * .35;
       } else if (d >= 6) {
-        const s = Math.min(d, 170 * Math.min(1.4, F.spd) * (B.busy > 0 ? .6 : 1) * dt), nx = B.x + dx / d * s, ny = B.y + dy / d * s;
+        const s = Math.min(d, 170 * Math.min(1.4, F.spd) * (B.busy > 0 ? .6 : 1) * (B.hex > 0 ? 1.6 : 1) * dt), nx = B.x + dx / d * s, ny = B.y + dy / d * s;
         // never runs into the player: it stops short and picks somewhere else
         if (Math.hypot(nx - P.x, ny - P.y) < B.r + P.r + 40) { B.tx = B.x; B.ty = B.y; B.pauseT = 0; }
         else { B.x = nx; B.y = ny; }
@@ -3075,7 +3365,11 @@ function update(dt) {
     // while launchers stand, they do the attacking
     // a combination carries straight on into its next part
     if (B.busy <= 0 && !launchers.length && B.cmb && !P.dead) { if (B.cmb.c.kind !== 'dual' || liveUnits() < 2) B.busy = comboStep(); }
-    else if (B.busy <= 0 && !launchers.length) { B.nextAtk -= dt; if (B.nextAtk <= 0 && !P.dead && liveUnits() < 2) startAttack(); }
+    else if (B.busy <= 0 && !launchers.length) {
+      // the next skill is chosen as soon as the last is over, and its sign shows over the body while it waits
+      if (!B.nextPick && !P.dead) { B.nextPick = pickAttack(F.pool, lastAtk); B.sign = signOf(B.nextPick); }
+      B.nextAtk -= dt; if (B.nextAtk <= 0 && !P.dead && liveUnits() < 2) startAttack();
+    }
   }
   for (const l of launchers) {
     l.a += dt; l.next -= dt;
@@ -3116,7 +3410,7 @@ function update(dt) {
     }
     if (L.t > L.warn && L.t < L.warn + L.act && !beamDark(L)) {
       let d = 1e9; for (const g of beamSegs(L)) d = Math.min(d, segDist(P.x, P.y, ...g));
-      if (d < L.w / 2 + P.r - 3) hurt(1, !!L.blue);
+      if (d < L.w / 2 + P.r - 3) hurt(L.heavy ? 2 : 1, !!L.blue);
     }
     if (L.t > L.warn + L.act) { if (L.sig === 'branch') beamShots(L, 'branch'); lasers.splice(i, 1); }
   }
@@ -3126,9 +3420,12 @@ function update(dt) {
     const z = zones[i];
     z.t += dt;
     if (z.follow && z.t < z.follow) { z.x += (P.x - z.x) * Math.min(1, dt * 6); z.y += (P.y - z.y) * Math.min(1, dt * 6); }
-    if (!z.hit && z.t >= z.warn) {
-      z.hit = true; burst(z.x, z.y, C.shu, 10, 220, .35); addShake(3); sfx('zap');
-      if (Math.hypot(P.x - z.x, P.y - z.y) < z.r + P.r - 4) hurt();
+    // a strike lands once; a pillar (linger) keeps burning while it stands. heavy ones take two lives
+    if (z.t >= z.warn && (!z.hit || z.linger) && z.t <= z.warn + z.act) {
+      if (!z.hit) {
+        z.hit = true; burst(z.x, z.y, C.shu, z.heavy ? 22 : 10, z.heavy ? 300 : 220, .35); addShake(z.heavy ? 7 : 3); sfx('zap');
+      }
+      if (Math.hypot(P.x - z.x, P.y - z.y) < z.r + P.r - 4) hurt(z.heavy ? 2 : 1);
     }
     if (z.t > z.warn + z.act) zones.splice(i, 1);
   }
@@ -3251,6 +3548,7 @@ function checkHitPlayer(b, i) {
   if (P.parryT > 0 && parryable(b) && d < P.r + b.r + PARRY_R) { reflect(b, d); return; }
   if (d < P.r + b.r - 2 && hurt(1, b.kind === 'b')) {
     if (b.sealHit) applySeal(b.sealHit);
+    if (b.curse) { fx.pslow = Math.max(fx.pslow || 0, 3); pop(P.x, P.y - 26, '呪 鈍', C.murasaki, 20); }
     const j = bullets.indexOf(b); if (j >= 0) bullets.splice(j, 1);
   }
 }
@@ -3388,9 +3686,11 @@ function render() {
   // marks: where a skill is about to come from, a gold ring closing on a point
   for (const m of marks) {
     const k = Math.max(0, 1 - m.t / Math.min(m.life, .8));
-    ctx.strokeStyle = C.kin; ctx.lineWidth = 2; ctx.globalAlpha = .9;
+    const mc = m.col || C.kin;
+    ctx.strokeStyle = mc; ctx.lineWidth = m.big ? 4 : 2; ctx.globalAlpha = .9;
     ctx.beginPath(); ctx.arc(m.x, m.y, 8 + 22 * k, 0, TAU); ctx.stroke();
-    diamond(m.x, m.y, 5); ctx.fillStyle = C.kin; ctx.fill();
+    diamond(m.x, m.y, m.big ? 9 : 5); ctx.fillStyle = mc; ctx.fill();
+    if (m.label) { ctx.font = '700 18px ' + FD; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = C.washi; ctx.fillText(m.label, m.x, m.y - 24); }
     ctx.globalAlpha = 1;
   }
 
@@ -3412,6 +3712,11 @@ function render() {
       const k = Math.max(0, B.tell.t / B.tell.max);
       ctx.strokeStyle = C.kin; ctx.lineWidth = 2 + 2 * (1 - k); ctx.globalAlpha = .55 + .45 * (1 - k);
       ctx.beginPath(); ctx.arc(bx, by, B.r + 6 + 54 * k, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1;
+    }
+    // the sign of what comes next, over the body while it waits
+    if (B.sign && B.busy <= 0 && B.final !== 'on') {
+      ctx.font = '700 20px ' + FD; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.globalAlpha = .9 * alpha; ctx.fillStyle = C.kin; ctx.fillText(B.sign, bx, by - B.r - 22); ctx.globalAlpha = 1;
     }
     if (F.special.includes('shield') && !B.barrier) {
       ctx.strokeStyle = C.washi; ctx.lineWidth = 5; ctx.globalAlpha = .85 * alpha;
@@ -3608,7 +3913,7 @@ function render() {
 // =====================================================================
 // screens
 // =====================================================================
-const VERSION = '3.6.0';
+const VERSION = '3.8.0';
 let selN = 1, life = 0, freeDiff = 1, tempUnlock = false;
 const bestTime = c => Math.min(...LIFE_TK.map(k => c[k] || Infinity));
 const bestScore = c => Math.max(0, ...(c.hs || []));
