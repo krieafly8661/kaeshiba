@@ -1,5 +1,5 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>返し刃</title>
+<title>霑斐＠蛻・/title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -8,15 +8,15 @@
 /* layout: one dojo floor (canvas) centred in the window; menus float over it; controls strip below */
 :root{
   color-scheme: dark;
-  --ai:#101a2e;      /* 藍の夜: page + arena ground */
+  --ai:#101a2e;      /* 阯阪・螟・ page + arena ground */
   --ai-2:#1a2843;    /* raised surfaces */
   --line:#2f4166;    /* hairlines */
   --washi:#ebe6d8;   /* text, parryable shots */
   --mute:#8f9ab0;    /* secondary text */
-  --kin:#e6b85c;     /* 金: the player's blade, reflected shots, cleared */
-  --shu:#e4573f;     /* 朱: danger, cannot be parried */
-  --ao:#4a9be8;      /* 蒼: cannot be parried or dashed through */
-  --murasaki:#b07fe0;/* 紫: shots that seal on hit */
+  --kin:#e6b85c;     /* 驥・ the player's blade, reflected shots, cleared */
+  --shu:#e4573f;     /* 譛ｱ: danger, cannot be parried */
+  --ao:#4a9be8;      /* 闥ｼ: cannot be parried or dashed through */
+  --murasaki:#b07fe0;/* 邏ｫ: shots that seal on hit */
   --veil:rgba(16,26,46,.9);
   --display:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho",serif;
   --body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
@@ -63,7 +63,7 @@ button:focus-visible{outline:2px solid var(--kin);outline-offset:2px}
 h2.head{margin:0;font-family:var(--display);font-weight:800;font-size:1.9rem;letter-spacing:.06em;line-height:1.2}
 .rules{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;font-size:.88rem;max-width:66ch}
 .rules li{padding-left:1.1em;text-indent:-1.1em}
-.rules li::before{content:"―";color:var(--line);margin-right:.25em}
+.rules li::before{content:"窶・;color:var(--line);margin-right:.25em}
 .k-w{color:var(--washi)} .k-r{color:var(--shu)} .k-g{color:var(--kin)} .k-b{color:var(--ao)} .k-m{color:var(--murasaki)}
 .ver{position:absolute;right:14px;bottom:10px;margin:0;font:500 .75rem var(--mono);color:var(--mute)}
 .row{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
@@ -133,33 +133,33 @@ kbd{font-family:var(--mono);font-size:.74rem;color:var(--washi);border:1px solid
 </style>
 
 <header class="top">
-  <div class="brand"><h1>返し刃</h1><span class="tag">三十の鬼と、弾いて斬る果し合い（試作）</span></div>
+  <div class="brand"><h1>霑斐＠蛻・/h1><span class="tag">荳牙香縺ｮ鬯ｼ縺ｨ縲∝ｼｾ縺・※譁ｬ繧区棡縺怜粋縺・ｼ郁ｩｦ菴懶ｼ・/span></div>
   <div class="tools">
-    <button id="pauseBtn" type="button">一時停止</button>
-    <button id="muteBtn" type="button">音 入</button>
+    <button id="pauseBtn" type="button">荳譎ょ●豁｢</button>
+    <button id="muteBtn" type="button">髻ｳ 蜈･</button>
   </div>
 </header>
 
 <main id="stage">
-  <canvas id="cv" tabindex="-1" aria-label="ゲーム画面"></canvas>
+  <canvas id="cv" tabindex="-1" aria-label="繧ｲ繝ｼ繝逕ｻ髱｢"></canvas>
   <div id="ov"></div>
 </main>
 
 <div id="touch" hidden>
-  <div id="pad" aria-label="移動パッド"><div id="knob"></div></div>
+  <div id="pad" aria-label="遘ｻ蜍輔ヱ繝・ラ"><div id="knob"></div></div>
   <div class="tbtns">
-    <button id="bLook" class="tb" type="button">見</button>
-    <button id="bBig" class="tb" type="button">大</button>
-    <button id="bDash" class="tb" type="button">踏</button>
-    <button id="bParry" class="tb" type="button">弾</button>
+    <button id="bLook" class="tb" type="button">隕・/button>
+    <button id="bBig" class="tb" type="button">螟ｧ</button>
+    <button id="bDash" class="tb" type="button">雕・/button>
+    <button id="bParry" class="tb" type="button">蠑ｾ</button>
   </div>
 </div>
 
 <footer class="keys">
-  <span>移動 <kbd>WASD</kbd> <kbd>矢印</kbd></span>
-<span>弾き・斬り <kbd>Z</kbd> <kbd>左クリック</kbd></span>
-  <span>小踏み込み <kbd>X</kbd> <kbd>右クリック</kbd> ・大踏み込み <kbd>C</kbd> <kbd>中クリック</kbd> ・見渡し <kbd>V</kbd></span>
-  <span>一時停止 <kbd>P</kbd> <kbd>Esc</kbd> ・やり直し <kbd>R</kbd> ・音 <kbd>M</kbd></span>
+  <span>遘ｻ蜍・<kbd>WASD</kbd> <kbd>遏｢蜊ｰ</kbd></span>
+<span>蠑ｾ縺阪・譁ｬ繧・<kbd>Z</kbd> <kbd>蟾ｦ繧ｯ繝ｪ繝・け</kbd></span>
+  <span>蟆剰ｸ上∩霎ｼ縺ｿ <kbd>X</kbd> <kbd>蜿ｳ繧ｯ繝ｪ繝・け</kbd> 繝ｻ螟ｧ雕上∩霎ｼ縺ｿ <kbd>C</kbd> <kbd>荳ｭ繧ｯ繝ｪ繝・け</kbd> 繝ｻ隕区ｸ｡縺・<kbd>V</kbd></span>
+  <span>荳譎ょ●豁｢ <kbd>P</kbd> <kbd>Esc</kbd> 繝ｻ繧・ｊ逶ｴ縺・<kbd>R</kbd> 繝ｻ髻ｳ <kbd>M</kbd></span>
 </footer>
 
 <script>
@@ -201,87 +201,87 @@ const SLASH_REACH = 50, SLASH_CD = .2, STAGGER = 1.8, FINAL_STAGGER = 4.5, BREAK
 // =====================================================================
 // gimmicks: every attack and special the enemies can use
 // =====================================================================
-// Generic skills (汎用技) are shared by many enemies. Each enemy also has one unique skill (固有技)
+// Generic skills (豎守畑謚) are shared by many enemies. Each enemy also has one unique skill (蝗ｺ譛画橿)
 // fitted to its name, defined further down in REC / ENEMY.
 const GIM = {
-  red: { n: '朱弾', s: '弾けない朱い弾', p: 1 },
-  blue: { n: '蒼弾', s: '踏み込みでも抜けられない青い弾', p: 1 },
-  homing: { n: '追い弾', s: '曲がって追ってくる弾', p: 1 },
-  stopgo: { n: '止め弾', s: '止まって向き直る弾', p: 1 },
-  bounce: { n: '跳ね弾', s: '壁で跳ねる朱弾', p: 1 },
-  bigorb: { n: '大玉', s: '放っておくと弾ける大玉', p: 1 },
-  accel: { n: '加速弾', s: '後から速くなる弾', p: 1 },
-  wave: { n: '波弾', s: 'うねりながら迫る弾', p: 1 },
-  split: { n: '分裂弾', s: '三つに割れる弾', p: 1 },
-  mines: { n: '置き弾', s: '近づくと弾ける置き弾', p: 1 },
-  orbit: { n: '衛星弾', s: '身にまとってから放つ弾', p: 1 },
-  redonly: { n: '朱一色', s: 'すべてが朱い弾', p: 1 },
-  sealshot: { n: '封じ弾', s: '当たると弾きか踏み込みを封じる弾', p: 1 },
-  gravity: { n: '落ち弾', s: '放物線を描いて落ちる弾', p: 1 },
-  boomerang: { n: '戻り弾', s: '一度離れて折り返す弾', p: 1 },
-  ghost: { n: '幽弾', s: '途中で見えなくなる弾', p: 1 },
-  fake: { n: '偽白', s: '弾くと爆ぜる偽の白弾', p: 1 },
-  needle: { n: '千本', s: '速く細い針', p: 1 },
-  redbig: { n: '朱大玉', s: '弾けるまで弾けない大玉', p: 1 },
-  redsplit: { n: '朱分裂弾', s: '割れるまで弾けない分裂弾', p: 1 },
-  curve: { n: '曲がり弾', s: '弧を描いて曲がる弾', p: 1 },
-  swirl: { n: '巻き弾', s: '撃たれた場所のまわりを渦を巻いて広がる弾', p: 1 },
-  grow: { n: '膨れ弾', s: '進むほど大きくなる弾', p: 1 },
-  pulse: { n: '脈弾', s: '速さが脈打つ弾', p: 1 },
-  zig: { n: '揺れ弾', s: '左右に折れながら進む弾', p: 1 },
-  decel: { n: '溜め弾', s: '止まりかけてから一気に飛ぶ弾', p: 1 },
-  wallsplit: { n: '壁割れ弾', s: '壁に当たると三つに割れる弾', p: 1 },
-  dropper: { n: '落とし弾', s: '通った跡に弾を置いていく弾', p: 1 },
-  stutter: { n: '刻み弾', s: '止まっては進む弾', p: 1 },
-  colorshift: { n: '移ろい弾', s: '途中で白から朱に変わる弾', p: 1 },
-  cluster: { n: '房弾', s: '衛星を連れて飛ぶ弾', p: 1 },
-  snake: { n: '連弾', s: '列になって同じ道をなぞる弾', p: 1 },
-  blink: { n: '明滅弾', s: '消えている間は当たらない弾', p: 1 },
-  charge: { n: '突進', s: '鋭い突進' },
-  laser: { n: '光線', s: '狙い澄ました光線' },
-  bluebeam: { n: '蒼光', s: '踏み込みでも抜けられない青い光線' },
-  sweep: { n: '掃射', s: '薙ぎ払う青い光線' },
-  thunder: { n: '落雷', s: '足元を狙う落雷' },
-  wind: { n: '風', s: '体を押し流す風' },
-  cross: { n: '光輪', s: '回る光線' },
-  snipe: { n: '狙撃', s: '一瞬で届く狙撃' },
-  teleport: { n: '瞬身', s: '消えては別の場所に現れる' },
-  trail: { n: '残影', s: '駆け抜けた跡に弾を残す' },
-  reflow: { n: '逆流', s: '飛んでいる弾の向きを反転させる' },
-  converge: { n: '収束', s: '四方から一点へ集まる弾' },
-  ink: { n: '墨', s: '弾を覆い隠す墨' },
-  wall: { n: '弾壁', s: '隙間のない弾の壁' },
-  encircle: { n: '包囲', s: '閉じてくる弾の輪' },
-  sealDash: { n: '封踏', s: '踏み込みを封じる' },
-  sealParry: { n: '封弾', s: '弾きを封じる' },
-  sealAll: { n: '封身', s: '弾きも踏み込みも封じる' },
-  slow: { n: '泥沼', s: '足を取る泥' },
-  dark: { n: '闇', s: '視界を奪う闇' },
-  well: { n: '渦穴', s: '引き寄せる渦穴' },
-  turret: { n: '砲台', s: '据え置きの砲台' },
-  reverse: { n: '逆さ', s: '操作を逆さにする' },
-  swap: { n: '反転', s: '白と朱の理を入れ替える' },
-  freeze: { n: '刻止め', s: '弾の時を止める' },
-  shrink: { n: '狭め', s: '戦う場を狭める' },
-  chase: { n: '追い雷', s: 'しつこく追う雷' },
-  lattice: { n: '格子', s: '格子状の光線' },
-  curse: { n: '呪印', s: '後から爆ぜる呪い' },
-  echo: { n: '谺', s: '同じ技を繰り返す' },
-  tether: { n: '鎖', s: '動ける範囲を縛る鎖' },
-  chainzone: { n: '連雷', s: '連なって迫る落雷' },
-  stones: { n: '封印石', s: '石を正しい順に踏むまで傷つかない', sp: 1 },
-  shield: { n: '盾', s: '片側を盾で守る', sp: 1 },
-  counter: { n: '返し構え', s: '構えの間は弾き返しを打ち返す', sp: 1 },
-  clones: { n: '分身', s: '本物を見抜かなければならない', sp: 1 },
-  regen: { n: '再生', s: '攻めの手を止めると傷が癒える', sp: 1 },
-  invisible: { n: '隠形', s: '撃つ瞬間しか姿が見えない', sp: 1 },
-  mirror: { n: '鏡写し', s: 'こちらと鏡写しに動く', sp: 1 },
-  launchers: { n: '発射台', s: '動かない発射台が撃ってくる。斬るか弾き返しで割る', sp: 1 },
-  sealPform: { n: '封弾の型', s: 'この型の間は弾けない。耐え抜けば次の型へ', sp: 1 },
-  sealDform: { n: '封踏の型', s: 'この型の間は踏み込めない', sp: 1 },
-  sealSform: { n: '封斬の型', s: 'この型の間は崩しても斬れない', sp: 1 },
-  revive: { n: '再起', s: '一度だけ立ち上がる', sp: 1 },
-  final: { n: '終ノ型', s: 'とどめの瞬間に終ノ型を放つ', sp: 1 },
+  red: { n: '譛ｱ蠑ｾ', s: '蠑ｾ縺代↑縺・愕縺・ｼｾ', p: 1 },
+  blue: { n: '闥ｼ蠑ｾ', s: '雕上∩霎ｼ縺ｿ縺ｧ繧よ栢縺代ｉ繧後↑縺・搨縺・ｼｾ', p: 1 },
+  homing: { n: '霑ｽ縺・ｼｾ', s: '譖ｲ縺後▲縺ｦ霑ｽ縺｣縺ｦ縺上ｋ蠑ｾ', p: 1 },
+  stopgo: { n: '豁｢繧∝ｼｾ', s: '豁｢縺ｾ縺｣縺ｦ蜷代″逶ｴ繧句ｼｾ', p: 1 },
+  bounce: { n: '霍ｳ縺ｭ蠑ｾ', s: '螢√〒霍ｳ縺ｭ繧区愕蠑ｾ', p: 1 },
+  bigorb: { n: '螟ｧ邇・, s: '謾ｾ縺｣縺ｦ縺翫￥縺ｨ蠑ｾ縺代ｋ螟ｧ邇・, p: 1 },
+  accel: { n: '蜉騾溷ｼｾ', s: '蠕後°繧蛾溘￥縺ｪ繧句ｼｾ', p: 1 },
+  wave: { n: '豕｢蠑ｾ', s: '縺・・繧翫↑縺後ｉ霑ｫ繧句ｼｾ', p: 1 },
+  split: { n: '蛻・｣ょｼｾ', s: '荳峨▽縺ｫ蜑ｲ繧後ｋ蠑ｾ', p: 1 },
+  mines: { n: '鄂ｮ縺榊ｼｾ', s: '霑代▼縺上→蠑ｾ縺代ｋ鄂ｮ縺榊ｼｾ', p: 1 },
+  orbit: { n: '陦帶弌蠑ｾ', s: '霄ｫ縺ｫ縺ｾ縺ｨ縺｣縺ｦ縺九ｉ謾ｾ縺､蠑ｾ', p: 1 },
+  redonly: { n: '譛ｱ荳濶ｲ', s: '縺吶∋縺ｦ縺梧愕縺・ｼｾ', p: 1 },
+  sealshot: { n: '蟆√§蠑ｾ', s: '蠖薙◆繧九→蠑ｾ縺阪°雕上∩霎ｼ縺ｿ繧貞ｰ√§繧句ｼｾ', p: 1 },
+  gravity: { n: '關ｽ縺｡蠑ｾ', s: '謾ｾ迚ｩ邱壹ｒ謠上＞縺ｦ關ｽ縺｡繧句ｼｾ', p: 1 },
+  boomerang: { n: '謌ｻ繧雁ｼｾ', s: '荳蠎ｦ髮｢繧後※謚倥ｊ霑斐☆蠑ｾ', p: 1 },
+  ghost: { n: '蟷ｽ蠑ｾ', s: '騾比ｸｭ縺ｧ隕九∴縺ｪ縺上↑繧句ｼｾ', p: 1 },
+  fake: { n: '蛛ｽ逋ｽ', s: '蠑ｾ縺上→辷・●繧句⊃縺ｮ逋ｽ蠑ｾ', p: 1 },
+  needle: { n: '蜊・悽', s: '騾溘￥邏ｰ縺・・', p: 1 },
+  redbig: { n: '譛ｱ螟ｧ邇・, s: '蠑ｾ縺代ｋ縺ｾ縺ｧ蠑ｾ縺代↑縺・､ｧ邇・, p: 1 },
+  redsplit: { n: '譛ｱ蛻・｣ょｼｾ', s: '蜑ｲ繧後ｋ縺ｾ縺ｧ蠑ｾ縺代↑縺・・陬ょｼｾ', p: 1 },
+  curve: { n: '譖ｲ縺後ｊ蠑ｾ', s: '蠑ｧ繧呈緒縺・※譖ｲ縺後ｋ蠑ｾ', p: 1 },
+  swirl: { n: '蟾ｻ縺榊ｼｾ', s: '謦・◆繧後◆蝣ｴ謇縺ｮ縺ｾ繧上ｊ繧呈ｸｦ繧貞ｷｻ縺・※蠎・′繧句ｼｾ', p: 1 },
+  grow: { n: '閹ｨ繧悟ｼｾ', s: '騾ｲ繧縺ｻ縺ｩ螟ｧ縺阪￥縺ｪ繧句ｼｾ', p: 1 },
+  pulse: { n: '閼亥ｼｾ', s: '騾溘＆縺瑚ц謇薙▽蠑ｾ', p: 1 },
+  zig: { n: '謠ｺ繧悟ｼｾ', s: '蟾ｦ蜿ｳ縺ｫ謚倥ｌ縺ｪ縺後ｉ騾ｲ繧蠑ｾ', p: 1 },
+  decel: { n: '貅懊ａ蠑ｾ', s: '豁｢縺ｾ繧翫°縺代※縺九ｉ荳豌励↓鬟帙・蠑ｾ', p: 1 },
+  wallsplit: { n: '螢∝牡繧悟ｼｾ', s: '螢√↓蠖薙◆繧九→荳峨▽縺ｫ蜑ｲ繧後ｋ蠑ｾ', p: 1 },
+  dropper: { n: '關ｽ縺ｨ縺怜ｼｾ', s: '騾壹▲縺溯ｷ｡縺ｫ蠑ｾ繧堤ｽｮ縺・※縺・￥蠑ｾ', p: 1 },
+  stutter: { n: '蛻ｻ縺ｿ蠑ｾ', s: '豁｢縺ｾ縺｣縺ｦ縺ｯ騾ｲ繧蠑ｾ', p: 1 },
+  colorshift: { n: '遘ｻ繧阪＞蠑ｾ', s: '騾比ｸｭ縺ｧ逋ｽ縺九ｉ譛ｱ縺ｫ螟峨ｏ繧句ｼｾ', p: 1 },
+  cluster: { n: '謌ｿ蠑ｾ', s: '陦帶弌繧帝｣繧後※鬟帙・蠑ｾ', p: 1 },
+  snake: { n: '騾｣蠑ｾ', s: '蛻励↓縺ｪ縺｣縺ｦ蜷後§驕薙ｒ縺ｪ縺槭ｋ蠑ｾ', p: 1 },
+  blink: { n: '譏取ｻ・ｼｾ', s: '豸医∴縺ｦ縺・ｋ髢薙・蠖薙◆繧峨↑縺・ｼｾ', p: 1 },
+  charge: { n: '遯・ｲ', s: '驪ｭ縺・ｪ・ｲ' },
+  laser: { n: '蜈臥ｷ・, s: '迢吶＞貔・∪縺励◆蜈臥ｷ・ },
+  bluebeam: { n: '闥ｼ蜈・, s: '雕上∩霎ｼ縺ｿ縺ｧ繧よ栢縺代ｉ繧後↑縺・搨縺・・邱・ },
+  sweep: { n: '謗・ｰ・, s: '阮吶℃謇輔≧髱偵＞蜈臥ｷ・ },
+  thunder: { n: '關ｽ髮ｷ', s: '雜ｳ蜈・ｒ迢吶≧關ｽ髮ｷ' },
+  wind: { n: '鬚ｨ', s: '菴薙ｒ謚ｼ縺玲ｵ√☆鬚ｨ' },
+  cross: { n: '蜈芽ｼｪ', s: '蝗槭ｋ蜈臥ｷ・ },
+  snipe: { n: '迢呎茶', s: '荳迸ｬ縺ｧ螻翫￥迢呎茶' },
+  teleport: { n: '迸ｬ霄ｫ', s: '豸医∴縺ｦ縺ｯ蛻･縺ｮ蝣ｴ謇縺ｫ迴ｾ繧後ｋ' },
+  trail: { n: '谿句ｽｱ', s: '鬧・￠謚懊￠縺溯ｷ｡縺ｫ蠑ｾ繧呈ｮ九☆' },
+  reflow: { n: '騾・ｵ・, s: '鬟帙ｓ縺ｧ縺・ｋ蠑ｾ縺ｮ蜷代″繧貞渚霆｢縺輔○繧・ },
+  converge: { n: '蜿取據', s: '蝗帶婿縺九ｉ荳轤ｹ縺ｸ髮・∪繧句ｼｾ' },
+  ink: { n: '蠅ｨ', s: '蠑ｾ繧定ｦ・＞髫縺吝｢ｨ' },
+  wall: { n: '蠑ｾ螢・, s: '髫咎俣縺ｮ縺ｪ縺・ｼｾ縺ｮ螢・ },
+  encircle: { n: '蛹・峇', s: '髢峨§縺ｦ縺上ｋ蠑ｾ縺ｮ霈ｪ' },
+  sealDash: { n: '蟆∬ｸ・, s: '雕上∩霎ｼ縺ｿ繧貞ｰ√§繧・ },
+  sealParry: { n: '蟆∝ｼｾ', s: '蠑ｾ縺阪ｒ蟆√§繧・ },
+  sealAll: { n: '蟆∬ｺｫ', s: '蠑ｾ縺阪ｂ雕上∩霎ｼ縺ｿ繧ょｰ√§繧・ },
+  slow: { n: '豕･豐ｼ', s: '雜ｳ繧貞叙繧区ｳ･' },
+  dark: { n: '髣・, s: '隕也阜繧貞･ｪ縺・裸' },
+  well: { n: '貂ｦ遨ｴ', s: '蠑輔″蟇・○繧区ｸｦ遨ｴ' },
+  turret: { n: '遐ｲ蜿ｰ', s: '謐ｮ縺育ｽｮ縺阪・遐ｲ蜿ｰ' },
+  reverse: { n: '騾・＆', s: '謫堺ｽ懊ｒ騾・＆縺ｫ縺吶ｋ' },
+  swap: { n: '蜿崎ｻ｢', s: '逋ｽ縺ｨ譛ｱ縺ｮ逅・ｒ蜈･繧梧崛縺医ｋ' },
+  freeze: { n: '蛻ｻ豁｢繧・, s: '蠑ｾ縺ｮ譎ゅｒ豁｢繧√ｋ' },
+  shrink: { n: '迢ｭ繧・, s: '謌ｦ縺・ｴ繧堤強繧√ｋ' },
+  chase: { n: '霑ｽ縺・峭', s: '縺励▽縺薙￥霑ｽ縺・峭' },
+  lattice: { n: '譬ｼ蟄・, s: '譬ｼ蟄千憾縺ｮ蜈臥ｷ・ },
+  curse: { n: '蜻ｪ蜊ｰ', s: '蠕後°繧臥・縺懊ｋ蜻ｪ縺・ },
+  echo: { n: '隹ｺ', s: '蜷後§謚繧堤ｹｰ繧願ｿ斐☆' },
+  tether: { n: '骼・, s: '蜍輔￠繧狗ｯ・峇繧堤ｸ帙ｋ骼・ },
+  chainzone: { n: '騾｣髮ｷ', s: '騾｣縺ｪ縺｣縺ｦ霑ｫ繧玖誠髮ｷ' },
+  stones: { n: '蟆∝魂遏ｳ', s: '遏ｳ繧呈ｭ｣縺励＞鬆・↓雕上・縺ｾ縺ｧ蛯ｷ縺､縺九↑縺・, sp: 1 },
+  shield: { n: '逶ｾ', s: '迚・・繧堤崟縺ｧ螳医ｋ', sp: 1 },
+  counter: { n: '霑斐＠讒九∴', s: '讒九∴縺ｮ髢薙・蠑ｾ縺崎ｿ斐＠繧呈遠縺｡霑斐☆', sp: 1 },
+  clones: { n: '蛻・ｺｫ', s: '譛ｬ迚ｩ繧定ｦ区栢縺九↑縺代ｌ縺ｰ縺ｪ繧峨↑縺・, sp: 1 },
+  regen: { n: '蜀咲函', s: '謾ｻ繧√・謇九ｒ豁｢繧√ｋ縺ｨ蛯ｷ縺檎剪縺医ｋ', sp: 1 },
+  invisible: { n: '髫蠖｢', s: '謦・▽迸ｬ髢薙＠縺句ｧｿ縺瑚ｦ九∴縺ｪ縺・, sp: 1 },
+  mirror: { n: '髀｡蜀吶＠', s: '縺薙■繧峨→髀｡蜀吶＠縺ｫ蜍輔￥', sp: 1 },
+  launchers: { n: '逋ｺ蟆・床', s: '蜍輔°縺ｪ縺・匱蟆・床縺梧茶縺｣縺ｦ縺上ｋ縲よ脈繧九°蠑ｾ縺崎ｿ斐＠縺ｧ蜑ｲ繧・, sp: 1 },
+  sealPform: { n: '蟆∝ｼｾ縺ｮ蝙・, s: '縺薙・蝙九・髢薙・蠑ｾ縺代↑縺・り舌∴謚懊￠縺ｰ谺｡縺ｮ蝙九∈', sp: 1 },
+  sealDform: { n: '蟆∬ｸ上・蝙・, s: '縺薙・蝙九・髢薙・雕上∩霎ｼ繧√↑縺・, sp: 1 },
+  sealSform: { n: '蟆∵脈縺ｮ蝙・, s: '縺薙・蝙九・髢薙・蟠ｩ縺励※繧よ脈繧後↑縺・, sp: 1 },
+  revive: { n: '蜀崎ｵｷ', s: '荳蠎ｦ縺縺醍ｫ九■荳翫′繧・, sp: 1 },
+  final: { n: '邨ゅヮ蝙・, s: '縺ｨ縺ｩ繧√・迸ｬ髢薙↓邨ゅヮ蝙九ｒ謾ｾ縺､', sp: 1 },
 };
 // the stage where each generic skill first appears
 const INTRO = {
@@ -304,34 +304,34 @@ const WEIGHT = { wind: .3, plain: .9 };
 const weightOf = id => WEIGHT[id] || (/^u\d$/.test(id) ? 1.5 : 1);
 
 // =====================================================================
-// 汎用弾幕: every layout (撃ち方) crossed with every shot property (弾の性質) that suits it
+// 豎守畑蠑ｾ蟷・ every layout (謦・■譁ｹ) crossed with every shot property (蠑ｾ縺ｮ諤ｧ雉ｪ) that suits it
 // =====================================================================
 // intro: the first stage a layout can appear on; cnt: how many shots one volley carries
 const EMIT = {
-  aimed: { n: '狙い撃ち', intro: 1, cnt: 'lo' },
-  ring: { n: '輪', intro: 1, cnt: 'mid' },
-  spiral: { n: '渦', intro: 2, cnt: 'hi', stream: 1 },
-  gapring: { n: '欠け輪', intro: 3, cnt: 'mid' },
-  flower: { n: '花輪', intro: 5, cnt: 'hi' },
-  stream: { n: '流し', intro: 6, cnt: 'hi', stream: 1 },
-  shotgun: { n: '散弾', intro: 7, cnt: 'mid' },
-  spray: { n: '散らし', intro: 9, cnt: 'hi', stream: 1 },
-  pinwheel: { n: '風車', intro: 10, cnt: 'hi', stream: 1 },
-  cross: { n: '十字', intro: 12, cnt: 'mid' },
-  curtain: { n: '幕', intro: 14, cnt: 'hi' },
-  rain: { n: '雨', intro: 16, cnt: 'hi', stream: 1 },
-  rows: { n: '横列', intro: 17, cnt: 'mid' },
-  pincer: { n: '挟み撃ち', intro: 19, cnt: 'mid', stream: 1 },
-  helix: { n: '螺旋', intro: 21, cnt: 'hi', stream: 1 },
-  sweepfan: { n: '薙ぎ', intro: 23, cnt: 'hi', stream: 1 },
-  star: { n: '星', intro: 25, cnt: 'hi' },
-  firework: { n: '花火', intro: 27, cnt: 'lo' },
-  arc: { n: '弧', intro: 29, cnt: 'mid' },
-  scatter: { n: '群れ撃ち', intro: 32, cnt: 'mid' },
-  lanes: { n: '並木', intro: 36, cnt: 'hi' },
-  vortex: { n: '渦潮', intro: 41, cnt: 'hi' },
-  zigzag: { n: '稲妻', intro: 46, cnt: 'hi', stream: 1 },
-  box: { n: '方陣', intro: 53, cnt: 'mid' },
+  aimed: { n: '迢吶＞謦・■', intro: 1, cnt: 'lo' },
+  ring: { n: '霈ｪ', intro: 1, cnt: 'mid' },
+  spiral: { n: '貂ｦ', intro: 2, cnt: 'hi', stream: 1 },
+  gapring: { n: '谺縺題ｼｪ', intro: 3, cnt: 'mid' },
+  flower: { n: '闃ｱ霈ｪ', intro: 5, cnt: 'hi' },
+  stream: { n: '豬√＠', intro: 6, cnt: 'hi', stream: 1 },
+  shotgun: { n: '謨｣蠑ｾ', intro: 7, cnt: 'mid' },
+  spray: { n: '謨｣繧峨＠', intro: 9, cnt: 'hi', stream: 1 },
+  pinwheel: { n: '鬚ｨ霆・, intro: 10, cnt: 'hi', stream: 1 },
+  cross: { n: '蜊∝ｭ・, intro: 12, cnt: 'mid' },
+  curtain: { n: '蟷・, intro: 14, cnt: 'hi' },
+  rain: { n: '髮ｨ', intro: 16, cnt: 'hi', stream: 1 },
+  rows: { n: '讓ｪ蛻・, intro: 17, cnt: 'mid' },
+  pincer: { n: '謖溘∩謦・■', intro: 19, cnt: 'mid', stream: 1 },
+  helix: { n: '陞ｺ譌・, intro: 21, cnt: 'hi', stream: 1 },
+  sweepfan: { n: '阮吶℃', intro: 23, cnt: 'hi', stream: 1 },
+  star: { n: '譏・, intro: 25, cnt: 'hi' },
+  firework: { n: '闃ｱ轣ｫ', intro: 27, cnt: 'lo' },
+  arc: { n: '蠑ｧ', intro: 29, cnt: 'mid' },
+  scatter: { n: '鄒､繧梧茶縺｡', intro: 32, cnt: 'mid' },
+  lanes: { n: '荳ｦ譛ｨ', intro: 36, cnt: 'hi' },
+  vortex: { n: '貂ｦ貎ｮ', intro: 41, cnt: 'hi' },
+  zigzag: { n: '遞ｲ螯ｻ', intro: 46, cnt: 'hi', stream: 1 },
+  box: { n: '譁ｹ髯｣', intro: 53, cnt: 'mid' },
 };
 const SHAPE_TYPES = Object.keys(EMIT);
 // layouts that fill the floor, against those that go for the player: an enemy carries at most one of the first
@@ -387,95 +387,95 @@ for (const e of SHAPE_TYPES) for (const m of ['plain', ...ATK_IDS.filter(isProp)
   if ((e === 'rows' || e === 'box' || e === 'curtain' || e === 'lanes' || e === 'arc') && (m === 'split' || m === 'redsplit' || m === 'cluster' || m === 'snake' || m === 'wallsplit')) continue;
   // a solid line of blue shots is a wall nobody can pass
   if ((e === 'rows' || e === 'box') && m === 'blue') continue;
-  GENS.push({ id: e + '.' + m, e, m, intro: Math.max(E.intro, m === 'plain' ? 1 : introAt[m]), name: m === 'plain' ? E.n : E.n + 'の' + GIM[m].n });
+  GENS.push({ id: e + '.' + m, e, m, intro: Math.max(E.intro, m === 'plain' ? 1 : introAt[m]), name: m === 'plain' ? E.n : E.n + '縺ｮ' + GIM[m].n });
 }
 const GEN = Object.fromEntries(GENS.map(g => [g.id, g]));
 
 // =====================================================================
-// 固有弾・固有光: what an enemy does to its own shots and beams
+// 蝗ｺ譛牙ｼｾ繝ｻ蝗ｺ譛牙・: what an enemy does to its own shots and beams
 // =====================================================================
 // b: on a share of every volley's shots; l: on every aimed beam. intro: first stage it can be given on.
 const SIG = {
-  twin: { n: '双子弾', k: 'b', intro: 1, s: '寄り添う二つの弾' },
-  heavy: { n: '重弾', k: 'b', intro: 1, s: '大きく遅い弾' },
-  quick: { n: '疾弾', k: 'b', intro: 2, s: '小さく速い弾' },
-  tail: { n: '尾引き', k: 'b', intro: 4, s: '通った跡に小さな弾を落とす' },
-  swerve: { n: '折れ弾', k: 'b', intro: 6, s: '途中で一度こちらへ折れる' },
-  pause: { n: '間弾', k: 'b', intro: 8, s: '一瞬止まってから進む' },
-  bloom: { n: '開花弾', k: 'b', intro: 11, s: '途中で四つに咲く' },
-  thaw: { n: '解け弾', k: 'b', intro: 13, s: '朱から白に解け、弾けるようになる' },
-  spin: { n: '旋弾', k: 'b', intro: 15, s: '螺旋を描いて進む' },
-  shed: { n: '脱皮弾', k: 'b', intro: 18, s: '遅い抜け殻を残す' },
-  rebound: { n: '返り弾', k: 'b', intro: 22, s: '壁で一度跳ね返る' },
-  echo: { n: '谺弾', k: 'b', intro: 26, s: '少し遅れて同じ弾がもう一度来る' },
-  dive: { n: '沈み弾', k: 'b', intro: 31, s: '重さで沈んでいく' },
-  lance: { n: '槍弾', k: 'b', intro: 37, s: '速い針になる' },
-  magnet: { n: '寄せ弾', k: 'b', intro: 44, s: '終わり際にこちらへ寄る' },
-  turn: { n: '翻り弾', k: 'b', intro: 52, s: '白から朱へ翻る' },
-  sweepl: { n: '薙ぎ光', k: 'l', intro: 8, s: '光線が首を振る' },
-  twinl: { n: '双光', k: 'l', intro: 14, s: '光線が二本並ぶ' },
-  branch: { n: '枝光', k: 'l', intro: 20, s: '光線が消えるとき枝のように弾を散らす' },
-  pulsel: { n: '脈光', k: 'l', intro: 27, s: '光線の太さが脈打つ' },
-  glow: { n: '残光', k: 'l', intro: 34, s: '光線の跡に弾が残る' },
-  shard: { n: '砕光', k: 'l', intro: 42, s: '光線が灯ると根元から弾が砕け散る' },
-  flick: { n: '払い光', k: 'l', intro: 50, s: '光線が消え際に払われる' },
+  twin: { n: '蜿悟ｭ仙ｼｾ', k: 'b', intro: 1, s: '蟇・ｊ豺ｻ縺・ｺ後▽縺ｮ蠑ｾ' },
+  heavy: { n: '驥榊ｼｾ', k: 'b', intro: 1, s: '螟ｧ縺阪￥驕・＞蠑ｾ' },
+  quick: { n: '逍ｾ蠑ｾ', k: 'b', intro: 2, s: '蟆上＆縺城溘＞蠑ｾ' },
+  tail: { n: '蟆ｾ蠑輔″', k: 'b', intro: 4, s: '騾壹▲縺溯ｷ｡縺ｫ蟆上＆縺ｪ蠑ｾ繧定誠縺ｨ縺・ },
+  swerve: { n: '謚倥ｌ蠑ｾ', k: 'b', intro: 6, s: '騾比ｸｭ縺ｧ荳蠎ｦ縺薙■繧峨∈謚倥ｌ繧・ },
+  pause: { n: '髢灘ｼｾ', k: 'b', intro: 8, s: '荳迸ｬ豁｢縺ｾ縺｣縺ｦ縺九ｉ騾ｲ繧' },
+  bloom: { n: '髢玖干蠑ｾ', k: 'b', intro: 11, s: '騾比ｸｭ縺ｧ蝗帙▽縺ｫ蜥ｲ縺・ },
+  thaw: { n: '隗｣縺大ｼｾ', k: 'b', intro: 13, s: '譛ｱ縺九ｉ逋ｽ縺ｫ隗｣縺代∝ｼｾ縺代ｋ繧医≧縺ｫ縺ｪ繧・ },
+  spin: { n: '譌句ｼｾ', k: 'b', intro: 15, s: '陞ｺ譌九ｒ謠上＞縺ｦ騾ｲ繧' },
+  shed: { n: '閼ｱ逧ｮ蠑ｾ', k: 'b', intro: 18, s: '驕・＞謚懊￠谿ｻ繧呈ｮ九☆' },
+  rebound: { n: '霑斐ｊ蠑ｾ', k: 'b', intro: 22, s: '螢√〒荳蠎ｦ霍ｳ縺ｭ霑斐ｋ' },
+  echo: { n: '隹ｺ蠑ｾ', k: 'b', intro: 26, s: '蟆代＠驕・ｌ縺ｦ蜷後§蠑ｾ縺後ｂ縺・ｸ蠎ｦ譚･繧・ },
+  dive: { n: '豐医∩蠑ｾ', k: 'b', intro: 31, s: '驥阪＆縺ｧ豐医ｓ縺ｧ縺・￥' },
+  lance: { n: '讒榊ｼｾ', k: 'b', intro: 37, s: '騾溘＞驥昴↓縺ｪ繧・ },
+  magnet: { n: '蟇・○蠑ｾ', k: 'b', intro: 44, s: '邨ゅｏ繧企圀縺ｫ縺薙■繧峨∈蟇・ｋ' },
+  turn: { n: '鄙ｻ繧雁ｼｾ', k: 'b', intro: 52, s: '逋ｽ縺九ｉ譛ｱ縺ｸ鄙ｻ繧・ },
+  sweepl: { n: '阮吶℃蜈・, k: 'l', intro: 8, s: '蜈臥ｷ壹′鬥悶ｒ謖ｯ繧・ },
+  twinl: { n: '蜿悟・', k: 'l', intro: 14, s: '蜈臥ｷ壹′莠梧悽荳ｦ縺ｶ' },
+  branch: { n: '譫晏・', k: 'l', intro: 20, s: '蜈臥ｷ壹′豸医∴繧九→縺肴椌縺ｮ繧医≧縺ｫ蠑ｾ繧呈淵繧峨☆' },
+  pulsel: { n: '閼亥・', k: 'l', intro: 27, s: '蜈臥ｷ壹・螟ｪ縺輔′閼域遠縺､' },
+  glow: { n: '谿句・', k: 'l', intro: 34, s: '蜈臥ｷ壹・霍｡縺ｫ蠑ｾ縺梧ｮ九ｋ' },
+  shard: { n: '遐募・', k: 'l', intro: 42, s: '蜈臥ｷ壹′轣ｯ繧九→譬ｹ蜈・°繧牙ｼｾ縺檎輔￠謨｣繧・ },
+  flick: { n: '謇輔＞蜈・, k: 'l', intro: 50, s: '蜈臥ｷ壹′豸医∴髫帙↓謇輔ｏ繧後ｋ' },
 };
 
 // =====================================================================
-// 派生形: beams and charges, each a shape (形) crossed with a habit (癖) or an after-effect (効果)
+// 豢ｾ逕溷ｽ｢: beams and charges, each a shape (蠖｢) crossed with a habit (逋・ or an after-effect (蜉ｹ譫・
 // =====================================================================
 const BEAM_SHAPE = {
-  aim: { n: '狙い光線', intro: 8, un: ['眼光', '射抜き'] },
-  fan: { n: '扇光線', intro: 12, un: ['扇光', '開眼'] },
-  rain: { n: '光の雨', intro: 18, un: ['光雨', '天光'] },
-  track: { n: '追い光線', intro: 22, un: ['凝視', '睨み据え'] },
-  sweep: { n: '薙ぎ光線', intro: 26, un: ['薙ぎ光', '払い光'] },
-  spiral: { n: '渦光', intro: 30, un: ['輪転', '渦眼'] },
-  pincer: { n: '挟み光', intro: 35, un: ['挟み光', '十字光'] },
-  side: { n: '横一文字', intro: 40, un: ['一文字', '横光'] },
-  refl: { n: '屈折光', intro: 47, un: ['照り返し', '鏡光'] },
-  cross: { n: '光輪', intro: 18, un: ['光輪', '後光'] },
-  lattice: { n: '格子光', intro: 68, un: ['光格子', '檻'] },
+  aim: { n: '迢吶＞蜈臥ｷ・, intro: 8, un: ['逵ｼ蜈・, '蟆・栢縺・] },
+  fan: { n: '謇・・邱・, intro: 12, un: ['謇・・', '髢狗愍'] },
+  rain: { n: '蜈峨・髮ｨ', intro: 18, un: ['蜈蛾岑', '螟ｩ蜈・] },
+  track: { n: '霑ｽ縺・・邱・, intro: 22, un: ['蜃晁ｦ・, '逹ｨ縺ｿ謐ｮ縺・] },
+  sweep: { n: '阮吶℃蜈臥ｷ・, intro: 26, un: ['阮吶℃蜈・, '謇輔＞蜈・] },
+  spiral: { n: '貂ｦ蜈・, intro: 30, un: ['霈ｪ霆｢', '貂ｦ逵ｼ'] },
+  pincer: { n: '謖溘∩蜈・, intro: 35, un: ['謖溘∩蜈・, '蜊∝ｭ怜・'] },
+  side: { n: '讓ｪ荳譁・ｭ・, intro: 40, un: ['荳譁・ｭ・, '讓ｪ蜈・] },
+  refl: { n: '螻域釜蜈・, intro: 47, un: ['辣ｧ繧願ｿ斐＠', '髀｡蜈・] },
+  cross: { n: '蜈芽ｼｪ', intro: 18, un: ['蜈芽ｼｪ', '蠕悟・'] },
+  lattice: { n: '譬ｼ蟄仙・', intro: 68, un: ['蜈画ｼ蟄・, '讙ｻ'] },
 };
 const BEAM_HABIT = {
   plain: { n: '', intro: 8 },
-  thin: { n: '細', intro: 14, s: '細く速い' },
-  late: { n: '溜め', intro: 16, s: '長く溜めて太い' },
-  blue: { n: '蒼', intro: 23, s: '踏み込みでも抜けられない' },
-  pulse: { n: '点滅', intro: 24, s: '点いては消える' },
-  twin: { n: '双', intro: 28, s: '二本並ぶ' },
-  glow: { n: '残光', intro: 34, s: '跡に弾が残る' },
-  branch: { n: '枝', intro: 38, s: '消え際に弾を散らす' },
+  thin: { n: '邏ｰ', intro: 14, s: '邏ｰ縺城溘＞' },
+  late: { n: '貅懊ａ', intro: 16, s: '髟ｷ縺乗ｺ懊ａ縺ｦ螟ｪ縺・ },
+  blue: { n: '闥ｼ', intro: 23, s: '雕上∩霎ｼ縺ｿ縺ｧ繧よ栢縺代ｉ繧後↑縺・ },
+  pulse: { n: '轤ｹ貊・, intro: 24, s: '轤ｹ縺・※縺ｯ豸医∴繧・ },
+  twin: { n: '蜿・, intro: 28, s: '莠梧悽荳ｦ縺ｶ' },
+  glow: { n: '谿句・', intro: 34, s: '霍｡縺ｫ蠑ｾ縺梧ｮ九ｋ' },
+  branch: { n: '譫・, intro: 38, s: '豸医∴髫帙↓蠑ｾ繧呈淵繧峨☆' },
 };
 const CHARGE_PATH = {
-  rush: { n: '突進', intro: 5, un: ['猛進', '体当たり'] },
-  hook: { n: '鉤突進', intro: 11, un: ['鉤爪', '回り込み'] },
-  zig: { n: '稲妻突進', intro: 17, un: ['稲妻駆け', '折れ駆け'] },
-  feint: { n: '見せ突進', intro: 23, un: ['見せ太刀', '空駆け'] },
-  leap: { n: '跳躍', intro: 29, un: ['踏み潰し', '跳び掛かり'] },
-  lane: { n: '横薙ぎ突進', intro: 37, un: ['横薙ぎ', '一文字駆け'] },
-  bound: { n: '壁跳ね突進', intro: 43, un: ['跳ね駆け', '暴れ駆け'] },
-  blink: { n: '瞬突', intro: 50, un: ['影駆け', '瞬き突き'] },
+  rush: { n: '遯・ｲ', intro: 5, un: ['迪幃ｲ', '菴灘ｽ薙◆繧・] },
+  hook: { n: '驩､遯・ｲ', intro: 11, un: ['驩､辷ｪ', '蝗槭ｊ霎ｼ縺ｿ'] },
+  zig: { n: '遞ｲ螯ｻ遯・ｲ', intro: 17, un: ['遞ｲ螯ｻ鬧・￠', '謚倥ｌ鬧・￠'] },
+  feint: { n: '隕九○遯・ｲ', intro: 23, un: ['隕九○螟ｪ蛻', '遨ｺ鬧・￠'] },
+  leap: { n: '霍ｳ霄・, intro: 29, un: ['雕上∩貎ｰ縺・, '霍ｳ縺ｳ謗帙°繧・] },
+  lane: { n: '讓ｪ阮吶℃遯・ｲ', intro: 37, un: ['讓ｪ阮吶℃', '荳譁・ｭ鈴ｧ・￠'] },
+  bound: { n: '螢∬ｷｳ縺ｭ遯・ｲ', intro: 43, un: ['霍ｳ縺ｭ鬧・￠', '證ｴ繧碁ｧ・￠'] },
+  blink: { n: '迸ｬ遯・, intro: 50, un: ['蠖ｱ鬧・￠', '迸ｬ縺咲ｪ√″'] },
 };
 const CHARGE_EFF = {
   none: { n: '', intro: 5 },
-  chain: { n: '連', intro: 10, s: '三度続けて来る' },
-  shock: { n: '衝撃', intro: 15, s: '止まった所から弾の輪' },
-  debris: { n: '礫', intro: 20, s: '止まった所からこちらへ礫' },
-  wake: { n: '波', intro: 33, s: '駆けながら両脇へ弾を撒く' },
-  trail: { n: '残影', intro: 45, s: '駆けた跡の弾が後から向かってくる' },
-  quake: { n: '地割れ', intro: 55, s: '駆けた跡に落雷が走る' },
+  chain: { n: '騾｣', intro: 10, s: '荳牙ｺｦ邯壹￠縺ｦ譚･繧・ },
+  shock: { n: '陦晄茶', intro: 15, s: '豁｢縺ｾ縺｣縺滓園縺九ｉ蠑ｾ縺ｮ霈ｪ' },
+  debris: { n: '遉ｫ', intro: 20, s: '豁｢縺ｾ縺｣縺滓園縺九ｉ縺薙■繧峨∈遉ｫ' },
+  wake: { n: '豕｢', intro: 33, s: '鬧・￠縺ｪ縺後ｉ荳｡閼・∈蠑ｾ繧呈鋳縺・ },
+  trail: { n: '谿句ｽｱ', intro: 45, s: '鬧・￠縺溯ｷ｡縺ｮ蠑ｾ縺悟ｾ後°繧牙髄縺九▲縺ｦ縺上ｋ' },
+  quake: { n: '蝨ｰ蜑ｲ繧・, intro: 55, s: '鬧・￠縺溯ｷ｡縺ｫ關ｽ髮ｷ縺瑚ｵｰ繧・ },
 };
 const VARS = [];
 for (const sh in BEAM_SHAPE) for (const hb in BEAM_HABIT) {
   if (hb === 'twin' && (sh === 'lattice' || sh === 'rain' || sh === 'side' || sh === 'cross')) continue;
   if (hb === 'blue' && sh === 'lattice') continue;
   const S = BEAM_SHAPE[sh], Hb = BEAM_HABIT[hb];
-  VARS.push({ id: 'L:' + sh + '.' + hb, fam: 'L', a: sh, b: hb, intro: Math.max(S.intro, Hb.intro), name: Hb.n ? S.n + '・' + Hb.n : S.n });
+  VARS.push({ id: 'L:' + sh + '.' + hb, fam: 'L', a: sh, b: hb, intro: Math.max(S.intro, Hb.intro), name: Hb.n ? S.n + '繝ｻ' + Hb.n : S.n });
 }
 for (const pa in CHARGE_PATH) for (const ef in CHARGE_EFF) {
   const S = CHARGE_PATH[pa], E = CHARGE_EFF[ef];
-  VARS.push({ id: 'C:' + pa + '.' + ef, fam: 'C', a: pa, b: ef, intro: Math.max(S.intro, E.intro), name: E.n ? S.n + '・' + E.n : S.n });
+  VARS.push({ id: 'C:' + pa + '.' + ef, fam: 'C', a: pa, b: ef, intro: Math.max(S.intro, E.intro), name: E.n ? S.n + '繝ｻ' + E.n : S.n });
 }
 const VAR = Object.fromEntries(VARS.map(v => [v.id, v]));
 
@@ -503,29 +503,26 @@ function diffAt(lv) {
   };
 }
 
-const NAMES = `小鬼 豆狸 鬼火 狐火 一ツ目 赤舌 河童 唐傘 提灯火 天邪鬼
-鎌鼬 大首 雷獣 野槌 磯女 雨女 一反木綿 輪入道 毛羽毛現 山姥
-小豆洗い 蛇帯 白坊主 天狗礫 夜雀 狐者異 火車 朱の盆 濡女 牛鬼
-枕返し 網剪 白粉婆 手長足長 泥田坊 骨女 煙々羅 わいら 青行灯 土蜘蛛
-管狐 闇御津羽 送り狼 渦巻淵 不知火 蟹坊主 影女 幽谷響 蜃 鵺
-釣瓶落とし 鉄鼠 片輪車 逆柱 野寺坊 化け草履 覚 返し鬼 七人ミサキ 九尾の影
-姑獲鳥 刻喰い 籠目 狭間 船幽霊 追い行灯 磯撫で 格子鬼 海坊主 大蝦蟇
-産女 呪い藁 狂骨 隠れ座頭 目目連 谺 古強者 極み鬼 塗仏 鬼一口
-陰摩羅鬼 以津真天 がしゃどくろ 見越し入道 封じ坊主 大入道 猩々 狒々 山彦 千本針
-木霊 雪女 雪童子 つらら女 姥ヶ火 黒坊主 海和尚 加牟波理入道 手の目 鏡写し
-赤鬼 青鬼 黒鬼 白鬼 黄鬼 橋姫 清姫 鬼女紅葉 大百足 鎖鬼
-白一色 夜叉 羅刹 修羅 鬼神 牛頭 馬頭 獄卒 奪衣婆 連雷
-ろくろ首 のっぺら坊 ぬらりひょん 化け猫 猫又 狢 鬼蜘蛛 雷神 風神 天井嘗
-大天狗 鞍馬天狗 酒呑童子 茨木童子 星熊童子 熊童子 金熊童子 虎熊童子 大嶽丸 両面宿儺
-玉藻前 八岐大蛇 祟り神 黄泉醜女 禍津日 鬼門 百目 常闇 大禍時 百鬼夜行`.split(/\s+/);
+const NAMES = `蟆城ｬｼ 雎・矯 鬯ｼ轣ｫ 迢千↓ 荳繝・岼 襍､闊・豐ｳ遶･ 蜚仙ｘ 謠千・轣ｫ 螟ｩ驍ｪ鬯ｼ
+骼碁ｼｬ 螟ｧ鬥・髮ｷ迯｣ 驥取ｧ・逎ｯ螂ｳ 髮ｨ螂ｳ 荳蜿肴惠邯ｿ 霈ｪ蜈･驕・豈帷ｾｽ豈帷樟 螻ｱ蟋･
+蟆剰ｱ・ｴ励＞ 陋・ｸｯ 逋ｽ蝮贋ｸｻ 螟ｩ迢礼､ｫ 螟憺它 迢占・焚 轣ｫ霆・譛ｱ縺ｮ逶・豼｡螂ｳ 迚幃ｬｼ
+譫戊ｿ斐＠ 邯ｲ蜑ｪ 逋ｽ邊牙ｩ・謇矩聞雜ｳ髟ｷ 豕･逕ｰ蝮・鬪ｨ螂ｳ 辣吶・ｾ・繧上＞繧・髱定｡檎・ 蝨溯恫陋・邂｡迢・髣・ｾ｡豢･鄒ｽ 騾√ｊ迢ｼ 貂ｦ蟾ｻ豺ｵ 荳咲衍轣ｫ 陝ｹ蝮贋ｸｻ 蠖ｱ螂ｳ 蟷ｽ隹ｷ髻ｿ 陷・魴ｺ
+驥｣逑ｶ關ｽ縺ｨ縺・驩・ｼ 迚・ｼｪ霆・騾・浤 驥主ｯｺ蝮・蛹悶￠闕牙ｱ･ 隕・霑斐＠鬯ｼ 荳・ｺｺ繝溘し繧ｭ 荵晏ｰｾ縺ｮ蠖ｱ
+蟋醍佐魑･ 蛻ｻ蝟ｰ縺・邀逶ｮ 迢ｭ髢・闊ｹ蟷ｽ髴・霑ｽ縺・｡檎・ 逎ｯ謦ｫ縺ｧ 譬ｼ蟄宣ｬｼ 豬ｷ蝮贋ｸｻ 螟ｧ陜ｦ陝・逕｣螂ｳ 蜻ｪ縺・浴 迢るｪｨ 髫繧悟ｺｧ鬆ｭ 逶ｮ逶ｮ騾｣ 隹ｺ 蜿､蠑ｷ閠・讌ｵ縺ｿ鬯ｼ 蝪嶺ｻ・鬯ｼ荳蜿｣
+髯ｰ鞫ｩ鄒・ｬｼ 莉･豢･逵溷､ｩ 縺後＠繧・←縺上ｍ 隕玖ｶ翫＠蜈･驕・蟆√§蝮贋ｸｻ 螟ｧ蜈･驕・迪ｩ縲・迢偵・螻ｱ蠖ｦ 蜊・悽驥・譛ｨ髴・髮ｪ螂ｳ 髮ｪ遶･蟄・縺､繧峨ｉ螂ｳ 蟋･繝ｶ轣ｫ 鮟貞搖荳ｻ 豬ｷ蜥悟ｰ・蜉迚滓ｳ｢逅・・驕・謇九・逶ｮ 髀｡蜀吶＠
+襍､鬯ｼ 髱帝ｬｼ 鮟帝ｬｼ 逋ｽ鬯ｼ 鮟・ｬｼ 讖句ｧｫ 貂・ｧｫ 鬯ｼ螂ｳ邏・痩 螟ｧ逋ｾ雜ｳ 骼夜ｬｼ
+逋ｽ荳濶ｲ 螟懷初 鄒・飴 菫ｮ鄒・鬯ｼ逾・迚幃ｭ 鬥ｬ鬆ｭ 迯・穀 螂ｪ陦｣蟀・騾｣髮ｷ
+繧阪￥繧埼ｦ・縺ｮ縺｣縺ｺ繧牙搖 縺ｬ繧峨ｊ縺ｲ繧・ｓ 蛹悶￠迪ｫ 迪ｫ蜿・迢｢ 鬯ｼ陷倩屁 髮ｷ逾・鬚ｨ逾・螟ｩ莠募・
+螟ｧ螟ｩ迢・髷埼ｦｬ螟ｩ迢・驟貞荘遶･蟄・闌ｨ譛ｨ遶･蟄・譏溽・遶･蟄・辭顔ｫ･蟄・驥醍・遶･蟄・陌守・遶･蟄・螟ｧ蠍ｽ荳ｸ 荳｡髱｢螳ｿ蜆ｺ
+邇芽僚蜑・蜈ｫ蟯仙､ｧ陋・逾溘ｊ逾・鮟・ｳ蛾・螂ｳ 遖肴ｴ･譌･ 鬯ｼ髢 逋ｾ逶ｮ 蟶ｸ髣・螟ｧ遖肴凾 逋ｾ鬯ｼ螟懆｡形.split(/\s+/);
 
 // hand-placed stages; everything else is composed from what has been introduced so far.
-// seal: forms with a permanent seal — P parry / D dash / S slash, on 'all' forms or the 'last' one.
+// seal: forms with a permanent seal 窶・P parry / D dash / S slash, on 'all' forms or the 'last' one.
 const OVR = {
   // early stages that measured far above their neighbours are evened out (from stage 20 on, spikes are kept on purpose)
-  5: { temper: '均衡', noCharge: true },
-  13: { temper: '均衡', noCharge: true, uI: .8, gapK: 1.2 },
-  15: { temper: '均衡', noCharge: true, uI: .8, gapK: 1.2 },
+  5: { temper: '蝮・｡｡', noCharge: true },
+  13: { temper: '蝮・｡｡', noCharge: true, uI: .8, gapK: 1.2 },
+  15: { temper: '蝮・｡｡', noCharge: true, uI: .8, gapK: 1.2 },
   45: { rules: { survive: 40 } },
   55: { seal: { D: 'last' } },
   65: { rules: { limit: true } },
@@ -561,15 +558,15 @@ const LAUNCH = { 59: 7, 75: 5, 109: 6, 142: 8, 147: 5 };
 const FORM_SP = ['shield', 'counter', 'clones', 'regen', 'invisible', 'mirror'];
 // temperaments: how an enemy paces itself, as multipliers around its stage's level
 const TEMPER = [
-  { name: '速射', spd: [1.08, 1.18], gap: [1.05, 1.2], den: [.85, .95], warn: [.95, 1.0] },
-  { name: '連撃', spd: [.88, .95], gap: [.75, .88], den: [.92, 1.02], warn: [1.0, 1.05] },
-  { name: '重厚', spd: [.86, .94], gap: [1.08, 1.2], den: [1.15, 1.3], warn: [1.02, 1.08] },
-  { name: '均衡', spd: [.97, 1.03], gap: [.95, 1.05], den: [.97, 1.05], warn: [.97, 1.03] },
-  { name: '気まぐれ', spd: [.9, 1.1], gap: [.8, 1.15], den: [.92, 1.1], warn: [.95, 1.05], jit: true },
+  { name: '騾溷ｰ・, spd: [1.08, 1.18], gap: [1.05, 1.2], den: [.85, .95], warn: [.95, 1.0] },
+  { name: '騾｣謦・, spd: [.88, .95], gap: [.75, .88], den: [.92, 1.02], warn: [1.0, 1.05] },
+  { name: '驥榊字', spd: [.86, .94], gap: [1.08, 1.2], den: [1.15, 1.3], warn: [1.02, 1.08] },
+  { name: '蝮・｡｡', spd: [.97, 1.03], gap: [.95, 1.05], den: [.97, 1.05], warn: [.97, 1.03] },
+  { name: '豌励∪縺舌ｌ', spd: [.9, 1.1], gap: [.8, 1.15], den: [.92, 1.1], warn: [.95, 1.05], jit: true },
 ]
 
 // =====================================================================
-// unique barrages (固有弾幕). `gens` are the generic skills that suit each one and get used alongside it.
+// unique barrages (蝗ｺ譛牙ｼｾ蟷・. `gens` are the generic skills that suit each one and get used alongside it.
 // Each fn takes an intensity I and returns how long the enemy stays committed.
 // =====================================================================
 const edgePoint = u => { const w = W - 40, h = H - 70, p = u * 2 * (w + h); if (p < w) return { x: 20 + p, y: 50 }; if (p < w + h) return { x: 20 + w, y: 50 + p - w }; if (p < 2 * w + h) return { x: 20 + w - (p - w - h), y: 50 + h }; return { x: 20, y: 50 + h - (p - 2 * w - h) }; };
@@ -617,14 +614,14 @@ const REC = {
   judgment: { gens: ['sealAll', 'lattice', 'sealshot'], fn: I => { at(0, () => ATK.lattice()); at(1.2, () => REC.nails.fn(I * .8)); return 3.0; } },
   eightheads: { gens: ['homing', 'wave', 'redonly'], fn: I => { const base = Math.random() * TAU, m = Math.round(5 * I); for (let h = 0; h < 8; h++) at(h * .22, () => { const a = base + h / 8 * TAU, x = B.x + Math.cos(a) * 60, y = B.y + Math.sin(a) * 60; for (let i = 0; i < m; i++) at(i * .06, () => shootFrom(x, y, aimFrom(x, y), 240 * SPD(), K())); }); at(0, () => sfx('shot')); return 8 * .22 + 1; } },
   kekkai: { gens: ['bluebeam', 'wall', 'shrink'], fn: I => { at(0, () => { const y0 = clamp(P.y, CY - 60, CY + 60); for (let i = 0; i < 3; i++) lasers.push({ x: -10, y: y0 - 120 + i * 120 + 60, ang: 0, warn: .9 * F.warn, act: 1.4, w: 16, t: 0, rot: 0, follow: false, snipe: false, blue: true }); sfx('warn'); }); at(1.0, () => fireShape('plain', { kind: whiteOnly })); return 2.8; } },
-  // 百鬼夜行: the bosses of the 番付 file past, each with its own barrage, one on the heels of the last
+  // 逋ｾ鬯ｼ螟懆｡・ the bosses of the 逡ｪ莉・file past, each with its own barrage, one on the heels of the last
   parade: { gens: [], fn: I => { const lim = RUN && RUN.st ? RUN.st.n : 150, bs = BOSSES.filter(b => b < lim), picks = []; while (picks.length < Math.min(3, bs.length)) { const b = bs[Math.random() * bs.length | 0]; if (!picks.includes(b)) picks.push(b); } picks.forEach((b, k) => at(k * 2.1, () => { const e = ENEMY[b - 1]; pop(B.x, B.y - B.r - 18, e.name, C.kin, 16); REC[e.rec].fn(I * .7); })); return picks.length * 2.1 + 1.6; } },
-  // 逢魔の大輪: slow-turning beams with a white and a red spiral turning the other way between them
+  // 騾｢鬲斐・螟ｧ霈ｪ: slow-turning beams with a white and a red spiral turning the other way between them
   grandwheel: { gens: [], min: 151, fn: I => { const dur = 3.6, n = Math.round(30 * I), dir = Math.random() < .5 ? 1 : -1, base = Math.random() * TAU; at(0, () => { for (let i = 0; i < 4; i++) laser(base + i * TAU / 4, { warn: 1.1 * F.warn, act: dur, w: 16, rot: dir * .4, follow: true }); sfx('warn'); }); for (let k = 0; k < n; k++) at(1.1 + k / n * (dur - .4), () => { const o = ORG(); for (let a = 0; a < 3; a++) { shootFrom(o.x, o.y, base + dir * k * .21 + a * TAU / 3, 150 * SPD(), 'w'); shootFrom(o.x, o.y, base - dir * k * .17 + a * TAU / 3 + .5, 120 * SPD(), 'r'); } }); return dur + 1.6; } },
-  // 百鬼の行列: rings of shots march across the floor in rows, one row always left empty
+  // 逋ｾ鬯ｼ縺ｮ陦悟・: rings of shots march across the floor in rows, one row always left empty
   procession: { gens: [], min: 151, fn: I => { const rows = 5, bd = bounds(), step = (bd.y1 - bd.y0 - 40) / rows, free = Math.random() * rows | 0, v = 110 * SPD() * Math.min(1.25, I); let j = 0; for (let r = 0; r < rows; r++) { if (r === free) continue; const y = bd.y0 + 20 + step * (r + .5), left = j++ % 2 === 0; for (let k = 0; k < 3; k++) at(k * .9 + j * .15, () => { const x0 = left ? -20 : W + 20, a = left ? 0 : Math.PI; for (let i = 0; i < 6; i++) { const b = shootFrom(x0, y, 0, 0, K()); b.orbc = { cx: x0, cy: y, vx: Math.cos(a) * v, vy: 0, ang: i / 6 * TAU, w: 2, r: 0 }; b.grace = 9; b.life = 12; } }); } at(.5, () => fireShape('plain', { kind: whiteOnly })); return 3.8; } },
 };
-// the bosses of the 番付 (every tenth stage before the last), whose barrages 百鬼夜行 calls up
+// the bosses of the 逡ｪ莉・(every tenth stage before the last), whose barrages 逋ｾ鬯ｼ螟懆｡・calls up
 const BOSSES = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140];
 // further unique barrages; min: the first stage that may carry one
 Object.assign(REC, {
@@ -654,43 +651,38 @@ Object.assign(REC, {
   bloomburst: { gens: ['split', 'wallsplit'], min: 42, fn: I => { const k = Math.round(5 * I); for (let j = 0; j < k; j++) at(j * .35, () => { const o = ORG(), b = shootFrom(o.x, o.y, aimFrom(o.x, o.y) + (k > 1 ? (j / (k - 1) - .5) * 1.4 : 0), 230 * SPD(), 'w'); b.r = 10; b.brake = true; b.burst = { t: .9, n: NN(12), spd: 150 * SPD() }; }); at(0, () => sfx('shot')); return k * .35 + 1.6; } },
   tidecross: { gens: ['cross', 'pulse'], min: 45, fn: I => { const dur = 2.6, base = Math.random() * TAU, dir = Math.random() < .5 ? 1 : -1, n = Math.round(32 * Math.min(1.4, I)); for (let k = 0; k < n; k++) at(k / n * dur, () => { const o = ORG(), a = base + dir * Math.sin(k * .12) * 1.2; for (let d = 0; d < 4; d++) shootFrom(o.x, o.y, a + d * Math.PI / 2, 180 * SPD(), K()); }); at(0, () => sfx('shot')); return dur + .4; } },
 });
-// names a unique barrage can take when it is not an enemy's signature one: '<enemy>の<name>'
+// names a unique barrage can take when it is not an enemy's signature one: '<enemy>縺ｮ<name>'
 const REC_NM = {
-  pebbles: ['石つぶて', '礫打ち'], calm: ['静寂', '波紋'], swarmhome: ['群れ火', '迷い火'], surround: ['取り囲み', '輪縛り'],
-  gazebeam: ['睨み', '眼光'], whip: ['鞭打ち', '舌打ち'], gravityarc: ['放り投げ', '水礫'], spokes: ['車輪', '傘回し'],
-  lanternmines: ['置き火', '灯し'], reverseaim: ['手返し', '裏返し'], crescents: ['三日月', '連鎌'], bite: ['噛み付き', '挟み込み'],
-  thunderchain: ['雷走り', '稲光'], rolltrail: ['轍', '転がり'], tide: ['引き潮', '高波'], shiftrain: ['にわか雨', '涙雨'],
-  ribbon: ['巻き付き', '渦紐'], edgewheel: ['火の輪', '縁回り'], hairspray: ['撒き散らし', '煙巻き'], cleaver: ['大鉈', '投げ刃'],
-  serpent: ['蛇行', '絡み付き'], whitepure: ['白波', '白嵐'], dropfrom: ['落とし', '降らし'], feathers: ['羽搏き', '羽根撃ち'],
-  predict: ['先回り', '読み撃ち'], rage: ['乱れ打ち', '怒涛'], oniclub: ['踏み鳴らし', '金棒'], bluetide: ['蒼波', '青潮'],
-  bonespear: ['骨槍', '串刺し'], web: ['蜘蛛の巣', '網張り'], ratswarm: ['群れ走り', '鼠算'], mirage: ['幻影', '影写し'],
-  triple: ['三面', '三つ巴'], sevenpts: ['七つ星', '行列'], ninetails: ['尾扇', '九尾'], timewarp: ['刻喰い', '時渡り'],
-  cage: ['籠目', '格子'], nails: ['釘打ち', '封じ札'], drunk: ['酔い舞', '千鳥足'], blizzard: ['吹雪', '雪礫'],
-  judgment: ['責め苦', '裁き'], eightheads: ['八つ首', '首振り'], kekkai: ['結界', '封門'], parade: ['夜行', '百鬼'],
-  lotus: ['蓮華', '蓮池'], pendulum: ['振り子', '揺り籠'], mirrorfan: ['合わせ鏡', '双扇'], meteor: ['流星', '隕石'],
-  petalrain: ['花吹雪', '桜吹雪'], ricochet: ['跳弾', '跳ね返り'], clockhand: ['時計回り', '針回し'], swarmring: ['群輪', '波紋撃ち'],
-  starfall: ['星降り', '五芒'], twinserp: ['双蛇', '二匹蛇'], shutter: ['格子戸', '引き戸'], cometchase: ['彗星', '箒星'],
-  lantern2: ['灯籠流し', '送り火'], bellring: ['鐘鳴り', '梵鐘'], thornwall: ['茨垣', '茨道'], dragonbreath: ['竜の息', '業火'],
-  gate: ['鳥居', '門'], whirlpool: ['鳴門', '大渦'], echoshot: ['木霊撃ち', '山彦撃ち'], scissor: ['鋏', '交差'],
-  fold: ['折り鶴', '折り返し'], mandala: ['曼荼羅', '輪廻'], spiderline: ['糸引き', '張り糸'], bloomburst: ['百花', '花火'],
-  tidecross: ['渦十字', '逆十字'],
+  pebbles: ['遏ｳ縺､縺ｶ縺ｦ', '遉ｫ謇薙■'], calm: ['髱吝ｯ・, '豕｢邏・], swarmhome: ['鄒､繧檎↓', '霑ｷ縺・↓'], surround: ['蜿悶ｊ蝗ｲ縺ｿ', '霈ｪ邵帙ｊ'],
+  gazebeam: ['逹ｨ縺ｿ', '逵ｼ蜈・], whip: ['髷ｭ謇薙■', '闊梧遠縺｡'], gravityarc: ['謾ｾ繧頑兜縺・, '豌ｴ遉ｫ'], spokes: ['霆願ｼｪ', '蛯伜屓縺・],
+  lanternmines: ['鄂ｮ縺咲↓', '轣ｯ縺・], reverseaim: ['謇玖ｿ斐＠', '陬剰ｿ斐＠'], crescents: ['荳画律譛・, '騾｣骼・], bite: ['蝎帙∩莉倥″', '謖溘∩霎ｼ縺ｿ'],
+  thunderchain: ['髮ｷ襍ｰ繧・, '遞ｲ蜈・], rolltrail: ['霓・, '霆｢縺後ｊ'], tide: ['蠑輔″貎ｮ', '鬮俶ｳ｢'], shiftrain: ['縺ｫ繧上°髮ｨ', '豸咎岑'],
+  ribbon: ['蟾ｻ縺堺ｻ倥″', '貂ｦ邏・], edgewheel: ['轣ｫ縺ｮ霈ｪ', '邵∝屓繧・], hairspray: ['謦偵″謨｣繧峨＠', '辣吝ｷｻ縺・], cleaver: ['螟ｧ驩・, '謚輔￡蛻・],
+  serpent: ['陋・｡・, '邨｡縺ｿ莉倥″'], whitepure: ['逋ｽ豕｢', '逋ｽ蠏・], dropfrom: ['關ｽ縺ｨ縺・, '髯阪ｉ縺・], feathers: ['鄒ｽ謳上″', '鄒ｽ譬ｹ謦・■'],
+  predict: ['蜈亥屓繧・, '隱ｭ縺ｿ謦・■'], rage: ['荵ｱ繧梧遠縺｡', '諤呈ｶ・], oniclub: ['雕上∩魑ｴ繧峨＠', '驥第｣・], bluetide: ['闥ｼ豕｢', '髱呈ｽｮ'],
+  bonespear: ['鬪ｨ讒・, '荳ｲ蛻ｺ縺・], web: ['陷倩屁縺ｮ蟾｣', '邯ｲ蠑ｵ繧・], ratswarm: ['鄒､繧瑚ｵｰ繧・, '鮠邂・], mirage: ['蟷ｻ蠖ｱ', '蠖ｱ蜀吶＠'],
+  triple: ['荳蛾擇', '荳峨▽蟾ｴ'], sevenpts: ['荳・▽譏・, '陦悟・'], ninetails: ['蟆ｾ謇・, '荵晏ｰｾ'], timewarp: ['蛻ｻ蝟ｰ縺・, '譎よｸ｡繧・],
+  cage: ['邀逶ｮ', '譬ｼ蟄・], nails: ['驥俶遠縺｡', '蟆√§譛ｭ'], drunk: ['驟斐＞闊・, '蜊・ｳ･雜ｳ'], blizzard: ['蜷ｹ髮ｪ', '髮ｪ遉ｫ'],
+  judgment: ['雋ｬ繧∬協', '陬√″'], eightheads: ['蜈ｫ縺､鬥・, '鬥匁険繧・], kekkai: ['邨千阜', '蟆・摩'], parade: ['螟懆｡・, '逋ｾ鬯ｼ'],
+  lotus: ['闢ｮ闖ｯ', '闢ｮ豎'], pendulum: ['謖ｯ繧雁ｭ・, '謠ｺ繧顔ｱ'], mirrorfan: ['蜷医ｏ縺幃升', '蜿梧援'], meteor: ['豬∵弌', '髫慕浹'],
+  petalrain: ['闃ｱ蜷ｹ髮ｪ', '譯懷聖髮ｪ'], ricochet: ['霍ｳ蠑ｾ', '霍ｳ縺ｭ霑斐ｊ'], clockhand: ['譎りｨ亥屓繧・, '驥晏屓縺・], swarmring: ['鄒､霈ｪ', '豕｢邏区茶縺｡'],
+  starfall: ['譏滄剄繧・, '莠碑樺'], twinserp: ['蜿瑚寐', '莠悟源陋・], shutter: ['譬ｼ蟄先虻', '蠑輔″謌ｸ'], cometchase: ['蠖玲弌', '邂呈弌'],
+  lantern2: ['轣ｯ邀豬√＠', '騾√ｊ轣ｫ'], bellring: ['髏倬ｳｴ繧・, '譴ｵ髏・], thornwall: ['闌ｨ蝙｣', '闌ｨ驕・], dragonbreath: ['遶懊・諱ｯ', '讌ｭ轣ｫ'],
+  gate: ['魑･螻・, '髢'], whirlpool: ['魑ｴ髢', '螟ｧ貂ｦ'], echoshot: ['譛ｨ髴頑茶縺｡', '螻ｱ蠖ｦ謦・■'], scissor: ['驪・, '莠､蟾ｮ'],
+  fold: ['謚倥ｊ鮓ｴ', '謚倥ｊ霑斐＠'], mandala: ['譖ｼ闕ｼ鄒・, '霈ｪ蟒ｻ'], spiderline: ['邉ｸ蠑輔″', '蠑ｵ繧顔ｳｸ'], bloomburst: ['逋ｾ闃ｱ', '闃ｱ轣ｫ'],
+  tidecross: ['貂ｦ蜊∝ｭ・, '騾・香蟄・],
 };
 // every enemy: its unique barrage and the name of that skill
-const ENEMY = `pebbles 小石投げ|pebbles 豆鉄砲|swarmhome 鬼火漂い|surround 狐火の輪|gazebeam 一ツ目の凝視|whip 赤舌なめ|gravityarc 河童の水礫|spokes 唐傘回し|lanternmines 提灯並べ|reverseaim 天邪鬼の手返し
-crescents 三連鎌|bite 大首の噛み付き|thunderchain 雷獣走り|rolltrail 野槌転がし|tide 磯波|shiftrain 雨女の涙雨|ribbon 一反巻き|edgewheel 火炎車輪|hairspray 毛羽散らし|cleaver 山姥の出刃
-calm 小豆とぎ|serpent 蛇帯絡み|whitepure 白坊主の白波|dropfrom 天狗礫|feathers 夜雀の羽音|predict 狐者異の先回り|rolltrail 火車引き|rage 朱の盆返し|tide 濡女の引き潮|oniclub 牛鬼の踏み鳴らし
-reverseaim 枕返し|crescents 網剪り鋏|hairspray 白粉撒き|dropfrom 手長足長の掴み|bluetide 泥田返せ|bonespear 骨女の簪|hairspray 煙々羅の煙|oniclub 土掻き|lanternmines 百物語の灯|web 土蜘蛛の巣
-ratswarm 管狐放ち|tide 闇御津羽の暗流|predict 送り狼の付け狙い|ribbon 渦巻き|lanternmines 不知火の連灯|bite 蟹坊主の大鋏|mirage 影女の影写し|calm 幽谷の谺|mirage 蜃気楼|triple 鵺の三面
-dropfrom 釣瓶落とし|ratswarm 鉄鼠の群れ|edgewheel 片輪車の轍|reverseaim 逆さ柱|calm 野寺の鐘|feathers 草履飛ばし|predict 覚の読心|reverseaim 返し鬼の打ち返し|sevenpts 七人の行列|ninetails 九尾の扇
-feathers 姑獲鳥の羽搏き|timewarp 刻喰らい|cage 籠目籠目|bluetide 狭間の閉門|tide 柄杓貸せ|lanternmines 追い行灯|whip 磯撫での尾|cage 格子牢|bluetide 海坊主の大波|gravityarc 蝦蟇の油
-swarmhome 産女の泣き声|nails 五寸釘|bonespear 狂骨の井戸|predict 座頭の勘|gazebeam 目目連の千目|calm 谺返し|whitepure 古強者の太刀筋|crescents 極みの一閃|whip 塗仏の舌|bite 鬼一口
-feathers 陰摩羅鬼の黒羽|feathers 以津真天の叫び|bonespear 大髑髏の骨雨|dropfrom 見越し伸び|nails 封じの札|oniclub 大入道の踏み潰し|drunk 猩々の酔い舞|cleaver 狒々の投石|calm 山彦返し|crescents 千本針
-calm 木霊の囁き|blizzard 雪女の吹雪|blizzard 雪童子の雪礫|shiftrain 氷柱落とし|lanternmines 姥ヶ火の飛び火|hairspray 黒坊主の墨|tide 海和尚の読経|gravityarc 加牟波理の吐息|gazebeam 手の目の掌眼|mirage 鏡写し
-oniclub 赤鬼の金棒|bluetide 青鬼の蒼波|hairspray 黒鬼の闇撒き|whitepure 白鬼の白嵐|thunderchain 黄鬼の雷鼓|nails 橋姫の妬み|serpent 清姫の大蛇|crescents 紅葉狩り|serpent 大百足の行進|web 鎖縛り
-whitepure 白一色|rage 夜叉の乱舞|rage 羅刹の連撃|rage 修羅の業火|cleaver 鬼神の大斧|oniclub 牛頭の突き上げ|rolltrail 馬頭の駆け|judgment 獄卒の責め苦|judgment 奪衣婆の衣剥ぎ|thunderchain 連雷
-whip 首伸ばし|mirage 顔無し|predict 総大将の気まぐれ|crescents 化け猫の爪|ratswarm 猫又の二股|mirage 狢の化かし|web 鬼蜘蛛の網|thunderchain 雷神の太鼓|spokes 風神の風袋|dropfrom 天井嘗め
-feathers 大天狗の団扇|crescents 鞍馬の剣|drunk 酒呑の大盃|cleaver 茨木の片腕|dropfrom 星熊の星落とし|oniclub 熊童子の剛腕|rage 金熊の黄金|crescents 虎熊の爪|thunderchain 大嶽丸の黒雲|triple 宿儺の四本腕
-ninetails 玉藻の九尾|eightheads 八岐の首|nails 祟り|swarmhome 黄泉の追手|timewarp 禍津日|kekkai 鬼門封じ|gazebeam 百目の睨み|hairspray 常闇の帳|timewarp 逢魔が時|parade 百鬼夜行`.split(/[|\n]/).map(s => { const [rec, name] = s.trim().split(' '); return { rec, name }; });
+const ENEMY = `pebbles 蟆冗浹謚輔￡|pebbles 雎・延遐ｲ|swarmhome 鬯ｼ轣ｫ貍ゅ＞|surround 迢千↓縺ｮ霈ｪ|gazebeam 荳繝・岼縺ｮ蜃晁ｦ翻whip 襍､闊後↑繧－gravityarc 豐ｳ遶･縺ｮ豌ｴ遉ｫ|spokes 蜚仙ｘ蝗槭＠|lanternmines 謠千・荳ｦ縺ｹ|reverseaim 螟ｩ驍ｪ鬯ｼ縺ｮ謇玖ｿ斐＠
+crescents 荳蛾｣骼芸bite 螟ｧ鬥悶・蝎帙∩莉倥″|thunderchain 髮ｷ迯｣襍ｰ繧掛rolltrail 驥取ｧ瑚ｻ｢縺後＠|tide 逎ｯ豕｢|shiftrain 髮ｨ螂ｳ縺ｮ豸咎岑|ribbon 荳蜿榊ｷｻ縺鋼edgewheel 轣ｫ轤手ｻ願ｼｪ|hairspray 豈帷ｾｽ謨｣繧峨＠|cleaver 螻ｱ蟋･縺ｮ蜃ｺ蛻・calm 蟆剰ｱ・→縺旨serpent 陋・ｸｯ邨｡縺ｿ|whitepure 逋ｽ蝮贋ｸｻ縺ｮ逋ｽ豕｢|dropfrom 螟ｩ迢礼､ｫ|feathers 螟憺它縺ｮ鄒ｽ髻ｳ|predict 迢占・焚縺ｮ蜈亥屓繧掛rolltrail 轣ｫ霆雁ｼ輔″|rage 譛ｱ縺ｮ逶・ｿ斐＠|tide 豼｡螂ｳ縺ｮ蠑輔″貎ｮ|oniclub 迚幃ｬｼ縺ｮ雕上∩魑ｴ繧峨＠
+reverseaim 譫戊ｿ斐＠|crescents 邯ｲ蜑ｪ繧企居|hairspray 逋ｽ邊画鋳縺鋼dropfrom 謇矩聞雜ｳ髟ｷ縺ｮ謗ｴ縺ｿ|bluetide 豕･逕ｰ霑斐○|bonespear 鬪ｨ螂ｳ縺ｮ邁ｪ|hairspray 辣吶・ｾ・・辣處oniclub 蝨滓悉縺鋼lanternmines 逋ｾ迚ｩ隱槭・轣ｯ|web 蝨溯恫陋帙・蟾｣
+ratswarm 邂｡迢先叛縺｡|tide 髣・ｾ｡豢･鄒ｽ縺ｮ證玲ｵ－predict 騾√ｊ迢ｼ縺ｮ莉倥￠迢吶＞|ribbon 貂ｦ蟾ｻ縺鋼lanternmines 荳咲衍轣ｫ縺ｮ騾｣轣ｯ|bite 陝ｹ蝮贋ｸｻ縺ｮ螟ｧ驪楯mirage 蠖ｱ螂ｳ縺ｮ蠖ｱ蜀吶＠|calm 蟷ｽ隹ｷ縺ｮ隹ｺ|mirage 陷・ｰ玲･ｼ|triple 魴ｺ縺ｮ荳蛾擇
+dropfrom 驥｣逑ｶ關ｽ縺ｨ縺慾ratswarm 驩・ｼ縺ｮ鄒､繧芸edgewheel 迚・ｼｪ霆翫・霓鋼reverseaim 騾・＆譟ｱ|calm 驥主ｯｺ縺ｮ髏・feathers 闕牙ｱ･鬟帙・縺慾predict 隕壹・隱ｭ蠢ポreverseaim 霑斐＠鬯ｼ縺ｮ謇薙■霑斐＠|sevenpts 荳・ｺｺ縺ｮ陦悟・|ninetails 荵晏ｰｾ縺ｮ謇・feathers 蟋醍佐魑･縺ｮ鄒ｽ謳上″|timewarp 蛻ｻ蝟ｰ繧峨＞|cage 邀逶ｮ邀逶ｮ|bluetide 迢ｭ髢薙・髢蛾摩|tide 譟・搏雋ｸ縺斈lanternmines 霑ｽ縺・｡檎・|whip 逎ｯ謦ｫ縺ｧ縺ｮ蟆ｾ|cage 譬ｼ蟄千欧|bluetide 豬ｷ蝮贋ｸｻ縺ｮ螟ｧ豕｢|gravityarc 陜ｦ陝・・豐ｹ
+swarmhome 逕｣螂ｳ縺ｮ豕｣縺榊｣ｰ|nails 莠泌ｯｸ驥・bonespear 迢るｪｨ縺ｮ莠墓虻|predict 蠎ｧ鬆ｭ縺ｮ蜍・gazebeam 逶ｮ逶ｮ騾｣縺ｮ蜊・岼|calm 隹ｺ霑斐＠|whitepure 蜿､蠑ｷ閠・・螟ｪ蛻遲弓crescents 讌ｵ縺ｿ縺ｮ荳髢ポwhip 蝪嶺ｻ上・闊芸bite 鬯ｼ荳蜿｣
+feathers 髯ｰ鞫ｩ鄒・ｬｼ縺ｮ鮟堤ｾｽ|feathers 莉･豢･逵溷､ｩ縺ｮ蜿ｫ縺ｳ|bonespear 螟ｧ鬮鷹ｫ上・鬪ｨ髮ｨ|dropfrom 隕玖ｶ翫＠莨ｸ縺ｳ|nails 蟆√§縺ｮ譛ｭ|oniclub 螟ｧ蜈･驕薙・雕上∩貎ｰ縺慾drunk 迪ｩ縲・・驟斐＞闊桍cleaver 迢偵・・謚慕浹|calm 螻ｱ蠖ｦ霑斐＠|crescents 蜊・悽驥・calm 譛ｨ髴翫・蝗√″|blizzard 髮ｪ螂ｳ縺ｮ蜷ｹ髮ｪ|blizzard 髮ｪ遶･蟄舌・髮ｪ遉ｫ|shiftrain 豌ｷ譟ｱ關ｽ縺ｨ縺慾lanternmines 蟋･繝ｶ轣ｫ縺ｮ鬟帙・轣ｫ|hairspray 鮟貞搖荳ｻ縺ｮ蠅ｨ|tide 豬ｷ蜥悟ｰ壹・隱ｭ邨芸gravityarc 蜉迚滓ｳ｢逅・・蜷先・|gazebeam 謇九・逶ｮ縺ｮ謗檎愍|mirage 髀｡蜀吶＠
+oniclub 襍､鬯ｼ縺ｮ驥第｣竹bluetide 髱帝ｬｼ縺ｮ闥ｼ豕｢|hairspray 鮟帝ｬｼ縺ｮ髣・鋳縺鋼whitepure 逋ｽ鬯ｼ縺ｮ逋ｽ蠏酢thunderchain 鮟・ｬｼ縺ｮ髮ｷ鮠倒nails 讖句ｧｫ縺ｮ螯ｬ縺ｿ|serpent 貂・ｧｫ縺ｮ螟ｧ陋・crescents 邏・痩迢ｩ繧掛serpent 螟ｧ逋ｾ雜ｳ縺ｮ陦碁ｲ|web 骼也ｸ帙ｊ
+whitepure 逋ｽ荳濶ｲ|rage 螟懷初縺ｮ荵ｱ闊桍rage 鄒・飴縺ｮ騾｣謦ポrage 菫ｮ鄒・・讌ｭ轣ｫ|cleaver 鬯ｼ逾槭・螟ｧ譁ｧ|oniclub 迚幃ｭ縺ｮ遯√″荳翫￡|rolltrail 鬥ｬ鬆ｭ縺ｮ鬧・￠|judgment 迯・穀縺ｮ雋ｬ繧∬協|judgment 螂ｪ陦｣蟀・・陦｣蜑･縺旨thunderchain 騾｣髮ｷ
+whip 鬥紋ｼｸ縺ｰ縺慾mirage 鬘皮┌縺慾predict 邱丞､ｧ蟆・・豌励∪縺舌ｌ|crescents 蛹悶￠迪ｫ縺ｮ辷ｪ|ratswarm 迪ｫ蜿医・莠瑚ぃ|mirage 迢｢縺ｮ蛹悶°縺慾web 鬯ｼ陷倩屁縺ｮ邯ｲ|thunderchain 髮ｷ逾槭・螟ｪ鮠倒spokes 鬚ｨ逾槭・鬚ｨ陲弓dropfrom 螟ｩ莠募・繧・feathers 螟ｧ螟ｩ迢励・蝗｣謇・crescents 髷埼ｦｬ縺ｮ蜑｣|drunk 驟貞荘縺ｮ螟ｧ逶ポcleaver 闌ｨ譛ｨ縺ｮ迚・・|dropfrom 譏溽・縺ｮ譏溯誠縺ｨ縺慾oniclub 辭顔ｫ･蟄舌・蜑幄・|rage 驥醍・縺ｮ鮟・≡|crescents 陌守・縺ｮ辷ｪ|thunderchain 螟ｧ蠍ｽ荳ｸ縺ｮ鮟帝峇|triple 螳ｿ蜆ｺ縺ｮ蝗帶悽閻・ninetails 邇芽僚縺ｮ荵晏ｰｾ|eightheads 蜈ｫ蟯舌・鬥翻nails 逾溘ｊ|swarmhome 鮟・ｳ峨・霑ｽ謇弓timewarp 遖肴ｴ･譌･|kekkai 鬯ｼ髢蟆√§|gazebeam 逋ｾ逶ｮ縺ｮ逹ｨ縺ｿ|hairspray 蟶ｸ髣・・蟶ｳ|timewarp 騾｢鬲斐′譎・parade 逋ｾ鬯ｼ螟懆｡形.split(/[|\n]/).map(s => { const [rec, name] = s.trim().split(' '); return { rec, name }; });
 
 // tactics: two skills timed to work together, to drive the player into a corner, harry them with speed, or slowly close in
 const TACTICS = {
@@ -703,7 +695,7 @@ const TACTICS = {
   feint: { need: ['stopgo', 'needle'], fn: () => { fireShape('stopgo'); at(.85, () => REC.crescents.fn(.8)); return 2.4; } },
   bluepincer: { need: ['bluebeam'], fn: () => { const a = aimAng(), nx = -Math.sin(a), ny = Math.cos(a); for (const s of [-1, 1]) lasers.push({ x: B.x + nx * 75 * s, y: B.y + ny * 75 * s, ang: a, warn: .8 * F.warn, act: 1.6, w: 18, t: 0, rot: 0, follow: false, snipe: false, blue: true }); sfx('warn'); at(.9, () => fireShape('plain', { kind: whiteOnly })); return 2.8; } },
   cageparry: { need: ['lattice'], fn: () => { ATK.lattice(); at(.7, () => fireShape('plain', { kind: whiteOnly })); return 2.8; } },
-  sealring: { need: ['sealDash'], fn: () => { fx.sealD = Math.max(fx.sealD, 3); pop(P.x, P.y - 26, '封 踏', C.shu, 20); sfx('seal'); at(.4, () => fireShape('redonly')); return 3.2; } },
+  sealring: { need: ['sealDash'], fn: () => { fx.sealD = Math.max(fx.sealD, 3); pop(P.x, P.y - 26, '蟆・雕・, C.shu, 20); sfx('seal'); at(.4, () => fireShape('redonly')); return 3.2; } },
   freezecross: { need: ['freeze', 'cross'], fn: () => { fireShape('plain'); at(.4, () => { fx.freeze = 1.4; }); at(.5, () => ATK.cross()); return 3.4; } },
   shrinkspiral: { need: ['shrink'], fn: () => { fx.shrink = 5; sfx('seal'); at(1.0, () => REC.spokes.fn(.8)); return 4.0; } },
   flurry: { need: ['needle'], fn: () => { for (let k = 0; k < 5; k++) at(k * .3, () => { const o = ORG(), a = aimFrom(o.x, o.y) + (k % 2 ? .5 : -.5); for (let i = 0; i < 5; i++) { const b = shootFrom(o.x, o.y, a + (i - 2) * .08, 360 * SPD(), K()); b.needle = true; b.r = 4; b.wv = null; } sfx('shot'); }); at(1.6, () => laser(aimAng(), { snipe: true, warn: .5, act: 0, w: 2, follow: true })); return 2.6; } },
@@ -721,7 +713,7 @@ const META_REC = new Set(['parade', 'pebbles', 'triple', 'judgment']);
 const finalTarget = n => Math.round((20 + n * .75) * (n % 10 === 0 ? 1.35 : 1) * (n === 150 ? 1.5 : 1));
 
 // =====================================================================
-// 技: everything an enemy does is its own skill: one of these kinds with that enemy's own numbers and name.
+// 謚: everything an enemy does is its own skill: one of these kinds with that enemy's own numbers and name.
 // An enemy opens with four to six, gains a few more with every form, and each skill grows a step stronger
 // for every form since it was first shown. From the second form on it also strings its skills together.
 // =====================================================================
@@ -733,107 +725,107 @@ const TECH = { wind: 'f', slow: 'f', well: 'f', dark: 'f', ink: 'f', shrink: 'f'
   converge: 'a', wall: 'a', encircle: 'a', sweep: 'a', bluebeam: 'a', laser: 'a', snipe: 'a' };
 // skills built from marks, moves and set pieces. min: the first stage that may carry one; roll gives one enemy's own numbers
 const sgn = r => (r() < .5 ? 1 : -1);
-// which of 百鬼夜行's own skills it shows in which form
+// which of 逋ｾ鬯ｼ螟懆｡・s own skills it shows in which form
 const CFW_AT = [['blastdash', 0], ['rubylunge', 0], ['swipe', 0], ['rubyshot', 0], ['aggression', 1], ['timecurse', 1], ['timerend', 2], ['impale', 2], ['energyhex', 3], ['deathstrike', 3], ['voidshatter', 4]];
 const NSK = {
-  // 溜め大技: a long wind-up, then one great release
-  chargeup: { min: 4, w: .6, names: ['溜め放ち', '大開放', '渾身', '気合い一閃'],
+  // 貅懊ａ螟ｧ謚: a long wind-up, then one great release
+  chargeup: { min: 4, w: .6, names: ['貅懊ａ謾ｾ縺｡', '螟ｧ髢区叛', '貂ｾ霄ｫ', '豌怜粋縺・ｸ髢・],
     roll: (r, n) => ({ T: 1.0 + r() * .3, kind: n >= 8 && r() < .33 ? 'beams' : r() < .5 ? 'rings' : 'flower', n: 14 + (r() * 8 | 0), sp: 150 + r() * 30, petals: 4 + (r() * 3 | 0) }) },
-  // 包囲陣: marks ring the player, then each fires at it in turn round the circle
-  siege: { min: 6, w: 1.1, names: ['包囲陣', '四面楚歌', '囲い撃ち', '八方塞がり'],
+  // 蛹・峇髯｣: marks ring the player, then each fires at it in turn round the circle
+  siege: { min: 6, w: 1.1, names: ['蛹・峇髯｣', '蝗幃擇讌壽ｭ・, '蝗ｲ縺・茶縺｡', '蜈ｫ譁ｹ蝪槭′繧・],
     roll: r => ({ n: 4 + (r() * 3 | 0), rad: 200 + r() * 40, rot: r() * TAU, dir: sgn(r), gap: .2 + r() * .1, form: ['fan', 'line', 'ring'][r() * 3 | 0] }) },
-  // 挟撃: two marks either side of the player take turns firing at it
-  crossfire: { min: 9, w: 1.2, names: ['挟撃', '十字砲火', '挟み撃ち'],
+  // 謖滓茶: two marks either side of the player take turns firing at it
+  crossfire: { min: 9, w: 1.2, names: ['謖滓茶', '蜊∝ｭ礼ｲ轣ｫ', '謖溘∩謦・■'],
     roll: r => ({ off: 210 + r() * 50, dur: 1.6 + r() * .6, rate: .15 + r() * .06, axis: ['h', 'v', 'd'][r() * 3 | 0] }) },
-  // 置き陣: shots set out in a shape round the player hang still, then all fly in at once
-  snare: { min: 11, w: .6, names: ['置き陣', '時限陣', '張り込み'],
+  // 鄂ｮ縺埼劵: shots set out in a shape round the player hang still, then all fly in at once
+  snare: { min: 11, w: .6, names: ['鄂ｮ縺埼劵', '譎る剞髯｣', '蠑ｵ繧願ｾｼ縺ｿ'],
     roll: r => ({ shape: ['ring', 'square', 'star'][r() * 3 | 0], n: 12 + (r() * 6 | 0), rad: 120 + r() * 30, wait: .9 + r() * .3, hole: r() * TAU }) },
-  // 時限玉: big slow orbs set out in a fan, bursting one after another in a fixed order
-  delayorbs: { min: 12, w: .6, names: ['時限玉', '連鎖花火', '導火線'],
+  // 譎る剞邇・ big slow orbs set out in a fan, bursting one after another in a fixed order
+  delayorbs: { min: 12, w: .6, names: ['譎る剞邇・, '騾｣骼冶干轣ｫ', '蟆守↓邱・],
     roll: r => ({ n: 3 + (r() * 3 | 0), sp: 120 + r() * 30, t0: .9 + r() * .2, dt: .22 + r() * .08, ring: 10 + (r() * 4 | 0) }) },
-  // 退き撃ち: draws back to the far edge, then lets fly from there
-  retreat: { min: 12, w: .8, moves: 1, names: ['退き撃ち', '間合い取り', '引き撃ち'],
+  // 騾縺肴茶縺｡: draws back to the far edge, then lets fly from there
+  retreat: { min: 12, w: .8, moves: 1, names: ['騾縺肴茶縺｡', '髢灘粋縺・叙繧・, '蠑輔″謦・■'],
     roll: r => { const kind = ['curtain', 'lanes', 'rows'][r() * 3 | 0]; return { top: r() < .7, sh: withSize(rollShape(kind, r), r) }; } },
-  // 雷の足跡: strikes walk a fixed path round the player: a closing spiral, a line across, or a cross
-  zonewalk: { min: 13, w: 1, names: ['雷の足跡', '落雷行', '稲妻道'],
+  // 髮ｷ縺ｮ雜ｳ霍｡: strikes walk a fixed path round the player: a closing spiral, a line across, or a cross
+  zonewalk: { min: 13, w: 1, names: ['髮ｷ縺ｮ雜ｳ霍｡', '關ｽ髮ｷ陦・, '遞ｲ螯ｻ驕・],
     roll: r => ({ shape: ['spiral', 'line', 'cross'][r() * 3 | 0], n: 8 + (r() * 4 | 0), step: .11 + r() * .05, rot: r() * TAU, dir: sgn(r) }) },
-  // 瞬身猛攻: hops round the player, a mark showing each next spot first, a short volley from each; then the onslaught
-  blink: { min: 14, w: 1.3, moves: 1, names: ['瞬身猛攻', '影渡り', '神出鬼没', '飛び移り'],
+  // 迸ｬ霄ｫ迪帶判: hops round the player, a mark showing each next spot first, a short volley from each; then the onslaught
+  blink: { min: 14, w: 1.3, moves: 1, names: ['迸ｬ霄ｫ迪帶判', '蠖ｱ貂｡繧・, '逾槫・鬯ｼ豐｡', '鬟帙・遘ｻ繧・],
     roll: r => ({ hops: 2 + (r() < .4), rad: 190 + r() * 50, base: r() * TAU, step: sgn(r) * (2.0 + r() * .6), n: [3, 3, 5][r() * 3 | 0], fin: ['ring', 'fan', 'gap'][r() * 3 | 0] }) },
-  // 纏い回し: rings of shots wheel round the body, then fly out all at once
-  spinner: { min: 16, w: .6, names: ['纏い回し', '回転陣', '車懸かり'],
+  // 郤上＞蝗槭＠: rings of shots wheel round the body, then fly out all at once
+  spinner: { min: 16, w: .6, names: ['郤上＞蝗槭＠', '蝗櫁ｻ｢髯｣', '霆頑・縺九ｊ'],
     roll: r => ({ arms: 4 + (r() * 3 | 0), rings: 2 + (r() < .4), w: sgn(r) * (1.4 + r() * .6), hold: 1.2 + r() * .4, sp: 150 + r() * 30, out: [0, .5, -.5][r() * 3 | 0] }) },
-  // 回り撃ち: circles the middle of the floor, firing a fixed fan at the player as it goes
-  orbit: { min: 18, w: 1.1, moves: 1, names: ['回り撃ち', '輪舞', '巡り撃ち'],
+  // 蝗槭ｊ謦・■: circles the middle of the floor, firing a fixed fan at the player as it goes
+  orbit: { min: 18, w: 1.1, moves: 1, names: ['蝗槭ｊ謦・■', '霈ｪ闊・, '蟾｡繧頑茶縺｡'],
     roll: r => ({ dir: sgn(r), dur: 2.4 + r() * .8, every: .3 + r() * .15, n: [3, 5][r() * 2 | 0], w: .8 + r() * .2, sp: 210 + r() * 40 }) },
-  // 天降り: a row of marks along one edge, level with the player, each sending a lane of needles across in turn
-  bladefall: { min: 20, w: 1.1, names: ['天降り', '剣の雨', '串刺し天井'],
+  // 螟ｩ髯阪ｊ: a row of marks along one edge, level with the player, each sending a lane of needles across in turn
+  bladefall: { min: 20, w: 1.1, names: ['螟ｩ髯阪ｊ', '蜑｣縺ｮ髮ｨ', '荳ｲ蛻ｺ縺怜､ｩ莠・],
     roll: r => ({ n: 5 + (r() * 3 | 0), sp: 70 + r() * 20, dir: sgn(r), del: .55 + r() * .15, len: 3 + (r() * 2 | 0), side: ['t', 'l', 'r'][r() * 3 | 0] }) },
-  // 背後取り: reappears on the player's far side, then fires from there
-  swapside: { min: 22, w: 1.3, moves: 1, names: ['背後取り', '回り込み', '影踏み'],
+  // 閭悟ｾ悟叙繧・ reappears on the player's far side, then fires from there
+  swapside: { min: 22, w: 1.3, moves: 1, names: ['閭悟ｾ悟叙繧・, '蝗槭ｊ霎ｼ縺ｿ', '蠖ｱ雕上∩'],
     roll: r => ({ n: 5 + (r() * 4 | 0), spread: .14 + r() * .06, vol: 2 + (r() < .5) }) },
-  // 抜き打ち: needles too fast to see coming, after a wind-up
-  quickdraw: { min: 24, w: 1.3, fast: 1, names: ['抜き打ち', '早撃ち', '居合'],
+  // 謚懊″謇薙■: needles too fast to see coming, after a wind-up
+  quickdraw: { min: 24, w: 1.3, fast: 1, names: ['謚懊″謇薙■', '譌ｩ謦・■', '螻・粋'],
     roll: r => ({ n: [3, 5][r() * 2 | 0], sp: 420 + r() * 60, vol: 2 + (r() < .5), gap: .32 + r() * .08, spread: .1 + r() * .05 }) },
-  // 時計の針: an arm of shots sweeps round the body like a clock hand, with a gap along it to stand in
-  clockbar: { min: 26, w: .6, names: ['時計の針', '大車輪', '薙ぎ払い'],
+  // 譎りｨ医・驥・ an arm of shots sweeps round the body like a clock hand, with a gap along it to stand in
+  clockbar: { min: 26, w: .6, names: ['譎りｨ医・驥・, '螟ｧ霆願ｼｪ', '阮吶℃謇輔＞'],
     roll: r => ({ arms: 1 + (r() < .35), len: 7 + (r() * 3 | 0), gap: 2 + (r() * 3 | 0), w: sgn(r) * (.5 + r() * .15), dur: 3.2 + r() * .6 }) },
-  // 写し身: a shadow on the far side of the floor fires the same barrage as the body
-  twin: { min: 30, w: .5, names: ['写し身', '双身', '鏡像'], roll: r => ({ k: r() }) },
-  // ---- 百鬼夜行's own: never carried by any other enemy (min 151) ----
-  // 迅突: a dark aura round its feet, a moment's halt, then a lunge too fast to follow; in its last forms no warning at all
-  blastdash: { min: 151, moves: 1, rush: 1, names: ['迅突'], roll: () => ({}) },
-  // 紅突: a slow-aimed lunge; if it misses, an instant second one (返し紅突)
-  rubylunge: { min: 151, moves: 1, rush: 1, names: ['紅突'], roll: () => ({}) },
-  // 乱れ紅: reels back, blinks in and slashes, loosing darts all round that turn and come back in
-  aggression: { min: 151, moves: 1, names: ['乱れ紅'], roll: () => ({}) },
-  // 時裂き: cuts through time to the player's far side, leaving a circle that shrinks into a shockwave
-  timerend: { min: 151, moves: 1, names: ['時裂き'], roll: () => ({}) },
-  // 死の一撃: vanishes and drops onto the player from above
-  deathstrike: { min: 151, moves: 1, names: ['死の一撃'], roll: () => ({}) },
-  // 虚空砕き: leaps out of sight and comes down with an explosion and a shockwave across the whole floor
-  voidshatter: { min: 151, moves: 1, names: ['虚空砕き'], roll: () => ({}) },
-  // 時戻し: winds time back, stepping away and mending a little
-  timecurse: { min: 151, moves: 1, names: ['時戻し'], roll: () => ({}) },
-  swipe: { min: 151, moves: 1, names: ['剣閃'], roll: () => ({}) },
-  rubyshot: { min: 151, names: ['紅玉散'], roll: () => ({}) },
-  impale: { min: 151, moves: 1, names: ['剛突'], roll: () => ({}) },
-  energyhex: { min: 151, names: ['魂枯らし'], roll: () => ({}) },
+  // 蜀吶＠霄ｫ: a shadow on the far side of the floor fires the same barrage as the body
+  twin: { min: 30, w: .5, names: ['蜀吶＠霄ｫ', '蜿瑚ｺｫ', '髀｡蜒・], roll: r => ({ k: r() }) },
+  // ---- 逋ｾ鬯ｼ螟懆｡・s own: never carried by any other enemy (min 151) ----
+  // 霑・ｪ・ a dark aura round its feet, a moment's halt, then a lunge too fast to follow; in its last forms no warning at all
+  blastdash: { min: 151, moves: 1, rush: 1, names: ['霑・ｪ・], roll: () => ({}) },
+  // 邏・ｪ・ a slow-aimed lunge; if it misses, an instant second one (霑斐＠邏・ｪ・
+  rubylunge: { min: 151, moves: 1, rush: 1, names: ['邏・ｪ・], roll: () => ({}) },
+  // 荵ｱ繧檎ｴ・ reels back, blinks in and slashes, loosing darts all round that turn and come back in
+  aggression: { min: 151, moves: 1, names: ['荵ｱ繧檎ｴ・], roll: () => ({}) },
+  // 譎り｣ゅ″: cuts through time to the player's far side, leaving a circle that shrinks into a shockwave
+  timerend: { min: 151, moves: 1, names: ['譎り｣ゅ″'], roll: () => ({}) },
+  // 豁ｻ縺ｮ荳謦・ vanishes and drops onto the player from above
+  deathstrike: { min: 151, moves: 1, names: ['豁ｻ縺ｮ荳謦・], roll: () => ({}) },
+  // 陌夂ｩｺ遐輔″: leaps out of sight and comes down with an explosion and a shockwave across the whole floor
+  voidshatter: { min: 151, moves: 1, names: ['陌夂ｩｺ遐輔″'], roll: () => ({}) },
+  // 譎よ綾縺・ winds time back, stepping away and mending a little
+  timecurse: { min: 151, moves: 1, names: ['譎よ綾縺・], roll: () => ({}) },
+  swipe: { min: 151, moves: 1, names: ['蜑｣髢・], roll: () => ({}) },
+  rubyshot: { min: 151, names: ['邏・脂謨｣'], roll: () => ({}) },
+  impale: { min: 151, moves: 1, names: ['蜑帷ｪ・], roll: () => ({}) },
+  energyhex: { min: 151, names: ['鬲よ椡繧峨＠'], roll: () => ({}) },
 
-  // 読み撃ち: shots in a string, each aimed its own way: straight at the player, where it is heading, or the other way
-  readshot: { min: 8, w: 1.2, names: ['読み撃ち', '先読み', '裏読み'],
+  // 隱ｭ縺ｿ謦・■: shots in a string, each aimed its own way: straight at the player, where it is heading, or the other way
+  readshot: { min: 8, w: 1.2, names: ['隱ｭ縺ｿ謦・■', '蜈郁ｪｭ縺ｿ', '陬剰ｪｭ縺ｿ'],
     roll: r => { const n = 4 + (r() * 3 | 0), seq = ['d']; for (let i = 1; i < n; i++) seq.push(['p', 'a', 'p', 'd'][r() * 4 | 0]); return { seq, n: [1, 3][r() * 2 | 0], sp: 300 + r() * 60, gap: .3 + r() * .1 }; } },
-  // 斬り込み: a wind-up, a lunge to just short of the player and a slash in front, again and again; it ends on a slam
-  slashcombo: { min: 10, w: 1.3, moves: 1, rush: 1, names: ['斬り込み', '連ね斬り', '踏み込み斬り'],
+  // 譁ｬ繧願ｾｼ縺ｿ: a wind-up, a lunge to just short of the player and a slash in front, again and again; it ends on a slam
+  slashcombo: { min: 10, w: 1.3, moves: 1, rush: 1, names: ['譁ｬ繧願ｾｼ縺ｿ', '騾｣縺ｭ譁ｬ繧・, '雕上∩霎ｼ縺ｿ譁ｬ繧・],
     roll: r => ({ hits: 2 + (r() < .5), arc: .9 + r() * .4, n: 7 + (r() * 3 | 0), slam: r() < .6 }) },
-  // 噴柱: points the blade at the sky, marks circles round itself and the player, then pillars burst from them
-  eruption: { min: 14, w: 1, names: ['噴柱', '火柱立て', '地獄釜'],
+  // 蝎ｴ譟ｱ: points the blade at the sky, marks circles round itself and the player, then pillars burst from them
+  eruption: { min: 14, w: 1, names: ['蝎ｴ譟ｱ', '轣ｫ譟ｱ遶九※', '蝨ｰ迯・∪'],
     roll: r => ({ n: 5 + (r() * 4 | 0), rot: r() * TAU, rad: 110 + r() * 80, warn: 1.2 + r() * .3 }) },
-  // 地紋: runes under the player that burst a moment later, taking two lives
-  runes: { min: 18, w: 1, names: ['地紋', '足元の印', '呪紋'],
+  // 蝨ｰ邏・ runes under the player that burst a moment later, taking two lives
+  runes: { min: 18, w: 1, names: ['蝨ｰ邏・, '雜ｳ蜈・・蜊ｰ', '蜻ｪ邏・],
     roll: r => ({ n: 1 + (r() * 3 | 0), gap: .5 + r() * .15 }) },
-  // 宵斬り: throws a marker at the player: gold, and the flames come all round it (go to it); red, and they come on it (get away)
-  nightslash: { min: 22, w: 1.1, names: ['宵斬り', '明暗', '昼夜斬り'], roll: r => ({ first: r() < .5 ? 'y' : 'r' }) },
-  // 連鎖弾: numbered marks round where the player is going, then one shot through them all in order
-  prism: { min: 26, w: 1, names: ['連鎖弾', '数え撃ち', '道標'],
+  // 螳ｵ譁ｬ繧・ throws a marker at the player: gold, and the flames come all round it (go to it); red, and they come on it (get away)
+  nightslash: { min: 22, w: 1.1, names: ['螳ｵ譁ｬ繧・, '譏取囓', '譏ｼ螟懈脈繧・], roll: r => ({ first: r() < .5 ? 'y' : 'r' }) },
+  // 騾｣骼門ｼｾ: numbered marks round where the player is going, then one shot through them all in order
+  prism: { min: 26, w: 1, names: ['騾｣骼門ｼｾ', '謨ｰ縺域茶縺｡', '驕捺ｨ・],
     roll: r => ({ n: 3 + (r() * 3 | 0), rad: 100 + r() * 50, rot: r() * TAU, dir: sgn(r) }) },
-  // 寄せ波一閃: rings close in on the body one after another, each faster than the last, then one great lunge
-  gambit: { min: 30, w: 1, moves: 1, rush: 1, names: ['寄せ波一閃', '波返し', '大一閃'],
+  // 蟇・○豕｢荳髢・ rings close in on the body one after another, each faster than the last, then one great lunge
+  gambit: { min: 30, w: 1, moves: 1, rush: 1, names: ['蟇・○豕｢荳髢・, '豕｢霑斐＠', '螟ｧ荳髢・],
     roll: r => ({ rings: 4 + (r() * 3 | 0), gap: .35 + r() * .1, sp: 80 + r() * 20 }) },
-  // 炎陣: a ring of fire round where it stands that holds for several seconds while it fights on
-  inferno: { min: 34, w: .6, linger: 5.5, names: ['炎陣', '火の檻', '焦熱陣'],
+  // 轤朱劵: a ring of fire round where it stands that holds for several seconds while it fights on
+  inferno: { min: 34, w: .6, linger: 5.5, names: ['轤朱劵', '轣ｫ縺ｮ讙ｻ', '辟ｦ辭ｱ髯｣'],
     roll: r => ({ R: 170 + r() * 50, n: 30 + (r() * 10 | 0), w: sgn(r) * (.15 + r() * .15) }) },
 
-  // 突き撃ち: fires a fan, then rushes in right behind its own shots
-  rushshot: { min: 5, w: 1.3, moves: 1, rush: 1, names: ['突き撃ち', '追い駆け', '鉄砲駆け'], roll: r => ({ n: [3, 5][r() * 2 | 0], spread: .16 + r() * .08, sp: 230 + r() * 40 }) },
-  // 返し光: rushes through, and from where it stops turns a beam on the player
-  rushbeam: { min: 8, w: 1.2, moves: 1, rush: 1, names: ['返し光', '駆け抜け眼光', '振り向き'], roll: r => ({ beams: 1 + (r() < .4), spread: .3 + r() * .15 }) },
-  // 見せ突き: a rush that pulls up short, then a vanishing step to the player's back and a volley from there
-  rushfeint: { min: 12, w: 1.2, moves: 1, rush: 1, names: ['見せ突き', '寸止め', '騙し駆け'], roll: r => ({ n: 5 + (r() * 3 | 0), spread: .14 + r() * .05 }) },
-  // 回り込み突進: swings round to the player's flank, firing as it goes, then rushes in from the side
-  flankrush: { min: 16, w: 1.2, moves: 1, rush: 1, names: ['回り込み突進', '横撃ち駆け', '脇差し'], roll: r => ({ side: sgn(r), n: 3 + (r() < .5) * 2, vol: 2 + (r() < .5) }) },
-  // 連突: rushes again and again, each stop ending in a burst shaped its own way
-  rushchain: { min: 20, w: 1.1, moves: 1, rush: 1, names: ['連突', '暴れ駆け', '猪突猛進'], roll: r => ({ n: 3 + (r() < .4), end: ['ring', 'fan', 'cross'][r() * 3 | 0], sp: 140 + r() * 30 }) },
+  // 遯√″謦・■: fires a fan, then rushes in right behind its own shots
+  rushshot: { min: 5, w: 1.3, moves: 1, rush: 1, names: ['遯√″謦・■', '霑ｽ縺・ｧ・￠', '驩・ｲ鬧・￠'], roll: r => ({ n: [3, 5][r() * 2 | 0], spread: .16 + r() * .08, sp: 230 + r() * 40 }) },
+  // 霑斐＠蜈・ rushes through, and from where it stops turns a beam on the player
+  rushbeam: { min: 8, w: 1.2, moves: 1, rush: 1, names: ['霑斐＠蜈・, '鬧・￠謚懊￠逵ｼ蜈・, '謖ｯ繧雁髄縺・], roll: r => ({ beams: 1 + (r() < .4), spread: .3 + r() * .15 }) },
+  // 隕九○遯√″: a rush that pulls up short, then a vanishing step to the player's back and a volley from there
+  rushfeint: { min: 12, w: 1.2, moves: 1, rush: 1, names: ['隕九○遯√″', '蟇ｸ豁｢繧・, '鬨吶＠鬧・￠'], roll: r => ({ n: 5 + (r() * 3 | 0), spread: .14 + r() * .05 }) },
+  // 蝗槭ｊ霎ｼ縺ｿ遯・ｲ: swings round to the player's flank, firing as it goes, then rushes in from the side
+  flankrush: { min: 16, w: 1.2, moves: 1, rush: 1, names: ['蝗槭ｊ霎ｼ縺ｿ遯・ｲ', '讓ｪ謦・■鬧・￠', '閼・ｷｮ縺・], roll: r => ({ side: sgn(r), n: 3 + (r() < .5) * 2, vol: 2 + (r() < .5) }) },
+  // 騾｣遯・ rushes again and again, each stop ending in a burst shaped its own way
+  rushchain: { min: 20, w: 1.1, moves: 1, rush: 1, names: ['騾｣遯・, '證ｴ繧碁ｧ・￠', '迪ｪ遯∫憲騾ｲ'], roll: r => ({ n: 3 + (r() < .4), end: ['ring', 'fan', 'cross'][r() * 3 | 0], sp: 140 + r() * 30 }) },
 };
 
 // opt.free: a free-play bout at level n, drawn fresh each time
@@ -843,8 +835,8 @@ function buildStage(n, opt = {}) {
   const pick = arr => arr[Math.floor(rng() * arr.length)];
   const R = (a, b) => a + rng() * (b - a);
   const D = diffAt(n);
-  const en = free ? ENEMY[Math.floor(rng() * n)] : ENEMY[n - 1], name = free ? '自由稽古' : NAMES[n - 1] || ('鬼' + n);
-  // ---- 技: everything this enemy does is its own ----
+  const en = free ? ENEMY[Math.floor(rng() * n)] : ENEMY[n - 1], name = free ? '閾ｪ逕ｱ遞ｽ蜿､' : NAMES[n - 1] || ('鬯ｼ' + n);
+  // ---- 謚: everything this enemy does is its own ----
   const I0 = (1 + Math.max(0, n - 90) / 60 * .6) * (o.uI || 1);
   const k = o.forms || (free ? 3 : n <= 2 ? 1 : n <= 6 ? 2 : n <= 20 ? pick([2, 2, 3]) : n <= 50 ? pick([2, 3, 3, 4]) : n <= 100 ? pick([3, 3, 4, 4, 5]) : pick([3, 4, 5, 5, 6]));
   const rg = mulberry32((free ? opt.seed : n) * 104729 + 3);
@@ -856,21 +848,21 @@ function buildStage(n, opt = {}) {
   const skills = [], usedRec = new Set([en.rec]), usedE = new Set(), usedV = new Set(), usedT = new Set(), usedN = new Set(), names = new Set();
   const add = (s, intro) => {
     let nm = s.name;
-    for (let q = 0; names.has(nm); q++) nm = s.name + '・' + ('弐参肆伍陸漆捌'[q] || q + 2);
+    for (let q = 0; names.has(nm); q++) nm = s.name + '繝ｻ' + ('蠑仙盾閧・ｼ埼匣貍・轟'[q] || q + 2);
     names.add(nm); s.name = nm; s.intro = intro; skills.push(s);
   };
-  // the enemy's own signature barrage leads; 百鬼夜行 carries three
+  // the enemy's own signature barrage leads; 逋ｾ鬯ｼ螟懆｡・carries three
   if (n === 150 && !free) {
-    add({ t: 'rec', rec: 'parade', name: '百鬼夜行', I: I0 * 1.1 }, 0);
-    add({ t: 'rec', rec: 'grandwheel', name: '逢魔の大輪', I: I0 }, 0);
-    add({ t: 'rec', rec: 'procession', name: '百鬼の行列', I: I0 }, 1);
+    add({ t: 'rec', rec: 'parade', name: '逋ｾ鬯ｼ螟懆｡・, I: I0 * 1.1 }, 0);
+    add({ t: 'rec', rec: 'grandwheel', name: '騾｢鬲斐・螟ｧ霈ｪ', I: I0 }, 0);
+    add({ t: 'rec', rec: 'procession', name: '逋ｾ鬯ｼ縺ｮ陦悟・', I: I0 }, 1);
     // and its own blade, form by form
     for (const [t, intro] of CFW_AT) add({ t, p: {}, name: NSK[t].names[0], moves: true, rush: !!NSK[t].rush, own: -1, nd: t === 'voidshatter' || t === 'timerend' }, intro);
   } else add({ t: 'rec', rec: en.rec, name: en.name, I: I0 * 1.15, fast: FAST_REC.has(en.rec) }, 0);
   const SEALS = ['sealDash', 'sealAll'];
   // a rush is the enemy's own: it is woven with one of its own barrages (one that goes for the player, if it has one)
   const ownPat = () => { const pats = skills.map((s, j) => j).filter(j => skills[j].t === 'pat'), pin = pats.filter(j => !DENSE_L.has(skills[j].sh.type)), src = pin.length ? pin : pats; return src.length ? src[Math.floor(rng() * src.length)] : -1; };
-  const ownNm = j => j >= 0 ? EMIT[skills[j].sh.type].n + '・' : '';
+  const ownNm = j => j >= 0 ? EMIT[skills[j].sh.type].n + '繝ｻ' : '';
   function roll(kind) {
     switch (kind) {
       case 'pat': {
@@ -895,14 +887,14 @@ function buildStage(n, opt = {}) {
         const src = vAvail.filter(v => v.fam === 'L' && !usedV.has(v.a));
         if (!src.length) return null;
         const v = pick(src); usedV.add(v.a);
-        return { t: 'beam', sh: v.a, hb: v.b, name: pick(BEAM_SHAPE[v.a].un) + (BEAM_HABIT[v.b].n ? '・' + BEAM_HABIT[v.b].n : ''), I: I0 * R(1, 1.15) };
+        return { t: 'beam', sh: v.a, hb: v.b, name: pick(BEAM_SHAPE[v.a].un) + (BEAM_HABIT[v.b].n ? '繝ｻ' + BEAM_HABIT[v.b].n : ''), I: I0 * R(1, 1.15) };
       }
       case 'rush': {
         const src = vAvail.filter(v => v.fam === 'C' && !usedV.has(v.a));
         if (!src.length) return null;
         const v = pick(src); usedV.add(v.a);
         const own = ownPat();
-        return { t: 'rush', pa: v.a, ef: v.b, name: ownNm(own) + pick(CHARGE_PATH[v.a].un) + (CHARGE_EFF[v.b].n ? '・' + CHARGE_EFF[v.b].n : ''), moves: true, rush: true, own };
+        return { t: 'rush', pa: v.a, ef: v.b, name: ownNm(own) + pick(CHARGE_PATH[v.a].un) + (CHARGE_EFF[v.b].n ? '繝ｻ' + CHARGE_EFF[v.b].n : ''), moves: true, rush: true, own };
       }
       case 'tech': {
         const src = techAvail.filter(id => !usedT.has(id));
@@ -975,7 +967,7 @@ function buildStage(n, opt = {}) {
       if (c && !sameAs(c)) { c.intro = i; combos.push(c); }
     }
   }
-  // 百鬼夜行's own strings: teleport, cut and fire with no gap between, as its forms go on
+  // 逋ｾ鬯ｼ螟懆｡・s own strings: teleport, cut and fire with no gap between, as its forms go on
   if (n === 150 && !free) {
     const at = t => skills.findIndex(s => s.t === t);
     for (const [parts, intro] of [[['blastdash', 'swipe', 'rubyshot'], 1], [['rubylunge', 'swipe', 'impale'], 2], [['timerend', 'swipe', 'aggression'], 2], [['energyhex', 'blastdash', 'swipe', 'deathstrike'], 3], [['voidshatter', 'swipe', 'rubyshot', 'impale'], 4], [['deathstrike', 'swipe', 'timerend', 'swipe', 'aggression'], 5]]) {
@@ -987,7 +979,7 @@ function buildStage(n, opt = {}) {
   const shapes = skills.filter(s => s.t === 'pat').map(s => s.sh);
   if (!shapes.length) shapes.push(withSize(rollShape('ring', rg), rg));
   const props = [...new Set(skills.filter(s => s.t === 'pat' && s.m !== 'plain').map(s => s.m))];
-  // ---- 固有弾・固有光 ----
+  // ---- 蝗ｺ譛牙ｼｾ繝ｻ蝗ｺ譛牙・ ----
   const bs = Object.keys(SIG).filter(q => SIG[q].k === 'b' && SIG[q].intro <= n), ls = Object.keys(SIG).filter(q => SIG[q].k === 'l' && SIG[q].intro <= n);
   const bsig = pick(bs), lsig = n >= 8 && ls.length ? pick(ls) : '', sigEvery = pick([2, 3, 3, 4]);
   // temperament: how the enemy paces itself around the stage's level
@@ -999,7 +991,7 @@ function buildStage(n, opt = {}) {
   const vr = mulberry32((free ? opt.seed : n) * 2654435 + 11), VR = (a, b) => a + vr() * (b - a);
   const V = { vn: VR(.85, 1.2), vsz: VR(.8, 1.35), vsp: VR(.92, 1.1), vz: VR(.85, 1.3), vw: VR(.8, 1.4) };
   // toughness is one total for the enemy, set by its level alone; forms only split it where the attacks change
-  // a final is the privilege of the few: the bosses of the 番付 from the fiftieth on, and the last; free play keeps its own
+  // a final is the privilege of the few: the bosses of the 逡ｪ莉・from the fiftieth on, and the last; free play keeps its own
   const finalHere = free || (!survive && (o.final || (n % 10 === 0 && n >= 50)));
   // much tougher than they were: about 1.8 times; those with a final, which is a long fight of its own, 1.2 to 1.4 times
   const total = Math.round((45 + 1.4 * n + .012 * n * n) * (finalHere ? R(1.2, 1.4) : 1.8) * R(.9, 1.1));
@@ -1012,7 +1004,7 @@ function buildStage(n, opt = {}) {
     skills.forEach((s, j) => { if (s.intro > i || s.follow) return; const id = 'k:' + j; pool.push(id); wt[id] = j === 0 ? 1.3 : s.intro === i && i ? 1.4 : 1; });
     combos.forEach((c, j) => { if (c.intro > i) return; pool.push('c:' + j); wt['c:' + j] = c.w || 1.1; });
     forms.push({
-      name: ['一ノ型', '二ノ型', '三ノ型', '四ノ型', '五ノ型', '六ノ型'][i],
+      name: ['荳繝主梛', '莠後ヮ蝙・, '荳峨ヮ蝙・, '蝗帙ヮ蝙・, '莠斐ヮ蝙・, '蜈ｭ繝主梛'][i],
       pool, wt, skills, combos, shapes, props, bsig, lsig, sigEvery,
       // each form faster and more relentless than the last
       spd: D.spd * base.spd * (1 + i * .06), gap: D.gap * base.gap * Math.max(.6, 1 - i * .07), warn: D.warn * base.warn,
@@ -1060,7 +1052,7 @@ function buildStage(n, opt = {}) {
   const finalLen = final ? finalTarget(n) : 0;
   if (rules.limit) rules.limit = Math.round(totalHp * .5 + 45 + finalLen * 1.1);
   return {
-    n, name, glyph: free ? '鬼' : (NAMES[n - 1] || '鬼')[0], forms, final, revive, rules, free,
+    n, name, glyph: free ? '鬯ｼ' : (NAMES[n - 1] || '鬯ｼ')[0], forms, final, revive, rules, free,
     finalSeed: free ? opt.seed : n * 31 + 7, finalLen, t, shapes, temper: arch.name, skills, combos, bsig, lsig, sigEvery,
     fseal: final && !free ? FINAL_SEAL[n] || '' : '',
   };
@@ -1076,10 +1068,10 @@ const prevOf = n => STAGES[STAGES.findIndex(s => s.n === n) - 1] || null;
 
 // free play: a fresh enemy at the level of one stage, with three forms and a final
 const FREE = [
-  { name: '簡単', lv: 10, hp: 5 },
-  { name: '普通', lv: 30, hp: 5 },
-  { name: '修羅', lv: 60, hp: 5 },
-  { name: '阿修羅', lv: 100, hp: 3 },
+  { name: '邁｡蜊・, lv: 10, hp: 5 },
+  { name: '譎ｮ騾・, lv: 30, hp: 5 },
+  { name: '菫ｮ鄒・, lv: 60, hp: 5 },
+  { name: '髦ｿ菫ｮ鄒・, lv: 100, hp: 3 },
 ];
 
 // ---- save ----
@@ -1254,7 +1246,7 @@ const SONGS = {
     { inst: 'pluck', layer: 0, notes: [[[0, 5, 4], [6, 7, 4], [10, 6, 6]], [[0, 5, 8], [8, 3, 8]], [[0, 4, 4], [6, 6, 4], [10, 5, 6]], [[0, 4, 12]]] },
     { inst: 'bell', layer: 0, notes: [[[0, 10, 16]], [], [], [[8, 9, 8]]] },
   ] },
-  // 灯守: light plucked strings over a soft drum, a flute joining when it turns serious
+  // 轣ｯ螳・ light plucked strings over a soft drum, a flute joining when it turns serious
   himori: { bpm: 112, root: 50, scale: 'yo', bars: 4, tracks: [
     { inst: 'taiko', layer: 0, drum: ['x.......x...o...', 'x.......x.o.....', 'x.......x...o...', 'x...o...x.o.o...'] },
     { inst: 'pluck', layer: 0, notes: [[[0, 5, 2], [2, 6, 2], [4, 7, 4], [8, 6, 2], [10, 5, 2], [12, 4, 4]], [[0, 3, 2], [2, 4, 2], [4, 5, 6], [12, 4, 4]], [[0, 5, 2], [2, 7, 2], [4, 8, 4], [8, 7, 2], [10, 6, 2], [12, 5, 4]], [[0, 4, 4], [4, 3, 4], [8, 2, 8]]] },
@@ -1263,7 +1255,7 @@ const SONGS = {
     { inst: 'hat', layer: 1, drum: ['..x...x...x...x.', '..x...x...x...x.', '..x...x...x...x.', '..x.x.x...x.x.x.'] },
     { inst: 'bell', layer: 1, notes: [[[0, 12, 16]], [], [[0, 14, 16]], []] },
   ] },
-  // 疾風丸: fast and driving; a flute line over running bass, an echo of it chasing behind from the second form
+  // 逍ｾ鬚ｨ荳ｸ: fast and driving; a flute line over running bass, an echo of it chasing behind from the second form
   hayate: { bpm: 160, root: 45, scale: 'minor', bars: 4, tracks: [
     { inst: 'kick', layer: 0, drum: ['x...x...x...x...', 'x...x...x...x...', 'x...x...x...x...', 'x...x...x.x.x.x.'] },
     { inst: 'hat', layer: 0, drum: ['.x.x.x.x.x.x.x.x', '.x.x.x.x.x.x.x.x', '.x.x.x.x.x.x.x.x', '.x.x.x.xxxxxxxxx'] },
@@ -1341,12 +1333,12 @@ function sfx(n) {
 // run state
 // =====================================================================
 let state = 'title';
-let RUN = null;        // { mode: 'stage'|'free', st, life (0 通常 / 1 決死 / 2 泡沫), diff }
+let RUN = null;        // { mode: 'stage'|'free', st, life (0 騾壼ｸｸ / 1 豎ｺ豁ｻ / 2 豕｡豐ｫ), diff }
 // index is what records are stored under; LIFE_ORDER is how the choices are shown.
-// 簡単: life slowly comes back, half a diamond at a time, after a while without being hit
+// 邁｡蜊・ life slowly comes back, half a diamond at a time, after a while without being hit
 // every mode: 50 to a life, and a life lost brings the player straight back where it fell, full and briefly untouchable.
-// 泡沫 has the one life and any hit ends it
-const LIFE = [{ name: '通常', lives: 5 }, { name: '決死', lives: 3 }, { name: '泡沫', lives: 1, oneHit: true }];
+// 豕｡豐ｫ has the one life and any hit ends it
+const LIFE = [{ name: '騾壼ｸｸ', lives: 5 }, { name: '豎ｺ豁ｻ', lives: 3 }, { name: '豕｡豐ｫ', lives: 1, oneHit: true }];
 const LIFE_ORDER = [0, 1, 2], LIFE_TK = ['t', 'kt', 'ut'];
 // hurt nothing for a while, and the life comes back a little at a time
 const HPMAX = 50, REGEN_WAIT = 2, REGEN_RATE = 5, RESPAWN_INV = 1.8;
@@ -1438,7 +1430,7 @@ function laser(ang, o = {}) {
   const L = Object.assign({ x: org.x, y: org.y, ang, warn: .8 * F.warn, act: .3, w: 26, t: 0, rot: 0, follow: false, snipe: false, fired: false }, o);
   if (!L.snipe) L.w *= F.vw || 1;
   lasers.push(L);
-  // 固有光: the enemy's own touch on its beams
+  // 蝗ｺ譛牙・: the enemy's own touch on its beams
   if (F.lsig && !L.snipe) {
     L.sig = F.lsig; L.fdir = Math.random() < .5 ? 1 : -1;
     if (F.lsig === 'twinl' && !o.noTwin) twinOf(L);
@@ -1451,7 +1443,7 @@ function twinOf(L) {
   if (!L2.follow) { L2.x -= Math.sin(L.ang) * 36; L2.y += Math.cos(L.ang) * 36; L2.off = 0; }
   lasers.push(L2);
 }
-// a beam with one of the habits (癖) of the 派生形
+// a beam with one of the habits (逋・ of the 豢ｾ逕溷ｽ｢
 function vlaser(ang, o, hb) {
   o = Object.assign({}, o);
   const w0 = o.w || 26, warn0 = o.warn || .8 * F.warn;
@@ -1465,7 +1457,7 @@ function vlaser(ang, o, hb) {
   if (hb === 'twin') twinOf(L);
   return L;
 }
-// the stretches of floor a beam covers: one line, or two when it reflects off a wall (屈折光)
+// the stretches of floor a beam covers: one line, or two when it reflects off a wall (螻域釜蜈・
 function beamSegs(L) {
   const c = Math.cos(L.ang), s = Math.sin(L.ang);
   if (!L.refl) return [[L.x, L.y, L.x + c * 1200, L.y + s * 1200]];
@@ -1477,9 +1469,9 @@ function beamSegs(L) {
   return [[L.x, L.y, qx, qy], [qx, qy, qx + c2 * 1200, qy + s2 * 1200]];
 }
 const segDist = (px, py, x0, y0, x1, y1) => { const dx = x1 - x0, dy = y1 - y0, l2 = dx * dx + dy * dy || 1, k = clamp(((px - x0) * dx + (py - y0) * dy) / l2, 0, 1); return Math.hypot(px - x0 - dx * k, py - y0 - dy * k); };
-// 点滅: a pulsing beam is dark (harmless) every other beat
+// 轤ｹ貊・ a pulsing beam is dark (harmless) every other beat
 const beamDark = L => L.pulse && Math.floor((L.t - L.warn) / .16) % 2 === 1;
-// what a 固有光 does as its beam lights up
+// what a 蝗ｺ譛牙・ does as its beam lights up
 function beamOn(L) {
   L.w0 = L.w;
   if (L.sig === 'glow') beamShots(L, 'glow');
@@ -1522,22 +1514,22 @@ function burstRing(x, y, n, spd, kindFn = K) {
   const off = Math.random() * TAU;
   for (let i = 0; i < n; i++) shootFrom(x, y, off + i / n * TAU, spd, typeof kindFn === 'string' ? kindFn : kindFn());
 }
-// 突進: a bull's rush. It bends a little toward the player on the way, scatters debris where it hits a wall,
+// 遯・ｲ: a bull's rush. It bends a little toward the player on the way, scatters debris where it hits a wall,
 // and from stage 10 turns round to come again (twice, from stage 90 three times), each time on a shorter wind-up.
 const chargeChain = () => { const lv = RUN && RUN.st ? RUN.st.n : 1; return lv < 10 ? 1 : lv < 90 ? 2 : 3; };
 function startCharge(aim = .78 * F.warn, spd = 950 * F.spd, chain = chargeChain(), cv = { pa: 'rush', ef: 'none' }) {
   B.mode = 'aim'; B.aimMax = B.aimT = aim; B.cspd = spd; B.cx = P.x; B.cy = P.y; B.vis = 1; B.chain = chain; B.cv = cv; sfx('warn');
   const bd = bounds();
   if (cv.pa === 'blink') {
-    // 瞬突: appears off to one side of the player, then rushes on a shorter wind-up
+    // 迸ｬ遯・ appears off to one side of the player, then rushes on a shorter wind-up
     let x, y, t = 0; do { const a = Math.random() * TAU; x = P.x + Math.cos(a) * 260; y = P.y + Math.sin(a) * 260; } while ((x < bd.x0 + 50 || x > bd.x1 - 50 || y < bd.y0 + 50 || y > bd.y1 - 50) && ++t < 20);
     burst(B.x, B.y, C.mute, 12, 200, .4); B.x = clamp(x, bd.x0 + 50, bd.x1 - 50); B.y = clamp(y, bd.y0 + 50, bd.y1 - 50); B.fade = .2;
     B.aimMax = B.aimT = aim * .7;
   } else if (cv.pa === 'lane') {
-    // 横薙ぎ: from the far side wall, along the player's row
+    // 讓ｪ阮吶℃: from the far side wall, along the player's row
     B.x = P.x < W / 2 ? W - 60 : 60; B.y = clamp(P.y, bd.y0 + 40, bd.y1 - 40); B.fade = .2;
   } else if (cv.pa === 'leap') {
-    // 跳躍: up and out of reach; it comes down on the marked circle
+    // 霍ｳ霄・ up and out of reach; it comes down on the marked circle
     B.mode = 'leap'; B.air = true; B.airT = aim + .25;
     zone(P.x, P.y, { r: 64, warn: aim + .25 });
     const z = zones[zones.length - 1]; B.lx = z.x; B.ly = z.y;
@@ -1615,13 +1607,13 @@ function spawner(prop, kindFn) {
       case 'dropper': b.drop = { every: .28, t: .28, kind: b.kind === 'w' ? 'r' : 'w', left: 4 }; break;
       case 'stutter': b.stut = { on: .3, off: .22, t: 0, s }; break;
       case 'colorshift': if (b.kind === 'w') b.shift = { t: .75, to: 'r' }; break;
-      // 房弾: four shots turning round a centre that flies on
+      // 謌ｿ蠑ｾ: four shots turning round a centre that flies on
       case 'cluster': { const w = vdir * 2.6, vx = b.vx, vy = b.vy; b.vx = b.vy = 0; b.orbc = { cx: x, cy: y, vx, vy, ang: 0, w, r: 0 }; for (let k = 1; k < 4; k++) { const c = shootFrom(x, y, 0, 0, b.kind); c.r = b.r * .85; c.orbc = { cx: x, cy: y, vx, vy, ang: k * TAU / 4, w, r: 0 }; } break; }
-      // 連弾: three more follow down the same line
+      // 騾｣蠑ｾ: three more follow down the same line
       case 'snake': { const k0 = b.kind, r0 = b.r; for (let k = 1; k <= 3; k++) at(.07 * k, () => { const c = shootFrom(x, y, a, s, k0); c.r = r0; }); break; }
       case 'blink': b.blink = .35; b.blinkPh = 0; break;
     }
-    // 固有弾: every few shots carry the enemy's own touch
+    // 蝗ｺ譛牙ｼｾ: every few shots carry the enemy's own touch
     if (F.bsig && prop !== 'blue' && b.kind !== 'b' && sigN++ % (F.sigEvery || 3) === 0) applySig(b, F.bsig);
     return b;
   };
@@ -1779,7 +1771,7 @@ const SHAPES = {
     return p.vol * p.gap + .5;
   },
 };
-// 固有弾: the enemy's own touch on one shot
+// 蝗ｺ譛牙ｼｾ: the enemy's own touch on one shot
 function applySig(b, id) {
   if (b.big || b.mine || b.orb || b.orbc) return;
   const s = Math.hypot(b.vx, b.vy), a = Math.atan2(b.vy, b.vx);
@@ -1803,7 +1795,7 @@ function applySig(b, id) {
     case 'turn': if (b.kind === 'w') b.shift = { t: .55, to: 'r' }; break;
   }
 }
-// 汎用弾幕: one of the enemy's generic barrages, with that enemy's own counts and speeds
+// 豎守畑蠑ｾ蟷・ one of the enemy's generic barrages, with that enemy's own counts and speeds
 function fireGen(id, opts = {}) {
   const g = GEN[id], p = (F.ginst && F.ginst[id]) || withSize(rollShape(g.e, Math.random), Math.random);
   if (g.m !== 'plain') seenNow.add(g.m);
@@ -1855,7 +1847,7 @@ const ATK = {
   trail() { startCharge(); B.trail = .06; return 2.4; },
   reflow() {
     at(0, () => cover());
-    at(1.0, () => { for (const b of bullets) if (b.own === 'b' && !b.mine) { b.vx = -b.vx; b.vy = -b.vy; if (b.wv) b.wv.a += Math.PI; } pop(B.x, B.y - B.r - 16, '逆流', C.washi, 20); sfx('seal'); });
+    at(1.0, () => { for (const b of bullets) if (b.own === 'b' && !b.mine) { b.vx = -b.vx; b.vy = -b.vy; if (b.wv) b.wv.a += Math.PI; } pop(B.x, B.y - B.r - 16, '騾・ｵ・, C.washi, 20); sfx('seal'); });
     return 2.4;
   },
   converge() {
@@ -1917,12 +1909,12 @@ const ATK = {
     return 2.0;
   },
   sealDash() {
-    fx.sealD = 4.5; sfx('seal'); pop(P.x, P.y - 26, '封 踏', C.shu, 20);
+    fx.sealD = 4.5; sfx('seal'); pop(P.x, P.y - 26, '蟆・雕・, C.shu, 20);
     at(.6, () => cover(whiteOnly)); at(2.4, () => cover(whiteOnly));
     return 4.2;
   },
   sealParry() {
-    fx.sealP = 4.5; sfx('seal'); pop(P.x, P.y - 26, '封 弾', C.shu, 20);
+    fx.sealP = 4.5; sfx('seal'); pop(P.x, P.y - 26, '蟆・蠑ｾ', C.shu, 20);
     at(.6, () => cover()); at(2.4, () => cover());
     return 4.2;
   },
@@ -1950,12 +1942,12 @@ const ATK = {
     return 2.4;
   },
   reverse() {
-    fx.rev = 3.8; sfx('seal'); pop(P.x, P.y - 26, '逆', C.shu, 22);
+    fx.rev = 3.8; sfx('seal'); pop(P.x, P.y - 26, '騾・, C.shu, 22);
     at(.6, () => cover());
     return 3.8;
   },
   swap() {
-    fx.swap = 6; sfx('seal'); banner = { txt: '反転', t: 1.3 };
+    fx.swap = 6; sfx('seal'); banner = { txt: '蜿崎ｻ｢', t: 1.3 };
     at(.8, () => cover(() => (kc++ % 2 ? 'r' : 'w'))); at(3.0, () => cover(() => (kc++ % 2 ? 'r' : 'w')));
     return 5.6;
   },
@@ -1985,12 +1977,12 @@ const ATK = {
   },
   curse() {
     // time enough after it stops following to walk out of even a large circle
-    at(0, () => { zone(P.x, P.y, { follow: 2.2, warn: 2.2 + Math.max(.6, (82 * (F.vz || 1) + 20) / SPEED + .15), r: 82 }); sfx('seal'); pop(P.x, P.y - 26, '呪', C.shu, 22); });
+    at(0, () => { zone(P.x, P.y, { follow: 2.2, warn: 2.2 + Math.max(.6, (82 * (F.vz || 1) + 20) / SPEED + .15), r: 82 }); sfx('seal'); pop(P.x, P.y - 26, '蜻ｪ', C.shu, 22); });
     at(.6, () => cover());
     return 3.2;
   },
   sealAll() {
-    fx.sealP = Math.max(fx.sealP, 3); fx.sealD = Math.max(fx.sealD, 3); sfx('seal'); pop(P.x, P.y - 26, '封 身', C.shu, 20);
+    fx.sealP = Math.max(fx.sealP, 3); fx.sealD = Math.max(fx.sealD, 3); sfx('seal'); pop(P.x, P.y - 26, '蟆・霄ｫ', C.shu, 20);
     at(.5, () => cover());
     return 3.4;
   },
@@ -2002,7 +1994,7 @@ const ATK = {
   },
   tether() {
     tether = { ax: P.x, ay: P.y, vx: (Math.random() - .5) * 80, vy: (Math.random() - .5) * 60, r: 140, life: 6 };
-    sfx('seal'); pop(P.x, P.y - 26, '鎖', C.shu, 22);
+    sfx('seal'); pop(P.x, P.y - 26, '骼・, C.shu, 22);
     at(.6, () => cover()); at(2.8, () => cover());
     return 5.0;
   },
@@ -2014,7 +2006,7 @@ const ATK = {
   },
 };
 // =====================================================================
-// 技 at work
+// 謚 at work
 // =====================================================================
 // a mark shows where something is about to come from; the wind-up ring warns of a blow too quick to answer
 const mark = (x, y, life, o = {}) => marks.push(Object.assign({ x, y, t: 0, life }, o));
@@ -2274,7 +2266,7 @@ const NSK_RUN = {
     B.afterRush = () => withCtxOf(ctx, () => { if (stats.hits === h0) startCharge(.22, 1050 * F.spd, 1, { pa: 'rush', ef: 'none' }); });
     return 2.8;
   },
-  // 剣閃: a step to the player's side and a quick cut, the glue of its strings
+  // 蜑｣髢・ a step to the player's side and a quick cut, the glue of its strings
   swipe(p, lv) {
     const a = aimFrom(P.x, P.y) + Math.PI + (Math.random() < .5 ? .9 : -.9), q = inField(P.x + Math.cos(a) * 95, P.y + Math.sin(a) * 95, B.r + 10);
     mark(q.x, q.y, .22, { col: C.shu });
@@ -2286,7 +2278,7 @@ const NSK_RUN = {
     });
     return .8;
   },
-  // 紅玉散: a ruby orb thrown at the player stops, bursts, and splits four ways, each of which bursts in turn
+  // 邏・脂謨｣: a ruby orb thrown at the player stops, bursts, and splits four ways, each of which bursts in turn
   rubyshot(p, lv) {
     const o = ORG(), a = aimFrom(o.x, o.y), b = shootFrom(o.x, o.y, a, 360 * Math.min(1.4, SPD()), 'r');
     b.r = 13; b.brake = true; b.life = 1.2; b.grace = 2;
@@ -2298,7 +2290,7 @@ const NSK_RUN = {
     });
     return 1.9;
   },
-  // 剛突: a thrust that crosses the whole floor in an instant; the line shows only a moment before. two lives
+  // 蜑帷ｪ・ a thrust that crosses the whole floor in an instant; the line shows only a moment before. two lives
   impale(p, lv) {
     const ctx = actx;
     at(.15, () => withCtxOf(ctx, () => {
@@ -2309,9 +2301,9 @@ const NSK_RUN = {
     }));
     return 1.4;
   },
-  // 魂枯らし: wraps itself in blue for a while: faster, and every hit it lands also takes the breath for a dash
+  // 鬲よ椡繧峨＠: wraps itself in blue for a while: faster, and every hit it lands also takes the breath for a dash
   energyhex(p, lv) {
-    B.hex = 5; sfx('seal'); pop(B.x, B.y - B.r - 30, '魂 枯', C.ao, 20);
+    B.hex = 5; sfx('seal'); pop(B.x, B.y - B.r - 30, '鬲・譫ｯ', C.ao, 20);
     return .6;
   },
   aggression(p, lv) {
@@ -2359,7 +2351,7 @@ const NSK_RUN = {
     B.ndUntil = gt + T + 1.5;
     B.fade = T; B.holdT = T + 1;
     tellOn(T); mark(cx, cy, T, { col: C.shu, big: true });
-    banner = { txt: '虚空砕き', t: 1.0 };
+    banner = { txt: '陌夂ｩｺ遐輔″', t: 1.0 };
     at(T, () => {
       zone(cx, cy, { r: 210 / (F.vz || 1), warn: .01, act: .25, heavy: true });
       // and a shockwave across the whole floor: only a well-timed dash gets through it
@@ -2374,7 +2366,7 @@ const NSK_RUN = {
     const a = aimFrom(B.x, B.y) + Math.PI, q = inField(B.x + Math.cos(a) * 220, B.y + Math.sin(a) * 220, B.r + 10);
     moveB(q.x, q.y);
     if (!invulnerable()) B.hp = Math.min(topOf(fi), B.hp + totalHp() * .006);
-    pop(B.x, B.y - B.r - 30, '刻 戻', C.washi, 18);
+    pop(B.x, B.y - B.r - 30, '蛻ｻ 謌ｻ', C.washi, 18);
     at(.3, () => { const s = 260, T = Math.hypot(P.x - B.x, P.y - B.y) / s; for (const f of [0, 1, -1]) { const c = shootFrom(B.x, B.y, Math.atan2(P.y + f * P.lvy * T - B.y, P.x + f * P.lvx * T - B.x), s, 'r'); c.curse = true; c.r = 11; c.sealHit = ''; } sfx('seal'); });
     return 1.2;
   },
@@ -2486,11 +2478,11 @@ const NSK_RUN = {
     return lv >= 1 ? 3.6 : 2.6;
   },
 };
-// ---- 定め技: a final's own set pieces. Nothing in them aims at the player: beams, shots, strikes and the body
+// ---- 螳壹ａ謚: a final's own set pieces. Nothing in them aims at the player: beams, shots, strikes and the body
 // itself come from fixed places on the floor in a fixed order, so the way through is a route to learn, and it is
 // the speed of the attack and the route, not the number of shots, that make them hard ----
 const fixBeam = (x, y, ang, o = {}) => lasers.push(Object.assign({ x, y, ang, warn: Math.max(.45, .7 * F.warn), act: .35, w: 20, t: 0, rot: 0, follow: false, snipe: false }, o));
-// 道筋: a final technique of its own. The floor is a grid; one safe way through it, cell by cell, is drawn
+// 驕鍋ｭ・ a final technique of its own. The floor is a grid; one safe way through it, cell by cell, is drawn
 // fresh for each technique, and every other cell is struck in turn, by lightning, by a beam down a whole row or
 // column, or by a line of shots along it. Each step's warning shows while the last is still to come, so the way
 // has to be read ahead, step by step. One step to a neighbouring cell (or across a corner) always has time enough.
@@ -2571,7 +2563,7 @@ const mazeRun = (p, lv) => {
 };
 const FIX = {
   F_maze: { roll: rollMaze, run: mazeRun },
-  // 光柵: parallel beams across the floor, in one of three ways: waves shifted half a step (the safe lanes move),
+  // 蜈画涎: parallel beams across the floor, in one of three ways: waves shifted half a step (the safe lanes move),
   // one beam after another marching across (stay behind it), or pairs closing in from both edges and opening again
   F_beams: { roll: (r, n) => ({ dir: ['v', 'h', 'd1', 'd2'][r() * 4 | 0], mode: 'shift', n: 4 + (r() * 3 | 0), waves: 3 + (r() < .4), gap: .55 + r() * .15, blue: n >= 23 && r() < .3, off: r(), back: r() < .5 }),
     run(p, lv) {
@@ -2600,7 +2592,7 @@ const FIX = {
       });
       return waves * p.gap + .9;
     } },
-  // 定め輪光: beams turning from a fixed point (the middle or a corner), starting from a fixed angle
+  // 螳壹ａ霈ｪ蜈・ beams turning from a fixed point (the middle or a corner), starting from a fixed angle
   F_sweep: { roll: r => ({ at: ['mid', 'tl', 'tr', 'bl', 'br'][r() * 5 | 0], arms: 2 + (r() * 3 | 0), a0: r() * TAU, rot: sgn(r) * (.5 + r() * .2), dur: 3 + r() * .8 }),
     run(p, lv) {
       const bd = bounds(), pt = { mid: [W / 2, CY], tl: [bd.x0, bd.y0], tr: [bd.x1, bd.y0], bl: [bd.x0, bd.y1], br: [bd.x1, bd.y1] }[p.at];
@@ -2611,7 +2603,7 @@ const FIX = {
       mark(pt[0], pt[1], 1.0); sfx('warn');
       return p.dur + 1.2;
     } },
-  // 弾列: fast lines of shots from the edges, each line with one opening at a fixed place
+  // 蠑ｾ蛻・ fast lines of shots from the edges, each line with one opening at a fixed place
   F_lanes: { roll: r => ({ sides: [['l', 'r'], ['t', 'b'], ['l', 't', 'r', 'b'], ['t', 'l', 'b', 'r']][r() * 4 | 0], rows: 4 + (r() * 3 | 0), gap: .45 + r() * .15, holes: Array.from({ length: 8 }, () => .15 + r() * .7), sp: 260 + r() * 60 }),
     run(p, lv) {
       const rows = p.rows + Math.min(2, lv), bd = bounds();
@@ -2629,7 +2621,7 @@ const FIX = {
       });
       return rows * p.gap + 1.4;
     } },
-  // 四方撃ち: emitters at fixed points round the edge fire straight streams along fixed lines, one after another
+  // 蝗帶婿謦・■: emitters at fixed points round the edge fire straight streams along fixed lines, one after another
   F_cross: { roll: r => ({ pts: [4, 6, 8][r() * 3 | 0], rot: r() * TAU, dir: sgn(r), toward: r() < .5, len: 5 + (r() * 3 | 0), sp: 280 + r() * 60, step: .3 + r() * .1 }),
     run(p, lv) {
       const n = p.pts, T0 = .7, pts = [];
@@ -2644,7 +2636,7 @@ const FIX = {
       }));
       return T0 + rounds * n * p.step + 1;
     } },
-  // 定め突進: the body itself runs a fixed course (a Z, an X, the edge of the floor, a cross), marked out first
+  // 螳壹ａ遯・ｲ: the body itself runs a fixed course (a Z, an X, the edge of the floor, a cross), marked out first
   F_rush: { roll: r => ({ path: ['Z', 'X', 'box', 'plus', 'N'][r() * 5 | 0], flip: r() < .5, sp: 640 + r() * 140 }),
     run(p, lv) {
       const bd = bounds(), x0 = bd.x0 + 70, x1 = bd.x1 - 70, y0 = bd.y0 + 60, y1 = bd.y1 - 60, xm = W / 2, ym = (y0 + y1) / 2;
@@ -2665,7 +2657,7 @@ const FIX = {
       B.holdT = t + .6;
       return t + .5;
     } },
-  // 落雷格子: strikes on a fixed grid, in one of three ways: the two colours of a checkerboard in turn, whole rows
+  // 關ｽ髮ｷ譬ｼ蟄・ strikes on a fixed grid, in one of three ways: the two colours of a checkerboard in turn, whole rows
   // marching across the floor one after another, or lines of strikes crossing it diagonally from a corner
   F_grid: { roll: r => ({ mode: 'checker', sp: 120 + r() * 20, waves: 3 + (r() < .5), gap: .7 + r() * .15, ox: r(), oy: r(), axis: r() < .5 ? 'x' : 'y', back: r() < .5, corner: r() * 4 | 0 }),
     run(p, lv) {
@@ -2695,7 +2687,7 @@ const FIX = {
       });
       return waves * p.gap + 1;
     } },
-  // 定め雨: needles shot in from one edge down fixed lanes, in a fixed order, sweeping across and back
+  // 螳壹ａ髮ｨ: needles shot in from one edge down fixed lanes, in a fixed order, sweeping across and back
   F_rain: { roll: r => ({ side: 't', cols: 8 + (r() * 4 | 0), order: ['lr', 'rl', 'out', 'in'][r() * 4 | 0], step: .1 + r() * .05, len: 3 + (r() * 2 | 0), passes: 2 + (r() < .4) }),
     run(p, lv) {
       const bd = bounds(), n = p.cols, passes = p.passes + (lv >= 2), vert = p.side === 't' || p.side === 'b';
@@ -2719,7 +2711,7 @@ const FIX = {
       at(0, () => sfx('warn'));
       return t + 1.2;
     } },
-  // 迫り壁: walls close from both sides, each with an opening at a fixed height, the openings never level
+  // 霑ｫ繧雁｣・ walls close from both sides, each with an opening at a fixed height, the openings never level
   F_walls: { roll: r => ({ axis: r() < .6 ? 'x' : 'y', pairs: 2 + (r() < .4), gap: 1.0 + r() * .3, holes: Array.from({ length: 6 }, () => .2 + r() * .6), sp: 170 + r() * 40 }),
     run(p, lv) {
       const bd = bounds(), pairs = p.pairs + (lv >= 2);
@@ -2789,11 +2781,11 @@ function runSkill(j, lv, u = 'u' + ++unitN) {
   }), s);
 }
 // =====================================================================
-// 手作りの鬼: the pieces their own skills are made of
+// 謇倶ｽ懊ｊ縺ｮ鬯ｼ: the pieces their own skills are made of
 // =====================================================================
-// props on the floor (灯籠 lanterns, 旗 flags) and the enemy's afterimages; each can be cut or broken by a returned shot
+// props on the floor (轣ｯ邀 lanterns, 譌・flags) and the enemy's afterimages; each can be cut or broken by a returned shot
 let props = [], clones = [], scriptId = 0;
-// a sound from a place: louder as it nears, and from the side of the screen it comes from (風切り音)
+// a sound from a place: louder as it nears, and from the side of the screen it comes from (鬚ｨ蛻・ｊ髻ｳ)
 function cueFrom(x, y, dur, f0 = 900, f1 = 2400) {
   if (!ac || muted || !noiseBuf) { musReady(); if (!ac || muted || !noiseBuf) return; }
   const vx = cam.x + SW / cam.z / 2, half = SW / cam.z / 2, t = ac.currentTime;
@@ -2897,7 +2889,7 @@ function hitHand(b) {
   for (const o of clones.concat(props)) if (Math.hypot(b.x - o.x, b.y - o.y) < (o.kind ? 14 : B.r) + b.r) { breakHand(o); return true; }
   return false;
 }
-// 風の結界: untouchable in a wind that drives the player one way; flags stand upwind, and cutting all of them ends it
+// 鬚ｨ縺ｮ邨千阜: untouchable in a wind that drives the player one way; flags stand upwind, and cutting all of them ends it
 function startWindBar(T, dirX, dirY) {
   B.barrier = true; B.windBar = { t: T };
   wind = { ax: dirX, ay: dirY, warn: .4, t: T + .4, str: 120 };
@@ -2912,7 +2904,7 @@ function startWindBar(T, dirX, dirY) {
 function endWindBar(broken) {
   B.barrier = false; B.windBar = null; wind = null;
   props = props.filter(p => p.kind !== 'flag');
-  if (broken) { banner = { txt: '破', t: 1 }; addShake(8); sfx('break'); }
+  if (broken) { banner = { txt: '遐ｴ', t: 1 }; addShake(8); sfx('break'); }
 }
 function stepWindBar(dt) { if (B.windBar && (B.windBar.t -= dt) <= 0) endWindBar(false); }
 function drawHand() {
@@ -2942,44 +2934,43 @@ function drawHand() {
 // ---- the skills of each hand-made enemy. Each returns how long the enemy stays committed ----
 const later = (d, fn) => { const id = scriptId; at(d, () => { if (id === scriptId) fn(); }); };
 const HAND = {
-  // ===== 灯守 =====
-  // 灯し撃ち: three white shots in a fan, twice
+  // ===== 轣ｯ螳・=====
+  // 轣ｯ縺玲茶縺｡: three white shots in a fan, twice
   h_shoot(s, lv) {
     for (let v = 0; v < 2 + (lv >= 1); v++) at(v * .55, () => { volley(B.x, B.y, 3, .22, 230); sfx('shot'); });
     return 1.7;
   },
-  // 灯籠置き: lanterns set round the player, each glowing a moment before it fires a white shot at it
+  // 轣ｯ邀鄂ｮ縺・ lanterns set round the player, each glowing a moment before it fires a white shot at it
   h_lantern(s, lv) {
     const max = fi >= 1 ? 3 : 2, have = props.filter(p => p.kind === 'lantern').length, a0 = Math.atan2(B.y - P.y, B.x - P.x);
     for (let k = have; k < max; k++) { const a = a0 + (k + 1) * TAU / (max + 1), q = inField(P.x + Math.cos(a) * 240, P.y + Math.sin(a) * 240, 40); props.push({ kind: 'lantern', x: q.x, y: q.y, period: 2.4, next: 1.2 + k * .5, life: 16, glow: 0 }); }
     burst(B.x, B.y, C.kin, 10, 160, .4); sfx('seal');
     return 1.0;
   },
-  // 火の輪: a ring of white with one red shot in it, set on the player; it stops a breath, then opens out
+  // 轣ｫ縺ｮ霈ｪ: a ring of white with one red shot in it, set on the player; it stops a breath, then opens out
   h_ring(s, lv) {
     const n = 16, a0 = aimFrom(B.x, B.y);
     for (let i = 0; i < n; i++) { const a = a0 + i / n * TAU, b = shootFrom(B.x + Math.cos(a) * 26, B.y + Math.sin(a) * 26, a, 0, i === 0 ? 'r' : 'w'); b.stop = { t: .35, wait: 0, spd: 170, phase: 1, ang: a }; }
     sfx('shot');
     return 1.8;
   },
-  // 跳び込み: a short wind-up, then a hop at the player; parried as it lands, 灯守 reels
+  // 霍ｳ縺ｳ霎ｼ縺ｿ: a short wind-up, then a hop at the player; parried as it lands, 轣ｯ螳・reels
   h_lunge(s, lv) { startCharge(.55, 650, 1, { pa: 'rush', ef: 'none' }); return 2.0; },
-  // 灯籠連ね: the lanterns fire one after another, in a fixed order, each glowing first
+  // 轣ｯ邀騾｣縺ｭ: the lanterns fire one after another, in a fixed order, each glowing first
   h_chain(s, lv) {
     if (props.filter(p => p.kind === 'lantern').length < 3) HAND.h_lantern(s, lv);
     const ls = props.filter(p => p.kind === 'lantern');
     ls.forEach((p, k) => { p.queue = [gt + .9 + k * .5, gt + 2.4 + k * .5]; p.next = 4; });
     return 3.6;
   },
-  // 送り火: a large slow white flame; returned, it breaks into embers that all fly back at 灯守
-  h_okuribi(s, lv) {
+  // 騾√ｊ轣ｫ: a large slow white flame; returned, it breaks into embers that all fly back at 轣ｯ螳・  h_okuribi(s, lv) {
     const b = shootFrom(B.x, B.y, aimFrom(B.x, B.y), 100, 'w');
     b.r = 18; b.dmg = 24; b.life = 9;
     b.onReflect = r => { for (let k = 0; k < 4; k++) { const c = shootFrom(r.x, r.y, 0, 0, 'w'); c.own = 'p'; c.kind = 'w'; c.dmg = r.dmg * .5; c.life = 3; const a = Math.atan2(B.y - r.y, B.x - r.x) + (k - 1.5) * .35; c.vx = Math.cos(a) * 420; c.vy = Math.sin(a) * 420; } };
     sfx('warn');
     return 1.6;
   },
-  // 火の輪・二重: two rings, turning opposite ways as they open
+  // 轣ｫ縺ｮ霈ｪ繝ｻ莠碁㍾: two rings, turning opposite ways as they open
   h_ring2(s, lv) {
     const a0 = aimFrom(B.x, B.y), cx = B.x, cy = B.y;
     for (const [n, rr, w, sp] of [[12, 22, .9, 150], [18, 34, -.9, 185]]) for (let i = 0; i < n; i++) {
@@ -2990,8 +2981,8 @@ const HAND = {
     return 2.2;
   },
 
-  // ===== 疾風丸 =====
-  // 疾駆: a moment's crouch, out over the nearest wall, then in over another (heard, not seen) straight through
+  // ===== 逍ｾ鬚ｨ荳ｸ =====
+  // 逍ｾ鬧・ a moment's crouch, out over the nearest wall, then in over another (heard, not seen) straight through
   // the player and out again; at last down from the sky somewhere near, with a shockwave
   s_shikku(s, lv) {
     B.sink = .3; sfx('dash');
@@ -3001,7 +2992,7 @@ const HAND = {
     });
     return 6.2;
   },
-  // 風刃: half a circle round the player, scattering red blades that wait, then fly outward
+  // 鬚ｨ蛻・ half a circle round the player, scattering red blades that wait, then fly outward
   s_kaze(s, lv) {
     const cx = P.x, cy = P.y, R = 170, a0 = Math.atan2(B.y - cy, B.x - cx), dir = Math.random() < .5 ? 1 : -1, n = 7 + (lv >= 1 ? 2 : 0), T = .7;
     B.holdT = T + .2;
@@ -3010,19 +3001,25 @@ const HAND = {
     sfx('dash');
     return T + 1.2;
   },
-  // 回り斬り: gone with a sound, and behind the player a breath later, cutting
+  // 蝗槭ｊ譁ｬ繧・ gone with a sound, behind the player a breath later, a moment drawing the blade back (seen and heard),
+  // then one cut across the fan in front of it. Step away while it draws, or dash through the cut
   s_mawari(s, lv) {
     B.out = true; burst(B.x, B.y, C.mute, 12, 200, .3); sfx('dash');
     later(.35, () => {
-      const q = inField(P.x - P.fx * 62, P.y - P.fy * 62, 30);
-      B.out = false; B.x = q.x; B.y = q.y; B.tx = q.x; B.ty = q.y;
-      const a0 = aimFrom(B.x, B.y);
-      for (let i = 0; i < 7; i++) { const b = shootFrom(B.x, B.y, a0 + (i / 6 - .5) * 1.2, 520, 'r'); b.life = .3; b.dmg = 24; }
-      sfx('slash');
+      const q = inField(P.x - P.fx * 80, P.y - P.fy * 80, 30);
+      B.out = false; B.x = q.x; B.y = q.y; B.tx = q.x; B.ty = q.y; B.holdT = .8;
+      B.sink = .3; sfx('warn');
+      later(.3, () => {
+        const a0 = aimFrom(B.x, B.y), reach = 105;
+        slashes.push({ x: B.x + Math.cos(a0) * 40, y: B.y + Math.sin(a0) * 40, a: a0 + Math.PI / 2, life: .22, r: 46 });
+        sfx('slash');
+        const d = Math.hypot(P.x - B.x, P.y - B.y);
+        if (d < reach + P.r && Math.abs(angDiff(Math.atan2(P.y - B.y, P.x - B.x), a0)) < .75) hurt(24);
+      });
     });
-    return 1.0;
+    return 1.3;
   },
-  // 影分身: the body and two afterimages crouch, then run through the player from three sides at once.
+  // 蠖ｱ蛻・ｺｫ: the body and two afterimages crouch, then run through the player from three sides at once.
   // Only the body casts a shadow
   s_bunshin(s, lv) {
     const a0 = Math.random() * TAU, R = 330, spd = 850;
@@ -3037,7 +3034,7 @@ const HAND = {
     });
     return 1.6;
   },
-  // 影縫い: three afterimages stand round the player and throw white blades in turn; a blade returned undoes its thrower
+  // 蠖ｱ邵ｫ縺・ three afterimages stand round the player and throw white blades in turn; a blade returned undoes its thrower
   s_kagenui(s, lv) {
     const set = [];
     for (let k = 0; k < 3; k++) { const a = -Math.PI / 2 + k * TAU / 3, q = inField(P.x + Math.cos(a) * 190, P.y + Math.sin(a) * 190, 30), c = { x: q.x, y: q.y, vx: 0, vy: 0, life: 3.4 }; clones.push(c); set.push(c); }
@@ -3048,7 +3045,7 @@ const HAND = {
     }));
     return 2.6;
   },
-  // 疾駆・三連: out over a wall; two afterimages come in, then the body itself, the last on a longer wind (heard)
+  // 逍ｾ鬧・・荳蛾｣: out over a wall; two afterimages come in, then the body itself, the last on a longer wind (heard)
   s_shikku3(s, lv) {
     B.sink = .3; sfx('dash');
     later(.3, () => {
@@ -3067,7 +3064,7 @@ const HAND = {
     });
     return 7.4;
   },
-  // 疾風迅雷: wrapped in wind, a charge straight at the player, and lightning falling behind it in a double helix
+  // 逍ｾ鬚ｨ霑・峭: wrapped in wind, a charge straight at the player, and lightning falling behind it in a double helix
   s_shippu(s, lv) {
     B.sink = .5; sfx('seal');
     for (let k = 0; k < 6; k++) at(k * .08, () => burst(B.x, B.y, C.ao, 6, 180, .3));
@@ -3085,20 +3082,20 @@ const HAND = {
     });
     return 2.6;
   },
-  // 風の結界: untouchable for eight seconds in a wind that drives the player one way
+  // 鬚ｨ縺ｮ邨千阜: untouchable for eight seconds in a wind that drives the player one way
   s_barrier(s, lv) {
     const a = Math.floor(Math.random() * 4), dir = [[1, 0], [-1, 0], [0, 1], [0, -1]][a];
-    startWindBar(8, dir[0], dir[1]); say('風よ!', { t: 1.2, col: C.ao });
+    startWindBar(8, dir[0], dir[1]); say('鬚ｨ繧・', { t: 1.2, col: C.ao });
     return 1.2;
   },
-  // 鎌鼬: five red whirlwinds set in a circle round the player; they close in a moment later
+  // 骼碁ｼｬ: five red whirlwinds set in a circle round the player; they close in a moment later
   s_kamaitachi(s, lv) {
     const cx = P.x, cy = P.y, a0 = Math.random() * TAU;
     for (let k = 0; k < 5; k++) { const a = a0 + k * TAU / 5, x = cx + Math.cos(a) * 150, y = cy + Math.sin(a) * 150, b = shootFrom(x, y, 0, 0, 'r'); b.r = 16; b.dmg = 20; b.life = 3.2; b.grace = 2; b.stop = { t: .8, wait: 0, spd: 200, phase: 1, ang: Math.atan2(cy - y, cx - x) }; }
     sfx('seal');
     return 1.6;
   },
-  // 追い風斬り: only in its wind: from downwind, chasing the player
+  // 霑ｽ縺・｢ｨ譁ｬ繧・ only in its wind: from downwind, chasing the player
   s_oikaze(s, lv) {
     if (!B.windBar || !wind) return HAND.s_kaze(s, lv);
     const w = wind.ax > 0 ? 0 : wind.ax < 0 ? 1 : wind.ay > 0 ? 2 : 3;
@@ -3108,10 +3105,10 @@ const HAND = {
     later(.5, () => { B.x = q.x; B.y = q.y; const v = through(q.x, q.y, 620); runB(v.vx, v.vy, 3, 30, () => { B.out = true; dropNear(.6, false); }, () => { const a = Math.atan2(B.run.vy, B.run.vx), want = aimFrom(B.x, B.y), na = a + clamp(angDiff(want, a), -1.4 / 120, 1.4 / 120); B.run.vx = Math.cos(na) * 620; B.run.vy = Math.sin(na) * 620; }); });
     return 3.8;
   },
-  // 颶風斬: a word, the name, then wall to wall through the player four times, faster each time, heard before seen
+  // 鬚ｶ鬚ｨ譁ｬ: a word, the name, then wall to wall through the player four times, faster each time, heard before seen
   s_gufu(s, lv) {
-    say('止まって見えるぜ!', { t: .9, col: C.washi });
-    later(.9, () => say('颶風斬', { t: 1.6, col: C.shu, size: 44 }));
+    say('豁｢縺ｾ縺｣縺ｦ隕九∴繧九●!', { t: .9, col: C.washi });
+    later(.9, () => say('鬚ｶ鬚ｨ譁ｬ', { t: 1.6, col: C.shu, size: 44 }));
     later(1.0, () => {
       const w = nearestWall(B.x, B.y), q = wallPoint(w, w < 2 ? B.y / H : B.x / W, 80), a = Math.atan2(q.y - B.y, q.x - B.x);
       runB(Math.cos(a) * 900, Math.sin(a) * 900, 2, 40, () => {
@@ -3148,21 +3145,21 @@ function dropNear(T, wave) {
 // ---- the hand-made enemies themselves ----
 // forms: the skills each form brings (they stay in the forms after), its combinations, and what it says on entering
 const HANDMADE = [
-  { n: 1, name: '灯守', glyph: '灯', song: 'himori', total: 60,
+  { n: 1, name: '轣ｯ螳・, glyph: '轣ｯ', song: 'himori', total: 60,
     forms: [
-      { share: .55, skills: [['h_shoot', '灯し撃ち'], ['h_lantern', '灯籠置き'], ['h_ring', '火の輪'], ['h_lunge', '跳び込み', { moves: 1 }]] },
-      { share: .45, line: '…ならば、もう少しだけ、灯を強くしましょうか。', skills: [['h_chain', '灯籠連ね'], ['h_okuribi', '送り火'], ['h_ring2', '火の輪・二重']], combos: [['h_lunge', 'h_shoot']] },
+      { share: .55, skills: [['h_shoot', '轣ｯ縺玲茶縺｡'], ['h_lantern', '轣ｯ邀鄂ｮ縺・], ['h_ring', '轣ｫ縺ｮ霈ｪ'], ['h_lunge', '霍ｳ縺ｳ霎ｼ縺ｿ', { moves: 1 }]] },
+      { share: .45, line: '窶ｦ縺ｪ繧峨・縲√ｂ縺・ｰ代＠縺縺代∫・繧貞ｼｷ縺上＠縺ｾ縺励ｇ縺・°縲・, skills: [['h_chain', '轣ｯ邀騾｣縺ｭ'], ['h_okuribi', '騾√ｊ轣ｫ'], ['h_ring2', '轣ｫ縺ｮ霈ｪ繝ｻ莠碁㍾']], combos: [['h_lunge', 'h_shoot']] },
     ],
-    defeat: '良い腕です。灯は、消えずに済みましたね。…どうか、先へ。' },
-  { n: 10, name: '疾風丸', glyph: '疾', song: 'hayate', total: 140, spd: 1.08, gap: .8,
+    defeat: '濶ｯ縺・・縺ｧ縺吶ら・縺ｯ縲∵ｶ医∴縺壹↓貂医∩縺ｾ縺励◆縺ｭ縲やｦ縺ｩ縺・°縲∝・縺ｸ縲・ },
+  { n: 10, name: '逍ｾ鬚ｨ荳ｸ', glyph: '逍ｾ', song: 'hayate', total: 140, spd: 1.08, gap: .8,
     forms: [
-      { share: .35, skills: [['s_shikku', '疾駆', { moves: 1 }], ['s_kaze', '風刃', { moves: 1 }], ['s_mawari', '回り斬り', { moves: 1 }]], combos: [['s_shikku', 's_mawari']] },
-      { share: .35, line: '見えてるか? 俺の影が!', skills: [['s_bunshin', '影分身', { moves: 1 }], ['s_kagenui', '影縫い'], ['s_shikku3', '疾駆・三連', { moves: 1 }], ['s_shippu', '疾風迅雷', { moves: 1 }]],
+      { share: .35, skills: [['s_shikku', '逍ｾ鬧・, { moves: 1 }], ['s_kaze', '鬚ｨ蛻・, { moves: 1 }], ['s_mawari', '蝗槭ｊ譁ｬ繧・, { moves: 1 }]], combos: [['s_shikku', 's_mawari']] },
+      { share: .35, line: '隕九∴縺ｦ繧九°? 菫ｺ縺ｮ蠖ｱ縺・', skills: [['s_bunshin', '蠖ｱ蛻・ｺｫ', { moves: 1 }], ['s_kagenui', '蠖ｱ邵ｫ縺・], ['s_shikku3', '逍ｾ鬧・・荳蛾｣', { moves: 1 }], ['s_shippu', '逍ｾ鬚ｨ霑・峭', { moves: 1 }]],
         combos: [['s_bunshin', 's_kagenui'], ['s_mawari', 's_shikku3'], ['s_mawari', 's_kagenui']] },
-      { share: .30, line: '…ちっ。ついて来られるかよ、これに!', enter: 's_barrier', skills: [['s_barrier', '風の結界'], ['s_gufu', '颶風斬', { moves: 1, big: 1 }], ['s_kamaitachi', '鎌鼬'], ['s_oikaze', '追い風斬り', { moves: 1 }]],
+      { share: .30, line: '窶ｦ縺｡縺｣縲ゅ▽縺・※譚･繧峨ｌ繧九°繧医√％繧後↓!', enter: 's_barrier', skills: [['s_barrier', '鬚ｨ縺ｮ邨千阜'], ['s_gufu', '鬚ｶ鬚ｨ譁ｬ', { moves: 1, big: 1 }], ['s_kamaitachi', '骼碁ｼｬ'], ['s_oikaze', '霑ｽ縺・｢ｨ譁ｬ繧・, { moves: 1 }]],
         combos: [['s_barrier', 's_kamaitachi', 's_kaze'], ['s_kamaitachi', 's_shikku3', 's_gufu'], ['s_mawari', 's_kamaitachi']] },
     ],
-    defeat: '…速さで、負けた…? あいつ以外に…' },
+    defeat: '窶ｦ騾溘＆縺ｧ縲∬ｲ縺代◆窶ｦ? 縺ゅ＞縺､莉･螟悶↓窶ｦ' },
 ];
 function makeHand(def, idx) {
   const skills = [], combos = [], idxOf = {};
@@ -3177,7 +3174,7 @@ function makeHand(def, idx) {
     skills.forEach((s, j) => { if (s.intro > i) return; pool.push('k:' + j); wt['k:' + j] = s.intro === i && i ? 1.4 : 1; });
     combos.forEach((c, j) => { if (c.intro > i) return; pool.push('c:' + j); wt['c:' + j] = 1.2; });
     return {
-      name: ['一ノ型', '二ノ型', '三ノ型', '四ノ型', '五ノ型', '六ノ型'][i], pool, wt, skills, combos, shapes, props: [], bsig: '', lsig: '', sigEvery: 3,
+      name: ['荳繝主梛', '莠後ヮ蝙・, '荳峨ヮ蝙・, '蝗帙ヮ蝙・, '莠斐ヮ蝙・, '蜈ｭ繝主梛'][i], pool, wt, skills, combos, shapes, props: [], bsig: '', lsig: '', sigEvery: 3,
       spd: def.spd || 1, gap: (def.gap || 1) * Math.max(.6, 1 - i * .07), warn: 1, den: 1, red: .3, white: false, jit: false,
       vn: 1, vsz: 1, vsp: 1, vz: 1, vw: 1, hp: Math.round(def.total * f.share / sum), special: [],
       line: f.line || '', enter: f.enter ? 'k:' + idxOf[f.enter] : '',
@@ -3207,7 +3204,7 @@ function skillBody(s, lv) {
 }
 // a pool entry: one skill (k:j) or a combination (c:j), whose parts run one after another
 // the sign of a pool entry: the first character of its (first) skill's name, and how many more follow in a string
-const signOf = id => { const ss = entrySkills(id), nm = ss[0].name.replace(/^.*・/, ''); return nm[0] + (ss.length > 1 ? '+' + (ss.length - 1) : ''); };
+const signOf = id => { const ss = entrySkills(id), nm = ss[0].name.replace(/^.*繝ｻ/, ''); return nm[0] + (ss.length > 1 ? '+' + (ss.length - 1) : ''); };
 const entrySkills = id => id[0] === 'k' ? [F.skills[+id.slice(2)]] : F.combos[+id.slice(2)].parts.map(j => F.skills[j]);
 function runEntry(id) {
   const u = 'u' + ++unitN;
@@ -3219,14 +3216,14 @@ function runEntry(id) {
 function comboStep() {
   const cb = B.cmb, c = cb.c, j = c.parts[cb.i++], s = F.skills[j];
   // the string so far, across the top
-  cb.names = (cb.names || []).concat(s.name); say(cb.names.join(' → '), { t: 2.6, col: C.kin, size: cb.names.length > 3 ? 22 : 26 });
+  cb.names = (cb.names || []).concat(s.name); say(cb.names.join(' 竊・'), { t: 2.6, col: C.kin, size: cb.names.length > 3 ? 22 : 26 });
   // a chain is one unit; the second half of a pair fired together is a unit of its own
   const d = runSkill(j, Math.max(0, fi - s.intro), c.kind === 'dual' && cb.i > 1 ? cb.u + 'b' : cb.u);
   if (cb.i >= c.parts.length) { B.cmb = null; return d; }
   return c.kind === 'dual' ? .6 : s.moves ? d : d * .75;
 }
 
-// ---- 派生形 ----
+// ---- 豢ｾ逕溷ｽ｢ ----
 function runVar(id, I) {
   const v = VAR[id];
   seenNow.add(v.fam === 'L' ? 'laser' : 'charge');
@@ -3305,12 +3302,11 @@ function startAttack() {
 // enemy's signature skill; between, every technique is new, each built from pieces (a barrage, a set piece, a beam,
 // a rush, a technique) drawn without putting any back until all have been used, so nothing comes round again
 // until everything else has. A short breather comes every fifth step.
-const FIN_NM = `百花繚乱 天地鳴動 千変万化 疾風迅雷 電光石火 森羅万象 鬼哭啾啾 阿鼻叫喚 一騎当千 紅蓮華 奈落落とし 黄泉路
-逢魔ヶ辻 夜叉舞 鬼火曼荼羅 輪廻転生 焦熱地獄 無間地獄 天網恢恢 羅刹天 金剛力 不動明王 月下氷人 花鳥風月 風林火山 天変地異
-乾坤一擲 波瀾万丈 一網打尽 絶体絶命 八面六臂 七転八倒 百戦錬磨 捲土重来 画竜点睛 明鏡止水 虚々実々 魑魅魍魎 驚天動地
-因果応報 東奔西走 氷輪 雷鳴轟 嵐の目 残月 朧月夜 陽炎 鬼灯 曼珠沙華 散華 落花狼藉 雲外蒼天 地獄車 修羅の巷 血の池 針の山
-三途の川 賽の河原 六道輪廻 天上天下 一刀両断 乱れ桜 乱れ雪 星月夜 流星群 天の川 鬼門開き 丑三つ時 夜明け前 宵闇 黄昏 暁
-業火 冥府 常世 幽明境 夢幻泡影 鏡花水月 胡蝶の夢 天衣無縫 迅雷 烈風 怒濤 万華鏡`.split(/\s+/);
+const FIN_NM = `逋ｾ闃ｱ郢壻ｹｱ 螟ｩ蝨ｰ魑ｴ蜍・蜊・､我ｸ・喧 逍ｾ鬚ｨ霑・峭 髮ｻ蜈臥浹轣ｫ 譽ｮ鄒・ｸ・ｱ｡ 鬯ｼ蜩ｭ蝠ｾ蝠ｾ 髦ｿ鮠ｻ蜿ｫ蝟・荳鬨主ｽ灘鴻 邏・動闖ｯ 螂郁誠關ｽ縺ｨ縺・鮟・ｳ芽ｷｯ
+騾｢鬲斐Ω霎ｻ 螟懷初闊・鬯ｼ轣ｫ譖ｼ闕ｼ鄒・霈ｪ蟒ｻ霆｢逕・辟ｦ辭ｱ蝨ｰ迯・辟｡髢灘慍迯・螟ｩ邯ｲ諱｢諱｢ 鄒・飴螟ｩ 驥大央蜉・荳榊虚譏守視 譛井ｸ区ｰｷ莠ｺ 闃ｱ魑･鬚ｨ譛・鬚ｨ譫礼↓螻ｱ 螟ｩ螟牙慍逡ｰ
+荵ｾ蝮､荳謫ｲ 豕｢轢ｾ荳・ｸ・荳邯ｲ謇灘ｰｽ 邨ｶ菴鍋ｵｶ蜻ｽ 蜈ｫ髱｢蜈ｭ閾・荳・ｻ｢蜈ｫ蛟・逋ｾ謌ｦ骭ｬ逎ｨ 謐ｲ蝨滄㍾譚･ 逕ｻ遶懃せ逹・譏朱升豁｢豌ｴ 陌壹・ｮ溘・鬲鷹ｭ・ｭ埼ｭ・鬩壼､ｩ蜍募慍
+蝗譫懷ｿ懷ｱ 譚ｱ螂碑･ｿ襍ｰ 豌ｷ霈ｪ 髮ｷ魑ｴ霓・蠏舌・逶ｮ 谿区怦 譛ｧ譛亥､・髯ｽ轤・鬯ｼ轣ｯ 譖ｼ迴豐呵庄 謨｣闖ｯ 關ｽ闃ｱ迢ｼ阯・髮ｲ螟冶直螟ｩ 蝨ｰ迯・ｻ・菫ｮ鄒・・蟾ｷ 陦縺ｮ豎 驥昴・螻ｱ
+荳蛾斐・蟾・雉ｽ縺ｮ豐ｳ蜴・蜈ｭ驕楢ｼｪ蟒ｻ 螟ｩ荳雁､ｩ荳・荳蛻荳｡譁ｭ 荵ｱ繧梧｡・荵ｱ繧碁妛 譏滓怦螟・豬∵弌鄒､ 螟ｩ縺ｮ蟾・鬯ｼ髢髢九″ 荳台ｸ峨▽譎・螟懈・縺大燕 螳ｵ髣・鮟・・ 證・讌ｭ轣ｫ 蜀･蠎・蟶ｸ荳・蟷ｽ譏主｢・螟｢蟷ｻ豕｡蠖ｱ 髀｡闃ｱ豌ｴ譛・閭｡陜ｶ縺ｮ螟｢ 螟ｩ陦｣辟｡邵ｫ 霑・峭 辜磯｢ｨ 諤呈ｿ､ 荳・庄髀｡`.split(/\s+/);
 function finalKit(st, r, noDash) {
   const n = st.n, pk = arr => arr[Math.floor(r() * arr.length)];
   const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -3369,7 +3365,7 @@ function finalKit(st, r, noDash) {
       parts = parts.filter(Boolean);
       if (!parts.length) parts = [piece('pat')];
       const base = names[ni % names.length], round = Math.floor(ni / names.length); ni++;
-      return { name: round ? base + '・' + ('弐参肆伍陸'[round - 1] || round + 1) : base, mode, parts };
+      return { name: round ? base + '繝ｻ' + ('蠑仙盾閧・ｼ埼匣'[round - 1] || round + 1) : base, mode, parts };
     },
   };
 }
@@ -3400,7 +3396,7 @@ function finalPlan() {
   }
   return plan;
 }
-// 百鬼夜行's final: every boss of the 番付 comes again in order, with its own barrage; between them come the
+// 逋ｾ鬯ｼ螟懆｡・s final: every boss of the 逡ｪ莉・comes again in order, with its own barrage; between them come the
 // last boss's own final techniques and short breathers; it ends on everything at once
 function lastFinalPlan(st, r, kit) {
   const L = st.forms.length, plan = [{ k: 's', j: 0, lv: L }];
@@ -3431,7 +3427,7 @@ function runSeg(sg) {
     case 's': return runSkill(sg.j, sg.lv, 'fs' + B.fstep);
     case 'fe': return holdUnit(sg.u, runFinalEl(sg.el, sg.lv, sg.name), sg.el);
     case 'boss': { const e = ENEMY[sg.n - 1]; say(e.name, { t: 2.4, col: C.kin }); return REC[e.rec].fn(1.25); }
-    case 'climax': { pop(B.x, B.y - B.r - 18, '百鬼夜行・明け', C.shu, 22); REC.grandwheel.fn(1.1); at(4.2, () => REC.procession.fn(1.1)); return 8.6; }
+    case 'climax': { pop(B.x, B.y - B.r - 18, '逋ｾ鬯ｼ螟懆｡後・譏弱￠', C.shu, 22); REC.grandwheel.fn(1.1); at(4.2, () => REC.procession.fn(1.1)); return 8.6; }
     // a breather: nothing comes
     default: return 1.6;
   }
@@ -3441,7 +3437,7 @@ function startFinal() {
   B.final = 'on'; B.barrier = true; B.finalT = 0; seenNow.add('final');
   clearHostile();
   B.mode = 'idle'; B.stagger = 0; B.busy = 99; EM = null; decoys = []; B.seal = false; stones = null; launchers = []; B.guard = false;
-  banner = { txt: '終ノ型', sub: RUN.st.n === 150 && !RUN.st.free ? '百鬼夜行 ・ 夜明けまで耐え抜け' : RUN.st.skills[0].name, t: 2.4 };
+  banner = { txt: '邨ゅヮ蝙・, sub: RUN.st.n === 150 && !RUN.st.free ? '逋ｾ鬯ｼ螟懆｡・繝ｻ 螟懈・縺代∪縺ｧ閠舌∴謚懊￠' : RUN.st.skills[0].name, t: 2.4 };
   addShake(10); sfx('phase');
   // the pieces run one after another: each starts when the last one hands over
   B.fplan = finalPlan(); B.fstep = 0; B.fnext = 2.4; B.fburst = false;
@@ -3466,7 +3462,7 @@ function endFinal() {
   clearHostile();
   B.stagger = B.staggerMax = FINAL_STAGGER; B.nextAtk = .8;
   burst(B.x, B.y, C.washi, 50, 380, .9, 3);
-  banner = { txt: '結界崩壊', t: 1.4 };
+  banner = { txt: '邨千阜蟠ｩ螢・, t: 1.4 };
   flash = reduced ? 0 : .5; addShake(10); sfx('break');
 }
 function clearHostile() {
@@ -3480,7 +3476,7 @@ function clearHostile() {
   fx.sealP = fx.sealD = fx.rev = fx.dark = fx.swap = fx.freeze = fx.shrink = fx.pslow = 0; B.hex = 0;
 }
 
-// ---- 発射台: stationary launchers that fire the enemy's own layouts; cut them, or break them with returned shots ----
+// ---- 逋ｺ蟆・床: stationary launchers that fire the enemy's own layouts; cut them, or break them with returned shots ----
 function makeLaunchers(n) {
   launchers = [];
   for (let i = 0; i < n; i++) {
@@ -3496,7 +3492,7 @@ function hitLauncher(l, d) {
   burst(l.x, l.y, C.washi, 26, 300, .6, 3); addShake(6); sfx('break');
   if (!launchers.length) {
     // every launcher down: the enemy loses its cover and reels
-    B.guard = false; pop(B.x, B.y - B.r - 16, '破', C.kin, 28);
+    B.guard = false; pop(B.x, B.y - B.r - 16, '遐ｴ', C.kin, 28);
     damageBoss(F.hp * .3, true, true);
     if (!ending && B.hp > 0 && !invulnerable()) { B.stagger = B.staggerMax = STAGGER; B.busy = 0; }
   }
@@ -3523,19 +3519,19 @@ function hurt(n = 1, pierce = false) {
   let dmg = n <= 3 ? [0, 16, 36, 52][n] : n;
   if (P.oneHit) dmg = P.hp;
   P.hp -= dmg; stats.hits++; stats.taken = (stats.taken || 0) + dmg; P.inv = 1.0; P.combo = 0; P.lastHurt = gt;
-  // 百鬼夜行 feeds on every hit it lands, and under its hex a hit also takes the breath for a dash
-  if (RUN && RUN.st && RUN.st.n === 150 && !RUN.st.free && B.hp > 0 && !invulnerable() && B.final !== 'on') { B.hp = Math.min(topOf(fi), B.hp + totalHp() * .03); pop(B.x, B.y - B.r - 30, '吸', C.shu, 22); }
+  // 逋ｾ鬯ｼ螟懆｡・feeds on every hit it lands, and under its hex a hit also takes the breath for a dash
+  if (RUN && RUN.st && RUN.st.n === 150 && !RUN.st.free && B.hp > 0 && !invulnerable() && B.final !== 'on') { B.hp = Math.min(topOf(fi), B.hp + totalHp() * .03); pop(B.x, B.y - B.r - 30, '蜷ｸ', C.shu, 22); }
   // (never while a shockwave that only a dash gets through is on its way)
   if (B.hex > 0 && gt > (B.ndUntil || 0) && !ndAlive()) P.dashCD = Math.max(P.dashCD, 1.6);
   const big = dmg >= 15;
   addShake(big ? 16 : 10); hitstop = big ? .09 : .06; flash = reduced ? 0 : big ? .35 : .2;
   burst(P.x, P.y, C.shu, big ? 30 : 16, 260);
-  pop(P.x, P.y - 24, '−' + Math.round(dmg), C.shu, big ? 24 : 18);
+  pop(P.x, P.y - 24, '竏・ + Math.round(dmg), C.shu, big ? 24 : 18);
   sfx('hurt');
   if (P.hp <= 0) {
     // a life gone: back on the spot, full, and untouchable for a moment; the last one ends it
     P.lives--;
-    if (P.lives > 0) { P.hp = P.max; P.inv = RESPAWN_INV; P.lastHurt = gt; burst(P.x, P.y, C.washi, 30, 240, .6); pop(P.x, P.y - 40, '残 ' + P.lives, C.washi, 26); sfx('phase'); }
+    if (P.lives > 0) { P.hp = P.max; P.inv = RESPAWN_INV; P.lastHurt = gt; burst(P.x, P.y, C.washi, 30, 240, .6); pop(P.x, P.y - 40, '谿・' + P.lives, C.washi, 26); sfx('phase'); }
     else { P.hp = 0; lose(''); }
   }
   return true;
@@ -3545,15 +3541,15 @@ function lose(why) {
   burst(P.x, P.y, C.washi, 40, 320, .9); sfx('lose');
 }
 const parryable = b => !b.mine && b.kind !== 'b' && (fx.swap > 0 ? b.kind === 'r' : b.kind === 'w');
-// 封じ弾: a hit also seals parry or dash for a while
+// 蟆√§蠑ｾ: a hit also seals parry or dash for a while
 function applySeal(k) {
   if (k === 'P') fx.sealP = Math.max(fx.sealP, 3); else fx.sealD = Math.max(fx.sealD, 3);
-  pop(P.x, P.y - 30, k === 'P' ? '封 弾' : '封 踏', C.murasaki, 18); sfx('seal');
+  pop(P.x, P.y - 30, k === 'P' ? '蟆・蠑ｾ' : '蟆・雕・, C.murasaki, 18); sfx('seal');
 }
 function reflect(b, d) {
   if (b.fake && fx.swap <= 0) {
     // the fake white bursts in your face when parried
-    burstRing(b.x, b.y, 10, 190, 'r'); pop(b.x, b.y - 14, '偽', C.shu, 22); sfx('zap');
+    burstRing(b.x, b.y, 10, 190, 'r'); pop(b.x, b.y - 14, '蛛ｽ', C.shu, 22); sfx('zap');
     const i = bullets.indexOf(b); if (i >= 0) bullets.splice(i, 1);
     P.parryHit = true; return;
   }
@@ -3568,19 +3564,19 @@ function reflect(b, d) {
   if (b.big) { b.big = false; b.r = 12; } else b.r = 7;
   P.parryHit = true;
   burst(b.x, b.y, C.kin, perfect ? 14 : 7, perfect ? 320 : 200, .35);
-  if (perfect) { stats.perfects++; pop(b.x, b.y - 14, '極', C.kin, 26); hitstop = Math.max(hitstop, .06); sfx('perfect'); }
+  if (perfect) { stats.perfects++; pop(b.x, b.y - 14, '讌ｵ', C.kin, 26); hitstop = Math.max(hitstop, .06); sfx('perfect'); }
   else { hitstop = Math.max(hitstop, .025); sfx('parry'); }
-  // some shots do something more when returned (送り火 breaks into embers; a thrown blade undoes its thrower)
+  // some shots do something more when returned (騾√ｊ轣ｫ breaks into embers; a thrown blade undoes its thrower)
   if (b.onReflect) { const f = b.onReflect; b.onReflect = null; f(b); }
 }
 const sealForm = () => F.special.includes('sealPform') && !B.sealDone;
 const invulnerable = () => ending || B.barrier || B.seal || B.guard || RL.survive || sealForm();
 // force: the breaking blow itself, which the enemy's brief invulnerability never swallows.
-// pierce: a 極 return, which gets through that invulnerability at a dwindling rate.
+// pierce: a 讌ｵ return, which gets through that invulnerability at a dwindling rate.
 // the damage dealt, in the large figures the enemy's life is shown in
 const dmgPop = d => pop(B.x + (Math.random() - .5) * 30, B.y - B.r - 10 - Math.random() * 16, Math.round(d * HPDISP).toLocaleString('en-US'), C.kin, 15);
-// every blow the player lands counts for 0.4 of what it did in the first build: fights run long
-const DMG_OUT = .4;
+// every blow the player lands counts for 0.8 of what it did in the first build
+const DMG_OUT = .8;
 function damageBoss(d, raw, force, pierce) {
   if (invulnerable() || B.out) return;
   d *= DMG_OUT;
@@ -3611,7 +3607,7 @@ function formDown() {
   if (RUN.mode === 'stage' && RUN.st.revive && !B.revived) {
     B.revived = true; B.hp = F.hp * .5; seenNow.add('revive');
     clearHostile(); B.mode = 'idle'; B.busy = 0; B.stagger = 0; B.nextAtk = 1.2;
-    banner = { txt: '再起', t: 1.6 }; addShake(10); sfx('phase');
+    banner = { txt: '蜀崎ｵｷ', t: 1.6 }; addShake(10); sfx('phase');
     return;
   }
   win();
@@ -3642,7 +3638,7 @@ function chargeParried() {
   P.combo++; stats.parries++; stats.maxCombo = Math.max(stats.maxCombo, P.combo); P.parryHit = true;
   const mx = (B.x + P.x) / 2, my = (B.y + P.y) / 2;
   if (invulnerable()) {
-    pop(mx, my - 20, '受け流し', C.washi, 22); burst(mx, my, C.washi, 16, 260, .4);
+    pop(mx, my - 20, '蜿励￠豬√＠', C.washi, 22); burst(mx, my, C.washi, 16, 260, .4);
     hitstop = .08; addShake(6); sfx('parry');
     return;
   }
@@ -3650,7 +3646,7 @@ function chargeParried() {
   const f0 = fi;
   damageBoss(BREAK_DMG * mult(), false, true);
   if (!ending && fi === f0 && !invulnerable() && B.hp > 0) { B.stagger = B.staggerMax = STAGGER; B.nextAtk = .4; }
-  pop(mx, my - 20, '崩し', C.kin, 30);
+  pop(mx, my - 20, '蟠ｩ縺・, C.kin, 30);
   burst(mx, my, C.kin, 30, 380, .6, 3);
   hitstop = .15; flash = reduced ? 0 : .5; addShake(10); sfx('big');
 }
@@ -3665,7 +3661,7 @@ function slash(label) {
   damageBoss(BREAK_DMG * .4 * mult(), true);
 }
 
-// ---- 封印石: step on three stones in order to drop the seal ----
+// ---- 蟆∝魂遏ｳ: step on three stones in order to drop the seal ----
 function makeStones() {
   const b = bounds(), pts = [], r = Math.random;
   for (let i = 0; i < 3; i++) {
@@ -3688,13 +3684,13 @@ function stepStones() {
     const p = stones.pts[inside];
     if (!p.on) {
       if (p.label === stones.next) {
-        p.on = true; stones.next++; sfx('stone'); pop(p.x, p.y - 30, '壱弐参'[p.label - 1], C.kin, 22);
+        p.on = true; stones.next++; sfx('stone'); pop(p.x, p.y - 30, '螢ｱ蠑仙盾'[p.label - 1], C.kin, 22);
         if (stones.next > 3) {
-          B.seal = false; B.sealOff = 9; banner = { txt: '封印解除', t: 1.0 }; sfx('break');
+          B.seal = false; B.sealOff = 9; banner = { txt: '蟆∝魂隗｣髯､', t: 1.0 }; sfx('break');
         }
       } else {
         stones.pts.forEach(q => q.on = false); stones.next = 1;
-        burstRing(p.x, p.y, 16, 170, 'r'); pop(p.x, p.y - 30, '誤', C.shu, 24); sfx('zap');
+        burstRing(p.x, p.y, 16, 170, 'r'); pop(p.x, p.y - 30, '隱､', C.shu, 24); sfx('zap');
         if (F.mem) stones.show = 1.2;
       }
     }
@@ -3725,7 +3721,7 @@ const finalSealLeft = () => RUN && RUN.st && RUN.st.fseal && B.final === 'on' ? 
 const finalSeal = k => finalSealLeft() > 0 && (RUN.st.fseal === k || RUN.st.fseal === 'A');
 function tryParry() {
   if (P.dead || ending) return;
-  if (parrySealed()) { pop(P.x, P.y - 22, '封', C.shu, 16); return; }
+  if (parrySealed()) { pop(P.x, P.y - 22, '蟆・, C.shu, 16); return; }
   // a launcher within reach is cut instead of parrying
   const ln = launchers.length ? nearestLauncher(P.x, P.y) : null;
   if (ln && Math.hypot(ln.x - P.x, ln.y - P.y) < 16 + P.r + SLASH_REACH) {
@@ -3739,7 +3735,7 @@ function tryParry() {
   // a lantern, flag or afterimage within reach is cut by the same press
   cutHandNear();
   if (B.stagger > 0 && !invulnerable() && !slashSealed() && Math.hypot(B.x - P.x, B.y - P.y) < B.r + P.r + SLASH_REACH) {
-    if (P.slashCD <= 0) { P.slashCD = SLASH_CD; slash('斬'); }
+    if (P.slashCD <= 0) { P.slashCD = SLASH_CD; slash('譁ｬ'); }
     return;
   }
   // with the enemy in reach the same press also cuts it; a cut that lands is no wasted parry
@@ -3749,9 +3745,9 @@ function tryParry() {
 }
 function tryDash(mv, big) {
   if (P.dead || ending || P.dashCD > 0 || P.dashT > 0) return;
-  if (dashSealed()) { pop(P.x, P.y - 22, '封', C.shu, 16); return; }
+  if (dashSealed()) { pop(P.x, P.y - 22, '蟆・, C.shu, 16); return; }
   // the big dash runs on stamina
-  if (big && P.stam < BIG_COST) { pop(P.x, P.y - 22, '息切れ', C.mute, 14); return; }
+  if (big && P.stam < BIG_COST) { pop(P.x, P.y - 22, '諱ｯ蛻・ｌ', C.mute, 14); return; }
   let dx = mv.x, dy = mv.y;
   if (!dx && !dy) { dx = P.fx; dy = P.fy; }
   const l = Math.hypot(dx, dy) || 1, v = big ? BIG_V : DASH_V;
@@ -3831,8 +3827,8 @@ function update(dt) {
     if (k > fi) { fi = k; F = forms[fi]; B.phase = fi + 1; banner = { txt: F.name, t: 1.2 }; setupForm(); }
     if (stats.time >= RL.survive) win();
   }
-  if (!ending && RL.limit && stats.time >= RL.limit) lose('時間切れ');
-  // 封弾の型: endured for its set time, then the seal lifts and the form falls
+  if (!ending && RL.limit && stats.time >= RL.limit) lose('譎る俣蛻・ｌ');
+  // 蟆∝ｼｾ縺ｮ蝙・ endured for its set time, then the seal lifts and the form falls
   if (!ending && !RL.survive && sealForm() && B.final !== 'on') {
     B.formT += dt;
     if (B.formT >= F.surviveT) { B.sealDone = true; B.hp = floorOf(fi); formDown(); }
@@ -3859,7 +3855,7 @@ function update(dt) {
   if (P.dashT > 0) {
     P.dashT -= dt; P.x += P.dvx * dt; P.y += P.dvy * dt;
     after.push({ x: P.x, y: P.y, a: .45 });
-    if (!P.dashHit && B.stagger > 0 && !invulnerable() && !slashSealed() && Math.hypot(B.x - P.x, B.y - P.y) < B.r + P.r + 8) { P.dashHit = true; slash('踏斬'); }
+    if (!P.dashHit && B.stagger > 0 && !invulnerable() && !slashSealed() && Math.hypot(B.x - P.x, B.y - P.y) < B.r + P.r + 8) { P.dashHit = true; slash('雕乗脈'); }
   } else if (!P.dead) {
     // looking round costs half the pace
     const lk = look ? .5 : 1;
@@ -3894,7 +3890,7 @@ function update(dt) {
   if (!P.dead && !ending && P.hp < P.max && gt - P.lastHurt > REGEN_WAIT) P.hp = Math.min(P.max, P.hp + REGEN_RATE * dt);
   if (P.parryT > 0) {
     P.parryT -= dt;
-    if (P.parryT <= 0 && !P.parryHit) { P.parryCD = Math.max(0, P.parryCD) + WHIFF; P.combo = 0; pop(P.x, P.y - 22, '空', C.mute, 16); sfx('whiff'); }
+    if (P.parryT <= 0 && !P.parryHit) { P.parryCD = Math.max(0, P.parryCD) + WHIFF; P.combo = 0; pop(P.x, P.y - 22, '遨ｺ', C.mute, 16); sfx('whiff'); }
   }
 
   // enemy
@@ -3951,21 +3947,21 @@ function update(dt) {
     const cvp = B.cv ? B.cv.pa : 'rush';
     B.hookT -= dt;
     if (cvp !== 'lane') { const tx = P.x - B.x, ty = P.y - B.y; if (tx * B.cvx + ty * B.cvy > 0 || B.hookT > 0) { const a = Math.atan2(B.cvy, B.cvx), sp = Math.hypot(B.cvx, B.cvy), w = B.hookT > 0 ? 3.2 : dashSealed() ? .45 : 1.1, na = a + clamp(angDiff(Math.atan2(ty, tx), a), -w * dt, w * dt); B.cvx = Math.cos(na) * sp; B.cvy = Math.sin(na) * sp; } }
-    // 稲妻: one sharp turn halfway
+    // 遞ｲ螯ｻ: one sharp turn halfway
     if (cvp === 'zig' && !B.zigDone && B.ctrav >= B.cdist * .45) { B.zigDone = true; const a = Math.atan2(B.cvy, B.cvx), sp = Math.hypot(B.cvx, B.cvy), na = a + (angDiff(aimFrom(B.x, B.y), a) > 0 ? .85 : -.85); B.cvx = Math.cos(na) * sp; B.cvy = Math.sin(na) * sp; B.cdist += 140; }
     const cef = B.cv ? B.cv.ef : 'none';
     if (cef === 'wake') { B.wakeT -= dt; if (B.wakeT <= 0) { B.wakeT = .1; const a = Math.atan2(B.cvy, B.cvx); for (const sd of [-1, 1]) shootFrom(B.x, B.y, a + sd * Math.PI / 2, 110 * SPD(), K()); } }
     if (cef === 'quake') { B.qd += Math.hypot(B.cvx, B.cvy) * dt; if (B.qd >= 70) { B.qd = 0; zone(B.x, B.y, { r: 30, warn: .6 * F.warn }); } }
     B.x += B.cvx * dt; B.y += B.cvy * dt; B.ctrav += Math.hypot(B.cvx, B.cvy) * dt;
     if (Math.random() < .7) parts.push({ x: B.x, y: B.y, vx: 0, vy: 0, life: .25, max: .25, col: C.shu, size: 6 });
-    // 残影: shots left along the charge, which wait and then turn on the player
+    // 谿句ｽｱ: shots left along the charge, which wait and then turn on the player
     if (B.trail) { B.trailT -= dt; if (B.trailT <= 0) { B.trailT = B.trail; const b = shootFrom(B.x, B.y, 0, 0, K()); b.stop = { t: .7, wait: 0, spd: 160 * SPD(), phase: 1 }; } }
     const m = B.r + 6, out = B.x < m || B.x > W - m || B.y < m + 30 || B.y > H - m;
     B.x = clamp(B.x, m, W - m); B.y = clamp(B.y, m + 30, H - m);
     const d = Math.hypot(B.x - P.x, B.y - P.y);
     if (P.parryT > 0 && d < B.r + P.r + 30) chargeParried();
     else if (d < B.r + P.r - 4) hurt(30);
-    // 壁跳ね: bounces off the walls instead of stopping
+    // 螢∬ｷｳ縺ｭ: bounces off the walls instead of stopping
     if (B.mode === 'dash' && out && B.bounces > 0) {
       B.bounces--; if (B.x <= m || B.x >= W - m) B.cvx = -B.cvx; if (B.y <= m + 30 || B.y >= H - m) B.cvy = -B.cvy;
       B.ctrav = 0; B.cdist = 520; addShake(4); burstRing(B.x, B.y, NN(6), 120 * SPD()); sfx('zap');
@@ -4042,9 +4038,9 @@ function update(dt) {
       if (L.t >= L.warn) lasers.splice(i, 1);
       continue;
     }
-    // a tracking beam (凝視) turns toward the player at a limited rate
+    // a tracking beam (蜃晁ｦ・ turns toward the player at a limited rate
     if (L.off && L.follow) { L.x -= Math.sin(L.ang) * L.off; L.y += Math.cos(L.ang) * L.off; }
-    // a tracking beam (凝視) turns toward the player, never faster than the player can run around it
+    // a tracking beam (蜃晁ｦ・ turns toward the player, never faster than the player can run around it
     if (L.track) { const da = angDiff(aimFrom(L.x, L.y), L.ang), tr = Math.min(L.track, .72 * SPEED / Math.max(60, Math.hypot(P.x - L.x, P.y - L.y))); L.ang += clamp(da, -tr * dt, tr * dt); }
     if (!L.on && L.t >= L.warn) { L.on = true; sfx(L.blue ? 'bluebeam' : 'beam'); beamOn(L); }
     if (L.sig && L.t > L.warn) {
@@ -4060,7 +4056,7 @@ function update(dt) {
     if (L.t > L.warn + L.act) { if (L.sig === 'branch') beamShots(L, 'branch'); lasers.splice(i, 1); }
   }
 
-  // strike zones (落雷, 追い雷, 呪印, 連雷)
+  // strike zones (關ｽ髮ｷ, 霑ｽ縺・峭, 蜻ｪ蜊ｰ, 騾｣髮ｷ)
   for (let i = zones.length - 1; i >= 0; i--) {
     const z = zones[i];
     z.t += dt;
@@ -4143,7 +4139,7 @@ function update(dt) {
       if (b.x < 6 || b.x > W - 6) { b.vx = -b.vx; b.x = clamp(b.x, 6, W - 6); b.bounce--; }
       else if (b.y < 36 || b.y > H - 6) { b.vy = -b.vy; b.y = clamp(b.y, 36, H - 6); b.bounce--; }
     }
-    // 壁割れ弾: on reaching a wall, three pieces come back off it
+    // 螢∝牡繧悟ｼｾ: on reaching a wall, three pieces come back off it
     if (b.wsplit && b.own === 'b' && b.age > .2 && (b.x < 8 || b.x > W - 8 || b.y < 38 || b.y > H - 8)) {
       const nx = b.x < 8 ? 1 : b.x > W - 8 ? -1 : 0, ny = b.y < 38 ? 1 : b.y > H - 8 ? -1 : 0, a = Math.atan2(ny, nx), sp = Math.hypot(b.vx, b.vy) * .8;
       for (const da of [-.6, 0, .6]) shootFrom(clamp(b.x, 10, W - 10), clamp(b.y, 40, H - 10), a + da, sp, b.kind === 'b' ? 'b' : 'r');
@@ -4162,16 +4158,16 @@ function update(dt) {
       // counter stance: the shot comes straight back as a white shot
       if (B.stance > 0 && !invulnerable()) {
         const a = aimFrom(b.x, b.y); b.own = 'b'; b.kind = 'w'; b.vx = Math.cos(a) * 560; b.vy = Math.sin(a) * 560; b.life = 4; b.perfect = false;
-        pop(B.x, B.y - B.r - 16, '返', C.washi, 22); sfx('block'); continue;
+        pop(B.x, B.y - B.r - 16, '霑・, C.washi, 22); sfx('block'); continue;
       }
       if (F.special.includes('shield') && !invulnerable()) {
         let da = Math.atan2(b.y - B.y, b.x - B.x) - B.shieldA; da = Math.atan2(Math.sin(da), Math.cos(da));
         if (Math.abs(da) < 1.1) { bullets.splice(i, 1); burst(b.x, b.y, C.washi, 6, 160, .25); sfx('block'); continue; }
       }
       bullets.splice(i, 1);
-      if (invulnerable() || (RL.perfectOnly && !b.perfect)) { burst(b.x, b.y, C.washi, 5, 160, .25); sfx('block'); if (RL.perfectOnly && !invulnerable()) pop(B.x, B.y - B.r - 14, '無', C.mute, 18); continue; }
+      if (invulnerable() || (RL.perfectOnly && !b.perfect)) { burst(b.x, b.y, C.washi, 5, 160, .25); sfx('block'); if (RL.perfectOnly && !invulnerable()) pop(B.x, B.y - B.r - 14, '辟｡', C.mute, 18); continue; }
       burst(b.x, b.y, b.perfect ? C.kin : C.washi, b.perfect ? 10 : 5, 180, .3);
-      // a 極 return cuts through the enemy's brief invulnerability
+      // a 讌ｵ return cuts through the enemy's brief invulnerability
       damageBoss(b.dmg, false, false, b.perfect ? { unit: b.unit || b.dmg } : null);
     }
   }
@@ -4186,7 +4182,7 @@ function update(dt) {
   for (let i = streaks.length - 1; i >= 0; i--) { streaks[i].life -= dt; if (streaks[i].life <= 0) streaks.splice(i, 1); }
   if (banner) { banner.t -= dt; if (banner.t <= 0) banner = null; }
 }
-// 明滅弾: harmless while it is dark
+// 譏取ｻ・ｼｾ: harmless while it is dark
 const blinkOff = b => b.blink && Math.floor(b.age / b.blink + b.blinkPh) % 2 === 1;
 function checkHitPlayer(b, i) {
   if (blinkOff(b)) return;
@@ -4194,7 +4190,7 @@ function checkHitPlayer(b, i) {
   if (P.parryT > 0 && parryable(b) && d < P.r + b.r + PARRY_R) { reflect(b, d); return; }
   if (d < P.r + b.r - 2 && hurt(b.dmg || (b.kind === 'w' ? 16 : 20), b.kind === 'b')) {
     if (b.sealHit) applySeal(b.sealHit);
-    if (b.curse) { fx.pslow = Math.max(fx.pslow || 0, 3); pop(P.x, P.y - 26, '呪 鈍', C.murasaki, 20); }
+    if (b.curse) { fx.pslow = Math.max(fx.pslow || 0, 3); pop(P.x, P.y - 26, '蜻ｪ 驤・, C.murasaki, 20); }
     const j = bullets.indexOf(b); if (j >= 0) bullets.splice(j, 1);
   }
 }
@@ -4203,9 +4199,9 @@ function checkHitPlayer(b, i) {
 // drawing
 // =====================================================================
 function diamond(x, y, r) { ctx.beginPath(); ctx.moveTo(x, y - r); ctx.lineTo(x + r, y); ctx.lineTo(x, y + r); ctx.lineTo(x - r, y); ctx.closePath(); }
-const fmtLen = t => t >= 60 ? `${Math.floor(t / 60)}分${Math.round(t % 60) ? Math.round(t % 60) + '秒' : ''}` : `${Math.round(t)}秒`;
+const fmtLen = t => t >= 60 ? `${Math.floor(t / 60)}蛻・{Math.round(t % 60) ? Math.round(t % 60) + '遘・ : ''}` : `${Math.round(t)}遘蛋;
 function fmt(t) { const m = Math.floor(t / 60), s = t - m * 60; return m + ':' + (s < 10 ? '0' : '') + s.toFixed(1); }
-const glyph = () => RUN && RUN.mode === 'stage' ? RUN.st.glyph : '鬼';
+const glyph = () => RUN && RUN.mode === 'stage' ? RUN.st.glyph : '鬯ｼ';
 
 function drawEnemy(x, y, alpha, real) {
   ctx.globalAlpha = alpha;
@@ -4220,7 +4216,7 @@ function drawEnemy(x, y, alpha, real) {
   ctx.lineWidth = 3; ctx.strokeStyle = real && (B.mode === 'dash' || B.mode === 'aim') ? C.shu : C.washi; ctx.stroke();
   ctx.fillStyle = real && B.hurtF > 0 ? C.ai : (real && B.stagger > 0 ? C.kin : real && B.stance > 0 ? C.kin : C.washi);
   ctx.font = `800 ${Math.round(B.r * 1.15)}px ${FD}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(real && B.stagger > 0 ? '崩' : real && B.stance > 0 ? '構' : glyph(), x, y + 1);
+  ctx.fillText(real && B.stagger > 0 ? '蟠ｩ' : real && B.stance > 0 ? '讒・ : glyph(), x, y + 1);
   ctx.globalAlpha = 1;
 }
 
@@ -4257,8 +4253,8 @@ function render() {
     for (const p of stones.pts) {
       ctx.beginPath(); ctx.arc(p.x, p.y, 22, 0, TAU);
       ctx.fillStyle = p.on ? C.kin : C.ai2; ctx.fill(); ctx.strokeStyle = p.on ? C.kin : C.washi; ctx.lineWidth = 2; ctx.stroke();
-      if (p.on || stones.show > 0) { ctx.fillStyle = p.on ? C.ai : C.washi; ctx.font = `800 20px ${FD}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('壱弐参'[p.label - 1], p.x, p.y + 1); }
-      else { ctx.fillStyle = C.mute; ctx.font = `800 18px ${FD}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('？', p.x, p.y + 1); }
+      if (p.on || stones.show > 0) { ctx.fillStyle = p.on ? C.ai : C.washi; ctx.font = `800 20px ${FD}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('螢ｱ蠑仙盾'[p.label - 1], p.x, p.y + 1); }
+      else { ctx.fillStyle = C.mute; ctx.font = `800 18px ${FD}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('・・, p.x, p.y + 1); }
     }
   }
   if (tether) {
@@ -4435,7 +4431,7 @@ function render() {
       ctx.strokeStyle = b.kind === 'w' ? C.washi : b.kind === 'b' ? C.ao : C.shu; ctx.lineWidth = 3; ctx.lineCap = 'round';
       ctx.beginPath(); ctx.moveTo(b.x - ux * 12, b.y - uy * 12); ctx.lineTo(b.x + ux * 6, b.y + uy * 6); ctx.stroke();
     } else if (b.kind === 'b') {
-      // 蒼弾: a hollow blue ring, unlike the white disc and the red diamond
+      // 闥ｼ蠑ｾ: a hollow blue ring, unlike the white disc and the red diamond
       ctx.strokeStyle = C.ao; ctx.lineWidth = 3.5; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, TAU); ctx.stroke();
       ctx.fillStyle = C.ao; ctx.beginPath(); ctx.arc(b.x, b.y, 2.5, 0, TAU); ctx.fill();
     } else if (b.kind === 'w') {
@@ -4461,7 +4457,7 @@ function render() {
     if (b.own === 'b' && b.shift) { ctx.strokeStyle = b.shift.to === 'r' ? C.shu : C.washi; ctx.lineWidth = 1.5; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.arc(b.x, b.y, b.r + 5, 0, TAU); ctx.stroke(); ctx.setLineDash([]); }
     ctx.globalAlpha = 1;
   }
-  // 墨: clouds that hide whatever passes under them
+  // 蠅ｨ: clouds that hide whatever passes under them
   for (const k of inks) {
     const a = Math.min(1, k.t * 3, k.life);
     const g = ctx.createRadialGradient(k.x, k.y, k.r * .3, k.x, k.y, k.r);
@@ -4534,12 +4530,12 @@ function render() {
     ctx.fillStyle = C.washi; ctx.fillRect(x0, y0 + bh + 4, bw * Math.max(0, 1 - B.finalT / B.finalLen), 5);
   }
   ctx.textBaseline = 'middle'; ctx.textAlign = 'right'; ctx.fillStyle = B.final === 'on' ? C.shu : C.washi; ctx.font = `800 17px ${FD}`;
-  ctx.fillText(B.final === 'on' ? '終ノ型' : F.name, x0 - 12, y0 + bh / 2);
+  ctx.fillText(B.final === 'on' ? '邨ゅヮ蝙・ : F.name, x0 - 12, y0 + bh / 2);
   ctx.textAlign = 'left'; ctx.font = `800 15px ${FD}`; ctx.fillStyle = C.mute;
   ctx.fillText(RUN.st.name, 14, y0 + bh / 2);
   ctx.textAlign = 'right'; ctx.font = `500 15px ${FM}`;
-  if (RL.limit) { const left = Math.max(0, RL.limit - stats.time); ctx.fillStyle = left < 15 ? C.shu : C.washi; ctx.fillText('残 ' + fmt(left), SW - 14, y0 + bh / 2); }
-  else if (RL.survive) { ctx.fillStyle = C.washi; ctx.fillText('残 ' + fmt(Math.max(0, RL.survive - stats.time)), SW - 14, y0 + bh / 2); }
+  if (RL.limit) { const left = Math.max(0, RL.limit - stats.time); ctx.fillStyle = left < 15 ? C.shu : C.washi; ctx.fillText('谿・' + fmt(left), SW - 14, y0 + bh / 2); }
+  else if (RL.survive) { ctx.fillStyle = C.washi; ctx.fillText('谿・' + fmt(Math.max(0, RL.survive - stats.time)), SW - 14, y0 + bh / 2); }
   else { ctx.fillStyle = C.mute; ctx.fillText(fmt(stats.time), SW - 14, y0 + bh / 2); }
 
   // HUD: what the enemy says, the string of skills it is running, its great techniques: large across the top
@@ -4566,16 +4562,16 @@ function render() {
     ctx.fillStyle = C.line; ctx.fillRect(px, py + 19, pw, 7);
     ctx.fillStyle = P.stam >= BIG_COST ? C.ao : C.mute; ctx.fillRect(px, py + 19, pw * P.stam / STAM_MAX, 7);
     for (let k = BIG_COST; k < STAM_MAX; k += BIG_COST) { ctx.fillStyle = 'rgba(8,13,24,.9)'; ctx.fillRect(px + pw * k / STAM_MAX - 1, py + 19, 2, 7); }
-    if (look) { ctx.textAlign = 'left'; ctx.font = `800 13px ${FD}`; ctx.fillStyle = C.kin; ctx.fillText('見渡し', px + pw + 14, py + 8); }
+    if (look) { ctx.textAlign = 'left'; ctx.font = `800 13px ${FD}`; ctx.fillStyle = C.kin; ctx.fillText('隕区ｸ｡縺・, px + pw + 14, py + 8); }
   }
   const chips = [];
-  if (sealForm() && !RL.survive) chips.push(['封 弾', F.surviveT - B.formT]); else if (sealForm()) chips.push(['封 弾', 0]); else if (finalSeal('P')) chips.push(['封 弾', finalSealLeft()]); else if (fx.sealP > 0) chips.push(['封 弾', fx.sealP]);
-  if (slashSealed()) chips.push(['封 斬', 0]);
-  if (F.special.includes('sealDform')) chips.push(['封 踏', 0]); else if (finalSeal('D')) chips.push(['封 踏', finalSealLeft()]); else if (fx.sealD > 0) chips.push(['封 踏', fx.sealD]);
-  if (fx.rev > 0) chips.push(['逆さ', fx.rev]);
-  if (fx.swap > 0) chips.push(['反転', fx.swap]);
-  if (RL.perfectOnly) chips.push(['極のみ', 0]);
-  if (B.seal && stones) chips.push(['封印 次:' + '壱弐参'[stones.next - 1], 0]);
+  if (sealForm() && !RL.survive) chips.push(['蟆・蠑ｾ', F.surviveT - B.formT]); else if (sealForm()) chips.push(['蟆・蠑ｾ', 0]); else if (finalSeal('P')) chips.push(['蟆・蠑ｾ', finalSealLeft()]); else if (fx.sealP > 0) chips.push(['蟆・蠑ｾ', fx.sealP]);
+  if (slashSealed()) chips.push(['蟆・譁ｬ', 0]);
+  if (F.special.includes('sealDform')) chips.push(['蟆・雕・, 0]); else if (finalSeal('D')) chips.push(['蟆・雕・, finalSealLeft()]); else if (fx.sealD > 0) chips.push(['蟆・雕・, fx.sealD]);
+  if (fx.rev > 0) chips.push(['騾・＆', fx.rev]);
+  if (fx.swap > 0) chips.push(['蜿崎ｻ｢', fx.swap]);
+  if (RL.perfectOnly) chips.push(['讌ｵ縺ｮ縺ｿ', 0]);
+  if (B.seal && stones) chips.push(['蟆∝魂 谺｡:' + '螢ｱ蠑仙盾'[stones.next - 1], 0]);
   ctx.font = `800 14px ${FD}`; ctx.textAlign = 'left';
   let cx = 260;
   for (const [t, v] of chips) {
@@ -4585,9 +4581,9 @@ function render() {
   }
   if (P.combo >= 2) {
     ctx.textAlign = 'right'; ctx.fillStyle = C.kin; ctx.font = `800 24px ${FD}`;
-    ctx.fillText(P.combo + ' 連', SW - 18, SH - 30);
+    ctx.fillText(P.combo + ' 騾｣', SW - 18, SH - 30);
     ctx.font = `500 13px ${FM}`; ctx.fillStyle = C.mute;
-    ctx.fillText('威力 ×' + mult().toFixed(2), SW - 18, SH - 10);
+    ctx.fillText('螽∝鴨 ﾃ・ + mult().toFixed(2), SW - 18, SH - 10);
   }
 
   if (banner) {
@@ -4603,7 +4599,7 @@ function render() {
 // =====================================================================
 // screens
 // =====================================================================
-const VERSION = '0.2.0';
+const VERSION = '0.2.1';
 let selN = 1, life = 0, freeDiff = 1, tempUnlock = false;
 const bestTime = c => Math.min(...LIFE_TK.map(k => c[k] || Infinity));
 const bestScore = c => Math.max(0, ...(c.hs || []));
@@ -4612,7 +4608,7 @@ function show(html) { ov.innerHTML = html; ov.hidden = false; ov.scrollTop = 0; 
 function hideOv() { ov.hidden = true; ov.innerHTML = ''; }
 const nClear = () => Object.keys(save.clr).length;
 
-// ---- 続きから: browsers may throw a background tab away and reload it, so a run in progress is checkpointed ----
+// ---- 邯壹″縺九ｉ: browsers may throw a background tab away and reload it, so a run in progress is checkpointed ----
 const RESUME_KEY = 'kaeshiba.next.resume';
 let resumeData = null, lastCheckpoint = 0;
 function saveResume() {
@@ -4628,9 +4624,9 @@ function loadResume() {
   return null;
 }
 function resumeLabel(d) {
-  const where = d.run.mode === 'stage' ? `${stageByN(d.run.n).name}${d.run.life ? ' ・' + LIFE[d.run.life].name : ''}` : `自由稽古 ${FREE[d.run.diff].name}`;
-  const form = d.final === 'on' ? '終ノ型' : ['一ノ型', '二ノ型', '三ノ型', '四ノ型', '五ノ型', '六ノ型'][d.fi] || '';
-  return `${where} ・ ${form} ・ 命 ${d.php}`;
+  const where = d.run.mode === 'stage' ? `${stageByN(d.run.n).name}${d.run.life ? ' 繝ｻ' + LIFE[d.run.life].name : ''}` : `閾ｪ逕ｱ遞ｽ蜿､ ${FREE[d.run.diff].name}`;
+  const form = d.final === 'on' ? '邨ゅヮ蝙・ : ['荳繝主梛', '莠後ヮ蝙・, '荳峨ヮ蝙・, '蝗帙ヮ蝙・, '莠斐ヮ蝙・, '蜈ｭ繝主梛'][d.fi] || '';
+  return `${where} 繝ｻ ${form} 繝ｻ 蜻ｽ ${d.php}`;
 }
 function continueRun(d) {
   startRun(d.run.mode === 'stage' ? { mode: 'stage', st: stageByN(d.run.n), life: d.run.life }
@@ -4640,48 +4636,48 @@ function continueRun(d) {
   B.hp = Math.max(1, d.bhp); P.hp = Math.max(1, d.php); if (d.plives) P.lives = d.plives; Object.assign(stats, d.stats); stats.won = false;
   B.revived = !!d.revived; B.formT = d.formT || 0; B.sealDone = !!d.sealDone;
   if (d.final === 'on') { B.hp = 1; startFinal(); }
-  else { if (d.final === 'done') { B.final = 'done'; B.hp = 1; } banner = { txt: '続き', sub: F.name, t: 1.2 }; }
+  else { if (d.final === 'done') { B.final = 'done'; B.hp = 1; } banner = { txt: '邯壹″', sub: F.name, t: 1.2 }; }
 }
 function titleScreen() {
   playSong('title'); setSongLevel(9);
   resumeData = loadResume();
   state = 'title'; RUN = null;
   show(`<div class="panel">
-    <p class="eyebrow">弾 ・ 踏 ・ 斬</p>
-    <h2 class="logo">返し刃<small>試作</small></h2>
+    <p class="eyebrow">蠑ｾ 繝ｻ 雕・繝ｻ 譁ｬ</p>
+    <h2 class="logo">霑斐＠蛻・small>隧ｦ菴・/small></h2>
     <ul class="rules">
-      <li><b class="k-w">● 白い弾</b>は当たる直前に<b class="k-g">弾き</b>で跳ね返せる。引きつけるほど<b class="k-g">「極」</b>。</li>
-      <li><b class="k-r">◆ 朱い弾</b>・朱い光線・落雷は弾けない。<b>踏み込み</b>の無敵で抜けるか、かわす。<b class="k-b">○ 青</b>は踏み込みでも抜けられない。</li>
-      <li>弾きの届く距離に鬼がいれば、弾くと同時に<b>斬る</b>。突進を弾けば鬼が<b class="k-g">崩れ</b>、斬れば大きく削れる。</li>
-      <li><b>小踏み込み</b>はその場をかわす一歩。<b>大踏み込み</b>は大技や速い一撃を遠くまで抜けるが、息（青い棒）を使う。<b>見渡し</b>の間は遠くまで見えるが足が遅い。</li>
-      <li>体力は一つの命に50。しばらく当たらなければ戻る。尽きれば命を一つ失い、その場で立ち直る。通常は命5、決死は3、泡沫は1で一撃でも終わり。</li>
-      <li>場は画面より広い。見えない所の鬼と攻めは、画面の端の印が教える。見て、覚えて、破れ。</li>
+      <li><b class="k-w">笳・逋ｽ縺・ｼｾ</b>縺ｯ蠖薙◆繧狗峩蜑阪↓<b class="k-g">蠑ｾ縺・/b>縺ｧ霍ｳ縺ｭ霑斐○繧九ょｼ輔″縺､縺代ｋ縺ｻ縺ｩ<b class="k-g">縲梧･ｵ縲・/b>縲・/li>
+      <li><b class="k-r">笳・譛ｱ縺・ｼｾ</b>繝ｻ譛ｱ縺・・邱壹・關ｽ髮ｷ縺ｯ蠑ｾ縺代↑縺・・b>雕上∩霎ｼ縺ｿ</b>縺ｮ辟｡謨ｵ縺ｧ謚懊￠繧九°縲√°繧上☆縲・b class="k-b">笳・髱・/b>縺ｯ雕上∩霎ｼ縺ｿ縺ｧ繧よ栢縺代ｉ繧後↑縺・・/li>
+      <li>蠑ｾ縺阪・螻翫￥霍晞屬縺ｫ鬯ｼ縺後＞繧後・縲∝ｼｾ縺上→蜷梧凾縺ｫ<b>譁ｬ繧・/b>縲らｪ・ｲ繧貞ｼｾ縺代・鬯ｼ縺・b class="k-g">蟠ｩ繧・/b>縲∵脈繧後・螟ｧ縺阪￥蜑翫ｌ繧九・/li>
+      <li><b>蟆剰ｸ上∩霎ｼ縺ｿ</b>縺ｯ縺昴・蝣ｴ繧偵°繧上☆荳豁ｩ縲・b>螟ｧ雕上∩霎ｼ縺ｿ</b>縺ｯ螟ｧ謚繧・溘＞荳謦・ｒ驕縺上∪縺ｧ謚懊￠繧九′縲∵・・磯搨縺・｣抵ｼ峨ｒ菴ｿ縺・・b>隕区ｸ｡縺・/b>縺ｮ髢薙・驕縺上∪縺ｧ隕九∴繧九′雜ｳ縺碁≦縺・・/li>
+      <li>菴灘鴨縺ｯ荳縺､縺ｮ蜻ｽ縺ｫ50縲ゅ＠縺ｰ繧峨￥蠖薙◆繧峨↑縺代ｌ縺ｰ謌ｻ繧九ょｰｽ縺阪ｌ縺ｰ蜻ｽ繧剃ｸ縺､螟ｱ縺・√◎縺ｮ蝣ｴ縺ｧ遶九■逶ｴ繧九る壼ｸｸ縺ｯ蜻ｽ5縲∵ｱｺ豁ｻ縺ｯ3縲∵ｳ｡豐ｫ縺ｯ1縺ｧ荳謦・〒繧らｵゅｏ繧翫・/li>
+      <li>蝣ｴ縺ｯ逕ｻ髱｢繧医ｊ蠎・＞縲りｦ九∴縺ｪ縺・園縺ｮ鬯ｼ縺ｨ謾ｻ繧√・縲∫判髱｢縺ｮ遶ｯ縺ｮ蜊ｰ縺梧蕗縺医ｋ縲りｦ九※縲∬ｦ壹∴縺ｦ縲∫ｴ繧後・/li>
     </ul>
     <div class="modes">
-      ${resumeData ? `<button type="button" class="mode" data-act="continue"><b>続きから</b><span>${resumeLabel(resumeData)}</span></button>` : ''}
-      <button type="button" class="mode" data-act="select"><b>番付</b><span>討伐 ${nClear()}</span></button>
+      ${resumeData ? `<button type="button" class="mode" data-act="continue"><b>邯壹″縺九ｉ</b><span>${resumeLabel(resumeData)}</span></button>` : ''}
+      <button type="button" class="mode" data-act="select"><b>逡ｪ莉・/b><span>險惹ｼ・${nClear()}</span></button>
     </div>
   </div>
   <p class="ver">ver ${VERSION}</p>`);
 }
-// keepUnlock: only the Ctrl+D+B chord keeps every stage open; any other return to 番付 closes them again
+// keepUnlock: only the Ctrl+D+B chord keeps every stage open; any other return to 逡ｪ莉・closes them again
 function selectScreen(keepUnlock) {
   state = 'select';
   if (!keepUnlock) tempUnlock = false;
   const cells = STAGES.map(s => {
     const c = save.clr[s.n], ok = unlocked(s.n);
     const cls = ['cell', c ? (c.u ? 'uta' : c.k ? 'kes' : c.t ? 'clr' : 'easy') : '', s.n === selN ? 'cur' : ''].join(' ');
-    const rec = c ? `<small>${bestTime(c) < Infinity ? fmt(bestTime(c)) : '―'}</small><small>${bestScore(c) || '―'}</small>` : '';
-    return `<button type="button" class="${cls}" data-act="pick" data-v="${s.n}" ${ok ? '' : 'disabled'} aria-label="${ok ? s.name : '未解放'}">${ok ? s.name : '？'}${rec}</button>`;
+    const rec = c ? `<small>${bestTime(c) < Infinity ? fmt(bestTime(c)) : '窶・}</small><small>${bestScore(c) || '窶・}</small>` : '';
+    return `<button type="button" class="${cls}" data-act="pick" data-v="${s.n}" ${ok ? '' : 'disabled'} aria-label="${ok ? s.name : '譛ｪ隗｣謾ｾ'}">${ok ? s.name : '・・}${rec}</button>`;
   }).join('');
   show(`<div class="panel wide">
-    <div class="row" style="justify-content:space-between"><h2 class="head">番付</h2><div class="row"><button type="button" class="ghost" data-act="transfer">引き継ぎ</button><button type="button" class="ghost" data-act="title">戻る</button></div></div>
-    <p class="best">討伐 ${nClear()}</p>
+    <div class="row" style="justify-content:space-between"><h2 class="head">逡ｪ莉・/h2><div class="row"><button type="button" class="ghost" data-act="transfer">蠑輔″邯吶℃</button><button type="button" class="ghost" data-act="title">謌ｻ繧・/button></div></div>
+    <p class="best">險惹ｼ・${nClear()}</p>
     <div class="grid">${cells}</div>
   </div>`);
   const cur = ov.querySelector('.cell.cur'); if (cur) cur.scrollIntoView({ block: 'center' });
 }
-// ---- 引き継ぎ: the clear record as a code to carry between sites, apps and devices ----
+// ---- 蠑輔″邯吶℃: the clear record as a code to carry between sites, apps and devices ----
 const CODE_TAG = 'KN1:';
 function recordCode() {
   const r2 = v => v ? Math.round(v * 100) / 100 : 0, clr = {};
@@ -4711,11 +4707,11 @@ function readCode(text) {
 function transferScreen() {
   state = 'transfer';
   show(`<div class="panel">
-    <h2 class="head">引き継ぎ</h2>
+    <h2 class="head">蠑輔″邯吶℃</h2>
     <textarea id="tcode" class="code" readonly rows="4">${recordCode()}</textarea>
-    <div class="row"><button type="button" class="primary" data-act="copycode">写す</button><span class="hint" id="tcopied" aria-live="polite"></span></div>
-    <textarea id="tin" class="code" rows="4" placeholder="${CODE_TAG}…" aria-label="引き継ぎコード"></textarea>
-    <div class="row"><button type="button" class="primary" data-act="importcode">読み込む</button><button type="button" class="ghost" data-act="select">番付へ</button><span class="hint" id="tmsg" aria-live="polite"></span></div>
+    <div class="row"><button type="button" class="primary" data-act="copycode">蜀吶☆</button><span class="hint" id="tcopied" aria-live="polite"></span></div>
+    <textarea id="tin" class="code" rows="4" placeholder="${CODE_TAG}窶ｦ" aria-label="蠑輔″邯吶℃繧ｳ繝ｼ繝・></textarea>
+    <div class="row"><button type="button" class="primary" data-act="importcode">隱ｭ縺ｿ霎ｼ繧</button><button type="button" class="ghost" data-act="select">逡ｪ莉倥∈</button><span class="hint" id="tmsg" aria-live="polite"></span></div>
   </div>`);
 }
 function detailScreen(n) {
@@ -4723,29 +4719,29 @@ function detailScreen(n) {
   const s = stageByN(n), c = save.clr[n];
   show(`<div class="panel">
     <h2 class="head">${s.name}</h2>
-    <div class="seg" role="group" aria-label="命">
+    <div class="seg" role="group" aria-label="蜻ｽ">
       ${LIFE_ORDER.map(i => `<button type="button" data-act="life" data-v="${i}" aria-pressed="${i === life}">${LIFE[i].name}</button>`).join('')}
     </div>
     <dl class="stats">
-      ${LIFE_ORDER.map(i => `<dt>${LIFE[i].name}</dt><dd>${c && c[LIFE_TK[i]] ? fmt(c[LIFE_TK[i]]) : '―'} ・ ${c && c.hs && c.hs[i] ? c.hs[i] : '―'}</dd>`).join('')}
+      ${LIFE_ORDER.map(i => `<dt>${LIFE[i].name}</dt><dd>${c && c[LIFE_TK[i]] ? fmt(c[LIFE_TK[i]]) : '窶・} 繝ｻ ${c && c.hs && c.hs[i] ? c.hs[i] : '窶・}</dd>`).join('')}
     </dl>
-    <div class="row"><button type="button" class="primary" data-act="go">挑む</button>
-      ${prevOf(n) ? `<button type="button" class="ghost" data-act="pick" data-v="${prevOf(n).n}">前の鬼</button>` : ''}
-      ${nextOf(n) && unlocked(nextOf(n).n) ? `<button type="button" class="ghost" data-act="pick" data-v="${nextOf(n).n}">次の鬼</button>` : ''}
-      <button type="button" class="ghost" data-act="select">番付へ</button></div>
+    <div class="row"><button type="button" class="primary" data-act="go">謖代・</button>
+      ${prevOf(n) ? `<button type="button" class="ghost" data-act="pick" data-v="${prevOf(n).n}">蜑阪・鬯ｼ</button>` : ''}
+      ${nextOf(n) && unlocked(nextOf(n).n) ? `<button type="button" class="ghost" data-act="pick" data-v="${nextOf(n).n}">谺｡縺ｮ鬯ｼ</button>` : ''}
+      <button type="button" class="ghost" data-act="select">逡ｪ莉倥∈</button></div>
   </div>`);
 }
 function freeScreen() {
   state = 'freeSel';
   show(`<div class="panel">
-    <h2 class="head">自由稽古</h2>
-    <div class="seg" role="group" aria-label="難易度">
-      ${FREE.map((d, i) => `<button type="button" data-act="fdiff" data-v="${i}" aria-pressed="${i === freeDiff}">${d.name}<small>第${d.lv}番</small></button>`).join('')}
+    <h2 class="head">閾ｪ逕ｱ遞ｽ蜿､</h2>
+    <div class="seg" role="group" aria-label="髮｣譏灘ｺｦ">
+      ${FREE.map((d, i) => `<button type="button" data-act="fdiff" data-v="${i}" aria-pressed="${i === freeDiff}">${d.name}<small>隨ｬ${d.lv}逡ｪ</small></button>`).join('')}
     </div>
-    <p class="dnote">毎回ちがう鬼が出る。命は阿修羅のみ3。</p>
-    <div class="row"><button type="button" class="primary" data-act="gofree">始める</button><button type="button" class="ghost" data-act="title">戻る</button></div>
+    <p class="dnote">豈主屓縺｡縺後≧鬯ｼ縺悟・繧九ょ多縺ｯ髦ｿ菫ｮ鄒・・縺ｿ3縲・/p>
+    <div class="row"><button type="button" class="primary" data-act="gofree">蟋九ａ繧・/button><button type="button" class="ghost" data-act="title">謌ｻ繧・/button></div>
     <dl class="stats">
-      ${FREE.map((d, i) => `<dt>${d.name}</dt><dd>${save.free[i] ? fmt(save.free[i]) : '―'} ・ ${(save.freeHS || {})[i] || '―'}</dd>`).join('')}
+      ${FREE.map((d, i) => `<dt>${d.name}</dt><dd>${save.free[i] ? fmt(save.free[i]) : '窶・} 繝ｻ ${(save.freeHS || {})[i] || '窶・}</dd>`).join('')}
     </dl>
   </div>`);
 }
@@ -4764,10 +4760,10 @@ const retry = () => startRun(Object.assign({}, RUN));
 function pause() {
   if (state !== 'play' || ending) return;
   state = 'pause';
-  show(`<div class="panel"><h2 class="head">一時停止</h2>
-    <div class="row"><button type="button" class="primary" data-act="resume">再開</button>
-    <button type="button" class="ghost" data-act="retry">やり直す</button>
-    <button type="button" class="ghost" data-act="${RUN.mode === 'stage' ? 'select' : 'free'}">${RUN.mode === 'stage' ? '番付へ' : '難易度へ'}</button></div></div>`);
+  show(`<div class="panel"><h2 class="head">荳譎ょ●豁｢</h2>
+    <div class="row"><button type="button" class="primary" data-act="resume">蜀埼幕</button>
+    <button type="button" class="ghost" data-act="retry">繧・ｊ逶ｴ縺・/button>
+    <button type="button" class="ghost" data-act="${RUN.mode === 'stage' ? 'select' : 'free'}">${RUN.mode === 'stage' ? '逡ｪ莉倥∈' : '髮｣譏灘ｺｦ縺ｸ'}</button></div></div>`);
 }
 function resume() { if (state !== 'pause') return; hideOv(); state = 'play'; last = performance.now(); }
 // out of 10000: remaining life carries half of it; speed is measured against a par for this enemy's total life
@@ -4812,19 +4808,19 @@ function showResult() {
   }
   persist(); if (won) pushCloud();
   const rank = !won ? '' : sc >= 8500 ? 'S' : sc >= 7000 ? 'A' : sc >= 5500 ? 'B' : sc >= 4000 ? 'C' : 'D';
-  const label = RUN.mode === 'stage' ? `${RUN.st.name}${RUN.life ? ' ・' + LIFE[RUN.life].name : ''}` : `自由稽古 ${FREE[RUN.diff].name}`;
-  const nextBtn = RUN.mode === 'stage' && won && nextOf(RUN.st.n) ? `<button type="button" class="primary" data-act="next">次の鬼へ</button>` : '';
+  const label = RUN.mode === 'stage' ? `${RUN.st.name}${RUN.life ? ' 繝ｻ' + LIFE[RUN.life].name : ''}` : `閾ｪ逕ｱ遞ｽ蜿､ ${FREE[RUN.diff].name}`;
+  const nextBtn = RUN.mode === 'stage' && won && nextOf(RUN.st.n) ? `<button type="button" class="primary" data-act="next">谺｡縺ｮ鬯ｼ縺ｸ</button>` : '';
   show(`<div class="panel">
     <p class="eyebrow">${label}</p>
-    <div class="res-head"><h2 class="head">${won ? '討ち取った' : '敗れた'}</h2>
+    <div class="res-head"><h2 class="head">${won ? '險弱■蜿悶▲縺・ : '謨励ｌ縺・}</h2>
       ${won ? `<div class="rank">${rank}</div>` : s.why ? `<div class="rank lost">${s.why}</div>` : ''}</div>
     ${won ? `<p class="score">${sc}</p>` : ''}
     <dl class="stats">
-      <dt>最高得点</dt><dd>${bestS || '―'}${newScore ? ' <span class="k-g">更新</span>' : ''}</dd>
-      <dt>最速</dt><dd>${bestT ? fmt(bestT) : '―'}${newTime ? ' <span class="k-g">更新</span>' : ''}</dd>
+      <dt>譛鬮伜ｾ礼せ</dt><dd>${bestS || '窶・}${newScore ? ' <span class="k-g">譖ｴ譁ｰ</span>' : ''}</dd>
+      <dt>譛騾・/dt><dd>${bestT ? fmt(bestT) : '窶・}${newTime ? ' <span class="k-g">譖ｴ譁ｰ</span>' : ''}</dd>
     </dl>
-    <div class="row">${nextBtn}<button type="button" class="${nextBtn ? 'ghost' : 'primary'}" data-act="retry">もう一度</button>
-      <button type="button" class="ghost" data-act="${RUN.mode === 'stage' ? 'select' : 'free'}">${RUN.mode === 'stage' ? '番付へ' : '難易度へ'}</button></div>
+    <div class="row">${nextBtn}<button type="button" class="${nextBtn ? 'ghost' : 'primary'}" data-act="retry">繧ゅ≧荳蠎ｦ</button>
+      <button type="button" class="ghost" data-act="${RUN.mode === 'stage' ? 'select' : 'free'}">${RUN.mode === 'stage' ? '逡ｪ莉倥∈' : '髮｣譏灘ｺｦ縺ｸ'}</button></div>
   </div>`);
 }
 ov.addEventListener('click', e => {
@@ -4847,16 +4843,16 @@ ov.addEventListener('click', e => {
   else if (act === 'transfer') transferScreen();
   else if (act === 'copycode') {
     const ta = ov.querySelector('#tcode'), msg = ov.querySelector('#tcopied');
-    const fallback = () => { ta.focus(); ta.select(); msg.textContent = '選択しました'; };
-    try { navigator.clipboard.writeText(ta.value).then(() => { msg.textContent = '写しました'; }, fallback); } catch (e) { fallback(); }
+    const fallback = () => { ta.focus(); ta.select(); msg.textContent = '驕ｸ謚槭＠縺ｾ縺励◆'; };
+    try { navigator.clipboard.writeText(ta.value).then(() => { msg.textContent = '蜀吶＠縺ｾ縺励◆'; }, fallback); } catch (e) { fallback(); }
   }
   else if (act === 'importcode') {
     const r = readCode(ov.querySelector('#tin').value), msg = ov.querySelector('#tmsg');
-    if (!r) { msg.textContent = 'コードが正しくありません'; return; }
+    if (!r) { msg.textContent = '繧ｳ繝ｼ繝峨′豁｣縺励￥縺ゅｊ縺ｾ縺帙ｓ'; return; }
     // the better of the two records is kept for every stage
     mergeRecords(r); persist(); pushCloud();
     ov.querySelector('#tcode').value = recordCode();
-    msg.textContent = `読み込みました（討伐 ${nClear()}）`;
+    msg.textContent = `隱ｭ縺ｿ霎ｼ縺ｿ縺ｾ縺励◆・郁ｨ惹ｼ・${nClear()}・荏;
   }
 });
 
@@ -4869,15 +4865,14 @@ const LOOK = new Set(['KeyV']);
 addEventListener('keydown', e => {
   // the first key or tap wakes the sound (browsers keep it asleep until then)
   if (!song && state !== 'play') { ensureAudio(); if (state === 'title') playSong('title'); }
-  // typing into the 引き継ぎ boxes is not a game key
+  // typing into the 蠑輔″邯吶℃ boxes is not a game key
   if (e.target && e.target.tagName === 'TEXTAREA') return;
   const c = e.code;
   if (state === 'play' && (MOVE.has(c) || PARRY.has(c) || DASH.has(c) || BIG.has(c) || CUT.has(c) || LOOK.has(c))) e.preventDefault();
   keys[c] = true;
   const ctrl = e.ctrlKey || keys.ControlLeft || keys.ControlRight;
   if (ctrl && (c === 'KeyD' || c === 'KeyB')) e.preventDefault();
-  // Ctrl+D+B together opens every stage until the next ordinary return to 番付
-  if (ctrl && keys.KeyD && keys.KeyB && state !== 'play' && state !== 'pause') { tempUnlock = true; selectScreen(true); return; }
+  // Ctrl+D+B together opens every stage until the next ordinary return to 逡ｪ莉・  if (ctrl && keys.KeyD && keys.KeyB && state !== 'play' && state !== 'pause') { tempUnlock = true; selectScreen(true); return; }
   if (e.repeat) return;
   if (c === 'KeyM' && !ctrl) { toggleMute(); return; }
   if (state === 'play') {
@@ -4937,7 +4932,7 @@ $('#bLook').addEventListener('pointerdown', e => { e.preventDefault(); touchLook
 for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) $('#bLook').addEventListener(ev, () => { touchLook = false; });
 
 const muteBtn = $('#muteBtn');
-function toggleMute() { muted = !muted; muteBtn.textContent = muted ? '音 切' : '音 入'; if (musBus) musBus.gain.value = muted ? 0 : .32; }
+function toggleMute() { muted = !muted; muteBtn.textContent = muted ? '髻ｳ 蛻・ : '髻ｳ 蜈･'; if (musBus) musBus.gain.value = muted ? 0 : .32; }
 muteBtn.addEventListener('click', () => { ensureAudio(); toggleMute(); muteBtn.blur(); });
 $('#pauseBtn').addEventListener('click', e => { if (state === 'play') pause(); else if (state === 'pause') resume(); e.currentTarget.blur(); });
 
