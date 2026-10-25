@@ -151,14 +151,14 @@ kbd{font-family:var(--mono);font-size:.74rem;color:var(--washi);border:1px solid
     <button id="bLook" class="tb" type="button">見</button>
     <button id="bBig" class="tb" type="button">大</button>
     <button id="bDash" class="tb" type="button">踏</button>
-    <button id="bCut" class="tb" type="button">斬</button>
     <button id="bParry" class="tb" type="button">弾</button>
   </div>
 </div>
 
 <footer class="keys">
   <span>移動 <kbd>WASD</kbd> <kbd>矢印</kbd></span>
-<span>弾き <kbd>J</kbd> <kbd>Z</kbd> <kbd>左クリック</kbd> ・斬り <kbd>L</kbd> <kbd>C</kbd> <kbd>中クリック</kbd></span>  <span>踏み込み <kbd>K</kbd> <kbd>X</kbd> <kbd>Space</kbd> <kbd>右クリック</kbd> ・大踏み込み <kbd>V</kbd> ・見渡し <kbd>Shift</kbd> <kbd>Q</kbd></span>
+<span>弾き・斬り <kbd>Z</kbd> <kbd>左クリック</kbd></span>
+  <span>小踏み込み <kbd>X</kbd> <kbd>右クリック</kbd> ・大踏み込み <kbd>C</kbd> <kbd>中クリック</kbd> ・見渡し <kbd>V</kbd></span>
   <span>一時停止 <kbd>P</kbd> <kbd>Esc</kbd> ・やり直し <kbd>R</kbd> ・音 <kbd>M</kbd></span>
 </footer>
 
@@ -3302,8 +3302,10 @@ function tryParry() {
     if (P.slashCD <= 0) { P.slashCD = SLASH_CD; slash('斬'); }
     return;
   }
+  // with the enemy in reach the same press also cuts it; a cut that lands is no wasted parry
+  const cut = cutEnemy();
   if (P.parryCD > 0 || P.parryT > 0 || P.dashT > 0) return;
-  P.parryT = PARRY_WIN; P.parryHit = false; P.parryCD = PARRY_CD;
+  P.parryT = PARRY_WIN; P.parryHit = cut; P.parryCD = PARRY_CD;
 }
 function tryDash(mv, big) {
   if (P.dead || ending || P.dashCD > 0 || P.dashT > 0) return;
@@ -3317,31 +3319,16 @@ function tryDash(mv, big) {
   if (big) { P.stam -= BIG_COST; P.stamWait = STAM_WAIT; P.bigDash = true; } else P.bigDash = false;
   sfx('dash');
 }
-// the plain cut: as far as a parry reaches, in front of the player
-function trySlash() {
-  if (P.dead || ending || P.slashCD > 0 || P.dashT > 0) return;
-  if (slashSealed()) { pop(P.x, P.y - 22, '封', C.shu, 16); return; }
+// the plain cut that comes with a parry: only when the enemy stands as close as a parry reaches. Returns whether it cut
+function cutEnemy() {
+  if (P.slashCD > 0 || P.dashT > 0 || B.air || invulnerable() || slashSealed()) return false;
+  if (Math.hypot(B.x - P.x, B.y - P.y) >= B.r + P.r + PARRY_R + 12) return false;
   P.slashCD = NSLASH_CD;
-  const reach = P.r + PARRY_R + 12;
-  // a launcher in reach is cut
-  const ln = launchers.length ? nearestLauncher(P.x, P.y) : null;
-  if (ln && Math.hypot(ln.x - P.x, ln.y - P.y) < 16 + reach) {
-    slashes.push({ x: ln.x, y: ln.y, a: Math.atan2(ln.y - P.y, ln.x - P.x), life: .22, r: 16 });
-    sfx('slash'); hitLauncher(ln, BREAK_DMG * .5 * mult()); return;
-  }
-  const d = Math.hypot(B.x - P.x, B.y - P.y);
-  if (d < B.r + reach && !B.air) {
-    // a reeling enemy takes the full cut
-    if (B.stagger > 0 && !invulnerable()) { slash('斬'); return; }
-    const a = Math.atan2(B.y - P.y, B.x - P.x);
-    slashes.push({ x: B.x, y: B.y, a: a + Math.PI / 2, life: .16, r: B.r * .8 });
-    sfx('slash'); hitstop = Math.max(hitstop, .02);
-    damageBoss(NSLASH_DMG * mult(), false);
-    return;
-  }
-  // a cut at the air
-  slashes.push({ x: P.x + P.fx * 26, y: P.y + P.fy * 26, a: Math.atan2(P.fy, P.fx) + Math.PI / 2, life: .14, r: 14 });
-  sfx('whiff');
+  const a = Math.atan2(B.y - P.y, B.x - P.x);
+  slashes.push({ x: B.x, y: B.y, a: a + Math.PI / 2, life: .16, r: B.r * .8 });
+  sfx('slash'); hitstop = Math.max(hitstop, .02);
+  damageBoss(NSLASH_DMG * mult(), false);
+  return true;
 }
 // =====================================================================
 // simulation
@@ -3422,8 +3409,7 @@ function update(dt) {
   if (input.parry) { input.parry = false; tryParry(); }
   if (input.dash) { input.dash = false; tryDash(mv, false); }
   if (input.big) { input.big = false; tryDash(mv, true); }
-  if (input.slash) { input.slash = false; trySlash(); }
-  look = !!(keys.ShiftLeft || keys.ShiftRight || keys.KeyQ || touchLook);
+  look = !!(keys.KeyV || touchLook);
 
   // player
   let slowK = 1;
@@ -4172,7 +4158,7 @@ function render() {
 // =====================================================================
 // screens
 // =====================================================================
-const VERSION = '0.1.0';
+const VERSION = '0.1.1';
 let selN = 1, life = 0, freeDiff = 1, tempUnlock = false;
 const bestTime = c => Math.min(...LIFE_TK.map(k => c[k] || Infinity));
 const bestScore = c => Math.max(0, ...(c.hs || []));
@@ -4221,8 +4207,8 @@ function titleScreen() {
     <ul class="rules">
       <li><b class="k-w">● 白い弾</b>は当たる直前に<b class="k-g">弾き</b>で跳ね返せる。引きつけるほど<b class="k-g">「極」</b>。</li>
       <li><b class="k-r">◆ 朱い弾</b>・朱い光線・落雷は弾けない。<b>踏み込み</b>の無敵で抜けるか、かわす。<b class="k-b">○ 青</b>は踏み込みでも抜けられない。</li>
-      <li>弾きの届く距離なら<b>斬り</b>も届く。突進を弾けば鬼が<b class="k-g">崩れ</b>、斬れば大きく削れる。</li>
-      <li><b>大踏み込み</b>は遠くまで抜けるが息（青い棒）を使う。<b>見渡し</b>の間は遠くまで見えるが足が遅い。</li>
+      <li>弾きの届く距離に鬼がいれば、弾くと同時に<b>斬る</b>。突進を弾けば鬼が<b class="k-g">崩れ</b>、斬れば大きく削れる。</li>
+      <li><b>小踏み込み</b>はその場をかわす一歩。<b>大踏み込み</b>は大技や速い一撃を遠くまで抜けるが、息（青い棒）を使う。<b>見渡し</b>の間は遠くまで見えるが足が遅い。</li>
       <li>体力は一つの命に50。しばらく当たらなければ戻る。尽きれば命を一つ失い、その場で立ち直る。通常は命5、決死は3、泡沫は1で一撃でも終わり。</li>
       <li>場は画面より広い。見えない所の鬼と攻めは、画面の端の印が教える。見て、覚えて、破れ。</li>
     </ul>
@@ -4435,9 +4421,10 @@ ov.addEventListener('click', e => {
 
 // keyboard
 const MOVE = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
-const PARRY = new Set(['KeyJ', 'KeyZ']), DASH = new Set(['KeyK', 'KeyX', 'Space']), BIG = new Set(['KeyV']), CUT = new Set(['KeyL', 'KeyC']);
-// held to look round: Shift or Q
-const LOOK = new Set(['ShiftLeft', 'ShiftRight', 'KeyQ']);
+// Z parries (and cuts, when the enemy is in reach); X the short dash for the moment's dodge; C the big dash
+// for great techniques and fast blows; V held widens the view
+const PARRY = new Set(['KeyZ']), DASH = new Set(['KeyX']), BIG = new Set(['KeyC']), CUT = new Set();
+const LOOK = new Set(['KeyV']);
 addEventListener('keydown', e => {
   // the first key or tap wakes the sound (browsers keep it asleep until then)
   if (!song && state !== 'play') { ensureAudio(); if (state === 'title') playSong('title'); }
@@ -4475,7 +4462,7 @@ addEventListener('pagehide', saveResume);
 
 cv.addEventListener('pointerdown', e => {
   if (e.pointerType === 'touch' || state !== 'play') return;
-  if (e.button === 0) input.parry = true; else if (e.button === 2) input.dash = true; else if (e.button === 1) { e.preventDefault(); input.slash = true; }
+  if (e.button === 0) input.parry = true; else if (e.button === 2) input.dash = true; else if (e.button === 1) { e.preventDefault(); input.big = true; }
 });
 cv.addEventListener('contextmenu', e => e.preventDefault());
 // phones: a long press or a slide off the pad must not start a text selection or open the press menu
@@ -4505,7 +4492,6 @@ pad.addEventListener('pointerup', padEnd); pad.addEventListener('pointercancel',
 $('#bParry').addEventListener('pointerdown', e => { e.preventDefault(); if (state === 'play') input.parry = true; });
 $('#bDash').addEventListener('pointerdown', e => { e.preventDefault(); if (state === 'play') input.dash = true; });
 $('#bBig').addEventListener('pointerdown', e => { e.preventDefault(); if (state === 'play') input.big = true; });
-$('#bCut').addEventListener('pointerdown', e => { e.preventDefault(); if (state === 'play') input.slash = true; });
 $('#bLook').addEventListener('pointerdown', e => { e.preventDefault(); touchLook = true; });
 for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) $('#bLook').addEventListener(ev, () => { touchLook = false; });
 
