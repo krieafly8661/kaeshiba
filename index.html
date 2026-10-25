@@ -475,16 +475,19 @@ const VAR = Object.fromEntries(VARS.map(v => [v.id, v]));
 // =====================================================================
 function diffAt(lv) {
   const s = clamp((lv - 1) / 149, 0, 1);
+  // past the first few, every enemy is a wall to be learned: getting to its second form on a first try is doing well,
+  // and each skill takes try after try. h climbs from stage 6 to 25 and holds
+  const h = clamp((lv - 5) / 20, 0, 1);
   return {
     s,
     // gentle at first, then climbing hard from the middle on: the middle takes days to learn, the last stretch months.
     // Same end points at stage 150 as before; the middle now rises earlier.
     // the enemies come to finish the player fast: quicker shots and less rest, but thinner volleys,
     // so it is reflexes and reading that are tested rather than squeezing through a wall of shots
-    spd: (.84 + .3 * s + .57 * Math.pow(s, 1.3)) * 1.26,    // shot speed
-    gap: (1.22 - .75 * s - .15 * s * s) * .74,              // rest between attacks
-    den: (.9 + .7 * s + 1.4 * Math.pow(s, 1.3)) * .8,        // shots per volley
-    warn: (1.12 - .5 * s - .1 * s * s) * .95,                // warning time of beams, strikes and charges
+    spd: (.84 + .3 * s + .57 * Math.pow(s, 1.3)) * 1.26 * (1 + .12 * h),    // shot speed
+    gap: (1.22 - .75 * s - .15 * s * s) * .74 * (1 - .3 * h),              // rest between attacks
+    den: (.9 + .7 * s + 1.4 * Math.pow(s, 1.3)) * .8 * (1 + .15 * h),        // shots per volley
+    warn: (1.12 - .5 * s - .1 * s * s) * .95 * (1 - .1 * h),                // warning time of beams, strikes and charges
     red: lv < 3 ? 0 : Math.min(.8, .22 + .58 * s),
     layer: lv < 12 ? 0 : Math.min(.85, .05 + .8 * Math.pow((lv - 12) / 138, .7)),   // chance that a second volley overlaps the first
     hpK: .85 + .5 * s,
@@ -853,7 +856,7 @@ function buildStage(n, opt = {}) {
     add({ t: 'rec', rec: 'grandwheel', name: '逢魔の大輪', I: I0 }, 0);
     add({ t: 'rec', rec: 'procession', name: '百鬼の行列', I: I0 }, 1);
     // and its own blade, form by form
-    for (const [t, intro] of CFW_AT) add({ t, p: {}, name: NSK[t].names[0], moves: true, rush: !!NSK[t].rush, own: -1 }, intro);
+    for (const [t, intro] of CFW_AT) add({ t, p: {}, name: NSK[t].names[0], moves: true, rush: !!NSK[t].rush, own: -1, nd: t === 'voidshatter' || t === 'timerend' }, intro);
   } else add({ t: 'rec', rec: en.rec, name: en.name, I: I0 * 1.15, fast: FAST_REC.has(en.rec) }, 0);
   const SEALS = ['sealDash', 'sealAll'];
   // a rush is the enemy's own: it is woven with one of its own barrages (one that goes for the player, if it has one)
@@ -987,7 +990,10 @@ function buildStage(n, opt = {}) {
   const vr = mulberry32((free ? opt.seed : n) * 2654435 + 11), VR = (a, b) => a + vr() * (b - a);
   const V = { vn: VR(.85, 1.2), vsz: VR(.8, 1.35), vsp: VR(.92, 1.1), vz: VR(.85, 1.3), vw: VR(.8, 1.4) };
   // toughness is one total for the enemy, set by its level alone; forms only split it where the attacks change
-  const total = Math.round((45 + 1.4 * n + .012 * n * n) * R(.9, 1.1));
+  // a final is the privilege of the few: the bosses of the 番付 from the fiftieth on, and the last; free play keeps its own
+  const finalHere = free || (!survive && (o.final || (n % 10 === 0 && n >= 50)));
+  // much tougher than they were: about 1.8 times; those with a final, which is a long fight of its own, 1.2 to 1.4 times
+  const total = Math.round((45 + 1.4 * n + .012 * n * n) * (finalHere ? R(1.2, 1.4) : 1.8) * R(.9, 1.1));
   const shares = Array.from({ length: k }, () => R(.8, 1.2)), shareSum = shares.reduce((a, b) => a + b, 0);
   const forms = [];
   for (let i = 0; i < k; i++) {
@@ -1038,7 +1044,7 @@ function buildStage(n, opt = {}) {
   for (const f of forms) if (f.special.includes('sealDform')) f.pool = f.pool.filter(id => !parts(id).some(x => x.nd || x.red));
   if (LAUNCH[n] && !free) { const f = forms[k - 1]; f.special.push('launchers'); f.lcount = LAUNCH[n]; }
   for (const f of forms) if (!f.pool.length) { f.pool = ['k:0']; f.wt['k:0'] = 1; }
-  const final = free || (!survive && (o.final || n % 10 === 0 || (n > 30 && n <= 60 && rng() < .22) || (n > 60 && rng() < .3)));
+  const final = finalHere;
   const revive = !free && !survive && (o.revive || n === 80 || (n > 80 && rng() < .12));
   const rules = Object.assign({}, o.rules || {});
   const totalHp = forms.reduce((a, f) => a + f.hp, 0);
@@ -1237,7 +1243,8 @@ const topOf = i => floorOf(i) + forms[i].hp;
 const totalHp = () => topOf(0);
 const SPD = () => F.spd * (F.vsp || 1);
 // a skill's level (actx.I) raises how many shots it fires
-const NN = n => Math.max(1, Math.round(n * F.den * (F.vn || 1) * (actx && actx.I || 1)));
+// never more than three times a volley's own count, however strong the stage and the skill: past that a fan is a wall
+const NN = n => Math.max(1, Math.round(n * Math.min(3, F.den * (F.vn || 1) * (actx && actx.I || 1))));
 const K = () => F.white ? 'w' : ((kc++ * .618034) % 1) < F.red ? 'r' : 'w';
 const ORG = () => EM || B;
 const aimFrom = (x, y) => Math.atan2(P.y - y, P.x - x);
@@ -2101,7 +2108,7 @@ const NSK_RUN = {
     const ctx = actx, h0 = stats.hits;
     startCharge(.75 * F.warn, 1000 * F.spd, 1, { pa: 'rush', ef: 'none' });
     // missed: straight back in, with no wind-up to speak of
-    B.afterRush = () => withCtxOf(ctx, () => { if (stats.hits === h0) startCharge(.12, 1050 * F.spd, 1, { pa: 'rush', ef: 'none' }); });
+    B.afterRush = () => withCtxOf(ctx, () => { if (stats.hits === h0) startCharge(.22, 1050 * F.spd, 1, { pa: 'rush', ef: 'none' }); });
     return 2.8;
   },
   // 剣閃: a step to the player's side and a quick cut, the glue of its strings
@@ -2160,6 +2167,7 @@ const NSK_RUN = {
   },
   timerend(p, lv) {
     const a = aimFrom(B.x, B.y), q = inField(P.x + Math.cos(a) * 150, P.y + Math.sin(a) * 150, B.r + 10);
+    B.ndUntil = gt + 2.6;
     mark(q.x, q.y, .3, { col: C.shu });
     at(.3, () => {
       // it cuts straight through where the player stands
@@ -2185,6 +2193,7 @@ const NSK_RUN = {
   voidshatter(p, lv) {
     // up into the sky: the body is gone from the floor until it lands
     const cx = B.x, cy = B.y, T = 1.15;
+    B.ndUntil = gt + T + 1.5;
     B.fade = T; B.holdT = T + 1;
     tellOn(T); mark(cx, cy, T, { col: C.shu, big: true });
     banner = { txt: '虚空砕き', t: 1.0 };
@@ -2552,14 +2561,15 @@ const FIX = {
     run(p, lv) {
       const bd = bounds(), pairs = p.pairs + (lv >= 2);
       for (let k = 0; k < pairs; k++) at(k * p.gap, () => {
-        for (const s of [0, 1]) {
+        // the second wall comes a beat after the first, and neither so fast it cannot be read
+        for (const s of [0, 1]) at(s * .55, () => {
           const h = p.holes[(k * 2 + s) % p.holes.length];
-          if (p.axis === 'x') { const len = bd.y1 - bd.y0, hy = bd.y0 + h * len; for (let y = bd.y0 + 6; y < bd.y1; y += 16) { if (Math.abs(y - hy) < 40) continue; const b = shootFrom(s ? W + 8 : -8, y, s ? Math.PI : 0, p.sp * SPD(), K()); b.grace = 7; } }
-          else { const len = bd.x1 - bd.x0, hx = bd.x0 + h * len; for (let x = bd.x0 + 6; x < bd.x1; x += 16) { if (Math.abs(x - hx) < 40) continue; const b = shootFrom(x, s ? H + 8 : 36, s ? -Math.PI / 2 : Math.PI / 2, p.sp * SPD(), K()); b.grace = 7; } }
-        }
+          if (p.axis === 'x') { const len = bd.y1 - bd.y0, hy = bd.y0 + h * len; for (let y = bd.y0 + 6; y < bd.y1; y += 16) { if (Math.abs(y - hy) < 40) continue; const b = shootFrom(s ? W + 8 : -8, y, s ? Math.PI : 0, p.sp * Math.min(1.5, SPD()), K()); b.grace = 7; } }
+          else { const len = bd.x1 - bd.x0, hx = bd.x0 + h * len; for (let x = bd.x0 + 6; x < bd.x1; x += 16) { if (Math.abs(x - hx) < 40) continue; const b = shootFrom(x, s ? H + 8 : 36, s ? -Math.PI / 2 : Math.PI / 2, p.sp * Math.min(1.5, SPD()), K()); b.grace = 7; } }
+        });
         sfx('warn');
       });
-      return pairs * p.gap + 2;
+      return pairs * p.gap + 2.5;
     } },
 };
 
@@ -2607,7 +2617,7 @@ const holdUnit = (u, d, s) => { const end = gt + Math.max(d, (s && (s.linger || 
 function runSkill(j, lv, u = 'u' + ++unitN) {
   const s = F.skills[j] || F.skills[0];
   // what would leave no way through right now gives way to the enemy's plainest barrage
-  if ((s.nd && dashSealed()) || (s.red && dashSealed()) || (s.seals && ndAlive())) return holdUnit(u, withCtx(RUN.st.finalSeed + ':plain', () => fireShape('plain')));
+  if ((s.nd && (dashSealed() || P.dashCD > .2)) || (s.red && dashSealed()) || (s.seals && ndAlive())) return holdUnit(u, withCtx(RUN.st.finalSeed + ':plain', () => fireShape('plain')));
   return holdUnit(u, withCtx(RUN.st.finalSeed + ':sk:' + j, () => {
     actx.I = Math.min(1.6, 1 + .12 * lv);
     pop(ORG().x, ORG().y - B.r - 18, s.name, C.kin, 16);
@@ -2778,7 +2788,8 @@ function finalKit(st, r, noDash) {
   };
   // mostly set pieces from fixed places; only now and then something aimed at the player
   // mostly ways through to read; the set pieces and anything aimed at the player only now and then
-  const W8 = [['maze', 8], ['fix', 2.5], ['pat', .3], ['nsk', .4], ['beam', .3], ['rush', .2], ['tech', .3]].filter(([f]) => fams[f]().length);
+  // (__NOMAZE: test runs that check everything in a final but the ways through, which have their own walker)
+  const W8 = [['maze', globalThis.__NOMAZE ? 0 : 8], ['fix', 2.5], ['pat', .3], ['nsk', .4], ['beam', .3], ['rush', .2], ['tech', .3]].filter(([f]) => fams[f]().length);
   const fam = (not) => { let ws = W8.filter(([f]) => f !== not && left(f)); if (!ws.length) ws = W8.filter(([f]) => f !== not); let x = r() * ws.reduce((a, w) => a + w[1], 0); for (const w of ws) if ((x -= w[1]) <= 0) return w[0]; return 'pat'; };
   const names = shuffle(FIN_NM.slice());
   let ni = 0;
@@ -2940,7 +2951,8 @@ function hurt(n = 1, pierce = false) {
   P.hp -= n; stats.hits += n; P.inv = 1.1; P.combo = 0; P.regenT = 0;
   // 百鬼夜行 feeds on every hit it lands, and under its hex a hit also takes the breath for a dash
   if (RUN && RUN.st && RUN.st.n === 150 && !RUN.st.free && B.hp > 0 && !invulnerable() && B.final !== 'on') { B.hp = Math.min(topOf(fi), B.hp + totalHp() * .03); pop(B.x, B.y - B.r - 30, '吸', C.shu, 22); }
-  if (B.hex > 0) P.dashCD = Math.max(P.dashCD, 1.6);
+  // (never while a shockwave that only a dash gets through is on its way)
+  if (B.hex > 0 && gt > (B.ndUntil || 0) && !ndAlive()) P.dashCD = Math.max(P.dashCD, 1.6);
   addShake(n > 1 ? 16 : 12); hitstop = .09; flash = reduced ? 0 : .35;
   burst(P.x, P.y, C.shu, 18 * n, 260);
   if (n > 1) pop(P.x, P.y - 24, '−' + n, C.shu, 22);
@@ -3913,7 +3925,7 @@ function render() {
 // =====================================================================
 // screens
 // =====================================================================
-const VERSION = '3.8.0';
+const VERSION = '3.10.0';
 let selN = 1, life = 0, freeDiff = 1, tempUnlock = false;
 const bestTime = c => Math.min(...LIFE_TK.map(k => c[k] || Infinity));
 const bestScore = c => Math.max(0, ...(c.hs || []));
