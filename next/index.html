@@ -1349,7 +1349,7 @@ let RUN = null;        // { mode: 'stage'|'free', st, life (0 通常 / 1 決死 
 const LIFE = [{ name: '通常', lives: 5 }, { name: '決死', lives: 3 }, { name: '泡沫', lives: 1, oneHit: true }];
 const LIFE_ORDER = [0, 1, 2], LIFE_TK = ['t', 'kt', 'ut'];
 // hurt nothing for a while, and the life comes back a little at a time
-const HPMAX = 50, REGEN_WAIT = 2, REGEN_RATE = 5, RESPAWN_INV = 1.8;
+const HPMAX = 50, REGEN_WAIT = 2, REGEN_RATE = 5, RESPAWN_INV = 1.8, DOWN_T = 1.2;
 let forms, fi, F, RL;  // form list, current form index, current form, stage rules
 // the camera: the top-left of the view on the floor, and its zoom (1 = the plain screen; less while looking round)
 let cam = { x: 0, y: 0, z: 1 }, look = false, call = null;
@@ -1374,7 +1374,7 @@ function newGame(run) {
   P = { x: W / 2, y: H * .8, r: 9, fx: 0, fy: -1, hp: php, max: php, inv: 0, dashT: 0, dashCD: 0, dvx: 0, dvy: 0, dashHit: false,
         parryT: 0, parryCD: 0, parryHit: false, slashCD: 0, combo: 0, dead: false, px: W / 2, py: H * .8, lvx: 0, lvy: 0,
         lives: lf.lives, maxLives: lf.lives, oneHit: !!lf.oneHit, lastHurt: -9, stam: STAM_MAX, stamWait: 0 };
-  B = { x: W / 2, y: H * .8 - 260, r: 16, hp: topOf(0), phase: 1, mode: 'idle', tx: W / 2, ty: H * .8 - 260, stagger: 0, staggerMax: STAGGER,
+  B = { x: W / 2, y: H * .8 - 260, r: 34, hp: topOf(0), phase: 1, mode: 'idle', tx: W / 2, ty: H * .8 - 260, stagger: 0, staggerMax: STAGGER,
         nextAtk: 1.6, busy: 0, aimT: 0, aimMax: 0, cspd: 0, cx: 0, cy: 0, cvx: 0, cvy: 0, cdist: 0, ctrav: 0, hurtF: 0, spin: 0,
         final: '', barrier: false, seal: false, finalT: 0, finalLen: 1, revived: false, lastHit: 0, vis: 1, fade: 0,
         shieldA: 0, stance: 0, stCycle: 4, sealOff: 0, guard: false, trail: 0, trailT: 0, iframe: 0, pierceN: 0, pierceTot: 0, act: {} };
@@ -3539,12 +3539,20 @@ function hurt(n = 1, pierce = false) {
   pop(P.x, P.y - 24, '−' + Math.round(dmg), C.shu, big ? 24 : 18);
   sfx('hurt');
   if (P.hp <= 0) {
-    // a life gone: back on the spot, full, and untouchable for a moment; the last one ends it
+    // a life gone: the player falls, and a moment later stands again at the start, full and untouchable for a while; the last one ends it
     P.lives--;
-    if (P.lives > 0) { P.hp = P.max; P.inv = RESPAWN_INV; P.lastHurt = gt; burst(P.x, P.y, C.washi, 30, 240, .6); pop(P.x, P.y - 40, '残 ' + P.lives, C.washi, 26); sfx('phase'); }
+    if (P.lives > 0) { P.hp = 0; P.dead = true; P.downT = DOWN_T; P.combo = 0; burst(P.x, P.y, C.washi, 40, 320, .9); sfx('lose'); }
     else { P.hp = 0; lose(''); }
   }
   return true;
+}
+// fallen with lives left: back at the start once the moment has passed
+function stepDown(dt) {
+  if (!(P.downT > 0) || ending) return;
+  if ((P.downT -= dt) > 0) return;
+  P.downT = 0; P.dead = false; P.x = P.px = W / 2; P.y = P.py = H * .8; P.fx = 0; P.fy = -1; P.dashT = 0; P.parryT = 0;
+  P.hp = P.max; P.inv = RESPAWN_INV; P.lastHurt = gt; P.stam = STAM_MAX;
+  burst(P.x, P.y, C.washi, 30, 240, .6); pop(P.x, P.y - 40, '残 ' + P.lives, C.washi, 26); sfx('phase');
 }
 function lose(why) {
   P.hp = Math.max(0, P.hp); P.dead = true; ending = 1.4; stats.won = false; stats.why = why;
@@ -3897,6 +3905,7 @@ function update(dt) {
   P.lvx += ((P.x - P.px) / dt - P.lvx) * Math.min(1, dt * 8); P.lvy += ((P.y - P.py) / dt - P.lvy) * Math.min(1, dt * 8); P.px = P.x; P.py = P.y;
   P.inv -= dt; P.dashCD -= dt; P.parryCD -= dt; P.slashCD -= dt;
   if (P.stamWait > 0) P.stamWait -= dt; else P.stam = Math.min(STAM_MAX, P.stam + STAM_RATE * dt);
+  stepDown(dt);
   if (!P.dead && !ending && P.hp < P.max && gt - P.lastHurt > REGEN_WAIT) P.hp = Math.min(P.max, P.hp + REGEN_RATE * dt);
   if (P.parryT > 0) {
     P.parryT -= dt;
@@ -4609,7 +4618,7 @@ function render() {
 // =====================================================================
 // screens
 // =====================================================================
-const VERSION = '0.2.1';
+const VERSION = '0.2.2';
 let selN = 1, life = 0, freeDiff = 1, tempUnlock = false;
 const bestTime = c => Math.min(...LIFE_TK.map(k => c[k] || Infinity));
 const bestScore = c => Math.max(0, ...(c.hs || []));
